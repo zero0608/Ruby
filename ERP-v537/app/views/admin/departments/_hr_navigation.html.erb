@@ -1,0 +1,23 @@
+<a href="<%= admin_department_path(Department.order(:name).first.id) %>" class="underline-hover <%= "active" if controller.controller_name == "departments" && (params[:action] == "index" || params[:action] == "show") %>">
+  Departments
+</a>
+
+<a href="<%= expense_request_admin_departments_path %>" class="underline-hover <%= "active" if params[:action] == "expense_request" || params[:action] == "expense_history" %>">
+  Expense Requests (<%= Expense.eager_load(:employee).where(status: ["Pending", nil], employees: { exit_date: nil }).count %>)
+</a>
+
+<a href="<%= time_off_request_admin_departments_path %>" class="underline-hover <%= "active" if params[:action] == "time_off_request" || params[:action] == "time_off_history" %>">
+  Time-Off Requests (<%= Leave.eager_load(:employee).where(status: "Pending", employees: { exit_date: nil }).count %>)
+</a>
+
+<a href="<%= admin_templates_path %>" class="underline-hover <%= "active" if controller.controller_name == "templates" %>">
+  Documents
+</a>
+
+<a href="<%= admin_holidays_path %>" class="underline-hover <%= "active" if controller.controller_name == "holidays" %>">
+  Holidays
+</a>
+
+<a href="<%= commission_admin_invoices_path %>" class="underline-hover <%= "active" if controller.controller_name == "invoices" %>">
+  Sales
+</a>

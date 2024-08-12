@@ -1,0 +1,13 @@
+<div class="row mb-3">
+  <div class="col-12">
+    <p class="header1">System Settings</p>
+
+    <a class="underline-hover <%= "active" if controller.controller_name == "groups" || controller.controller_name == "users" || controller.controller_name == "create_whitelists" || controller.controller_name == "warehouses" || controller.controller_name == "store_addresses" %>" href="<%= admin_groups_path %>">NB Team</a>
+
+    <a class="underline-hover <%= "active" if controller.controller_name == "categories" || controller.controller_name == "suppliers" || controller.controller_name == "factories" || controller.controller_name == "product_parts" || controller.controller_name == "product_variants" || controller.controller_name == "invoice_macros" %>" href="<%= admin_categories_path %>">Production</a>
+
+    <a class="underline-hover <%= "active" if controller.controller_name == "pallets" || controller.controller_name == "truck_brokers" || controller.controller_name == "carriers" || controller.controller_name == "shipping_rates" || controller.controller_name == "shipping_codes" || controller.controller_name == "tax_rates" || controller.controller_name == "state_days" || controller.controller_name == "white_glove_directories" || controller.controller_name == "white_glove_addresses" %>" href="<%= admin_pallets_path %>">Shipping</a>
+
+    <a class="underline-hover <%= "active" if controller.controller_name == "accounting_expenses" %>" href="<%= accounting_admin_accounting_expenses_path %>">Accounting</a>
+  </div>
+</div>

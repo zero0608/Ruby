@@ -1,0 +1,38 @@
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 10%">Order Number</th>
+        <th style="width: 15%">Order Date</th>
+        <th style="width: 15%">ETC</th>
+        <th style="width: 10%">Quantity</th>
+        <th style="width: 10%">Not Started</th>
+        <th style="width: 10%">In Production</th>
+        <th style="width: 10%">Container Ready</th>
+        <th style="width: 10%">Completed</th>
+        <th style="width: 10%">Supplier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @purchases.each do |purchase| %>
+        <tr>
+          <td><%= link_to (purchase&.store == "us" ? "TUS" : "TCA") + "#{purchase.id}", admin_purchase_path(id: purchase.id), data: { turbolinks: false } %></td>
+          <td><%= purchase.created_at.to_date.strftime("%B %d, %Y") %></td>
+          <td><%= (purchase.created_at.to_date + 22.days).strftime("%B %d, %Y") %></td>
+          <td><%= purchase&.purchase_items.pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :not_started).pluck(:quantity).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :in_production).pluck(:quantity).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :container_ready).pluck(:quantity).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :completed).pluck(:quantity).sum %></td>
+          <td><%= purchase&.supplier&.name %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @pagy.count > 1 %>
+  <div id="page-nav">
+    <%= render partial: "index_paginator", locals: { current_user: current_user} %>
+  </div>
+<% end %>

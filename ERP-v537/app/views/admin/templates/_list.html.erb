@@ -1,0 +1,25 @@
+<a href="<%= new_admin_template_path %>">
+  <button class="btn btn-primary w-100 mb-3">Create New Template</button>
+</a>
+
+<% if @templates.present? %>
+  <p class="header2">All Templates</p>
+  <% @templates.order(created_at: :desc).each do |template| %>
+    <a href="<%= edit_admin_template_path(template.id) %>">
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="no-gutters d-flex">
+            <div class="col-6">
+              <h5 class="card-title fc-red-clay"><%= template.title %></h5>
+            </div>
+            <div class="col-6 text-right">
+              <span><%= template.created_at.strftime('%B %d, %Y') %></span>
+            </div>
+          </div>
+          <div style="height: 50px; overflow: hidden"><%= template.content&.html_safe %></div>
+        </div>
+      </div>
+    </a>
+  <% end %>
+<% end %>
+

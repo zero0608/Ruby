@@ -1,0 +1,17 @@
+<div class="container p-4">
+  <div class="row mb-4">
+    <div class="col-12 mb-4">
+      <h5>Pre-Orders</h5>
+    </div>
+
+    <div class="col-2">
+      <div class="search-bar">
+        <input type="text" placeholder="Search..." class="form-control" data-reflex="debounced:input->PurchaseReflex#search_variant" data-store-type="<%= current_store %>">
+			</div>
+    </div>
+  </div>
+
+  <section id="pre-order-list-results">
+    <%= render partial: "pre_order_results", locals: { pagy: @pagy, purchase_items: @purchase_items, current_user: current_user } %>
+  </section>
+</div>

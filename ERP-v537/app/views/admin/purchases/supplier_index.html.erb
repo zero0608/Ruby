@@ -1,0 +1,14 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <div class="row mb-3">
+    <div class="col-12">
+      <span class="header1 mr-4">订单</span>
+      <div class="search-bar d-inline-block">
+        <input type="text" placeholder="Search Supplier Orders..." class="form-control" data-reflex="debounced:input->PurchaseReflex#suppler_orders" data-store-type="<%= current_store %>" data-user-id="<%= current_user.id %>">
+      </div>
+    </div>
+  </div>
+
+  <section id="purchase-list-results-supplier">
+    <%= render partial: "supplier_purchases", locals: { pagy: @pagy, purchases: @purchases, current_user: current_user } %>
+  </section>
+</div>

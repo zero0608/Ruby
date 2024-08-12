@@ -1,0 +1,56 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-3 mb-3">
+        <span class="header1"><%= @product_location.rack %></span><br>
+        <span class="text-light-grey">Rack</span>
+      </div>
+
+      <div class="col-3 mb-3">
+        <span class="header1"><%= @product_location.level %></span><br>
+        <span class="text-light-grey">Level</span>
+      </div>
+
+      <div class="col-3 col-md-4 mb-3">
+        <span class="header1"><%= @product_location.bin %></span><br>
+        <span class="text-light-grey">Bin</span>
+      </div>
+      <div class="col-3 col-md-2 mb-3">
+        <a href="<%= add_inventory_to_location_admin_warehouses_path(location_id: @product_location.id) %>" class="btn text-green bg-light-green font-weight-bold h-100 w-100" style="font-size: 30px !important; min-width: initial">+</a>
+      </div>
+      <% @product_location.carton_locations.eager_load(carton: [:product_variant]).order("product_variants.sku").each do |carton_location| %>
+        <div class="col-12 mb-3">
+          <a href="<%= admin_variant_admin_warehouses_path(carton_location_id: carton_location.id, source: "location" ) %>" class="row mx-0 py-3 border-grey bg-white rounded-5 mb-3">
+            <div class="col-4">
+              <span class="text-light-grey">SKU</span><br>
+              <span class="header1"><%= carton_location.carton.product_variant&.sku&.upcase %></span>
+            </div>
+            <div class="col-4">
+              <span class="text-light-grey">Carton</span><br>
+              <span class="header1"><%= carton_location.carton.carton_detail.index %> / <%= carton_location.carton.carton_detail.product.carton_details.maximum(:index) %></span>
+            </div>
+            <div class="col-4">
+              <span class="text-light-grey">In-stock</span><br>
+              <span class="header1"><%= carton_location.quantity %></span>
+            </div>
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= aisle_location_admin_warehouses_path(rack: @product_location.rack) %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>

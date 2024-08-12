@@ -1,0 +1,63 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-12 mb-3">
+        <span class="header1">Add Location</span>
+      </div>
+
+      <div class="col-12 mb-3 border-bottom"></div>
+
+      <%= form_tag create_location_admin_warehouses_path, class: "col-12" do |f| %>
+        <div class="row">
+          <div class="col-4 mb-5 text-center">
+            <span class="text-light-grey">Rack</span>
+            <%= text_field_tag :rack, "", class: "form-control border-black header1 text-center", style: "height: 5rem" %>
+          </div>
+          <div class="col-4 mb-5 text-center">
+            <span class="text-light-grey">Level</span>
+            <%= text_field_tag :level, "", class: "form-control border-black header1 text-center", style: "height: 5rem" %>
+          </div>
+          <div class="col-4 mb-5 text-center">
+            <span class="text-light-grey">Bin</span>
+            <%= text_field_tag :bin, "", class: "form-control border-black header1 text-center", style: "height: 5rem" %>
+          </div>
+          <div class="col-12 mb-3 text-right">
+            <button type="button" class="btn bg-light-grey text-black" data-toggle="modal" data-target="#confirm">Create</button>
+          </div>
+        </div>
+        
+        <div class="modal" id="confirm" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog" style="max-width: calc(100% - 20px); position: absolute; transform: none !important; top: initial; bottom: 1rem; left: 10px">
+            <div class="modal-content" style="background: none">
+              <div class="row mx-0">
+                <div class="col-12 mb-2">
+                  <button type="submit" class="btn text-green bg-light-green w-100 rounded-5" style="font-size: 15px; height: 5rem">
+                    Add Location
+                  </button>
+                </div>
+                <div class="col-12">
+                  <button type="button" class="btn btn-secondary mr-4 w-100 rounded-5" data-dismiss="modal" style="font-size: 15px; height: 5rem">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= unassigned_locations_admin_warehouses_path %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>

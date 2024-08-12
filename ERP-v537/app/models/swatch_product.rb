@@ -1,0 +1,2 @@
+class SwatchProduct < ApplicationRecord
+end

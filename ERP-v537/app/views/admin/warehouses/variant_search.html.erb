@@ -1,0 +1,275 @@
+<div class="container px-4">
+  <div class="row">
+    <div class="col-6 col-md-2 mb-3">
+      <div class="h-100 border p-4">
+        <% if @product_variant.image_id.present? %>
+          <%= image_tag ProductImage.find_by(shopify_image_id: @product_variant.image_id).src, class: "img-fluid" %>
+        <% else %>
+          <%= image_tag "logo-em.png", class: "img-fluid" %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="col-6 mb-4">
+      <span class="header1"><%= @product_variant&.sku&.upcase %></span><br>
+      <%= link_to @product_variant&.title&.html_safe, admin_product_variant_path(id: @product_variant.id) %>
+    </div>
+
+    <div class="col-6 col-md-2 mb-4 text-center">
+      <div class="h-100 p-4 border">
+        <span class="header1">
+          <%= @product_variant.to_do_quantity.nil? ? 0 : @product_variant.to_do_quantity %>
+        </span><br>
+        PICK
+      </div>
+    </div>
+
+    <div class="col-6 col-md-2 mb-4 text-center">
+      <div class="h-100 p-4 border">
+        <span class="header1">
+          <%= @product_variant.received_quantity.nil? ? 0 : @product_variant.received_quantity %>
+        </span><br>
+        PUT
+      </div>
+    </div>
+
+    <% @product_variant.cartons.order(:id).each do |carton| %>
+      <div class="col-6 col-md-4 mb-3">
+        <a href="<%= variant_search_admin_warehouses_path(variant_id: @product_variant.id, rack: (params[:rack] if params[:rack].present?), level: (params[:level] if params[:level].present?), bin: (params[:bin] if params[:bin].present?), active_carton_id: carton.id) %>">
+          <div class="warehouse-carton py-3 text-center <%= "active" if carton.id == @active_carton.id %>">
+            <span class="header2 text-blue">
+              <%= carton.carton_detail.index %> / <%= carton.carton_detail.product.carton_details.maximum(:index) %>
+            </span>
+            <p>Carton</p>
+            <div class="w-100 mb-3" style="border-bottom: solid 2px var(--light-grey)"></div>
+            <div class="d-flex">
+              <div class="w-50 border-right">
+                <span class="header1 text-blue"><%= carton.to_do_quantity %></span>
+                <p>Pick</p>
+              </div>
+              <div class="w-50">
+                <span class="header1 text-blue"><%= carton.received_quantity %></span>
+                <p>Put</p>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% end %>
+    <div class="col-12 mb-3">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 20%">Rack</th>
+              <th style="width: 20%">Level</th>
+              <th style="width: 20%">Bin</th>
+              <th style="width: 20%">Qty</th>
+              <th style="width: 10%"></th>
+              <th style="width: 10%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @carton_locations.each do |carton_location| %>
+              <% location = ProductLocation.find_by(id: carton_location.product_location_id) %>
+              <tr>
+                <td><%= location.rack %></td>
+                <td><%= location.level %></td>
+                <td><%= location.bin %></td>
+                <td><%= carton_location.quantity.nil? ? 0 : carton_location.quantity %></td>
+                <td>
+                  <button class="btn btn-primary btn-fit-content toggle-view" style="width: 50px" <%= "disabled" if @product_variant.to_do_quantity.nil? || @product_variant.to_do_quantity == 0 || @active_carton.to_do_quantity.nil? || @active_carton.to_do_quantity == 0 || carton_location.quantity.nil? || carton_location.quantity == 0 %> data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-" + location.rack + "-" + location.level + "-" + location.bin + "-pick" %>">Pick</button>
+                </td>
+                <td>
+                  <button class="btn btn-primary btn-fit-content toggle-view" style="width: 50px" <%= "disabled" if @product_variant.received_quantity.nil? || @product_variant.received_quantity.to_i == 0 %> data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-" + location.rack + "-" + location.level + "-" + location.bin + "-put" %>">Put</button>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan=3>Received Quantity</td>
+              <td><%= @active_carton.received_quantity.nil? ? 0 : @active_carton.received_quantity %></td>
+              <td>
+                <button class="btn btn-primary btn-fit-content toggle-view" style="width: 50px" <%= "disabled" if @product_variant.received_quantity.nil? || @product_variant.received_quantity == 0 || @active_carton.received_quantity.nil? || @active_carton.received_quantity == 0 || @product_variant.to_do_quantity.nil? || @product_variant.to_do_quantity == 0 || @active_carton.to_do_quantity.nil? || @active_carton.to_do_quantity == 0 %> data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-pick" %>">Pick</button>
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="col-12 mb-3">
+      <button class="btn btn-secondary" data-toggle="modal" data-target="#searchLocationModal" <%= "disabled" if @product_variant.received_quantity.nil? || @product_variant.received_quantity.to_i == 0 || @active_carton.received_quantity.nil? || @active_carton.received_quantity == 0 %>>Search Assign Location</button>
+    </div>
+  </div>
+  
+  <% @carton_locations.each do |carton_location| %>
+    <% location = ProductLocation.find_by(id: carton_location.product_location_id) %>
+    <div class="row mx-0 toggle-content warehouse-modal rounded" data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-" + location.rack + "-" + location.level + "-" + location.bin + "-pick" %>">
+      <div class="col-12 mb-3">
+        <div class="text-white bg-light-grey rounded-circle rounded-circle-2 d-inline-block toggle-view" data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-" + location.rack + "-" + location.level + "-" + location.bin + "-pick" %>" style="vertical-align: middle">
+          <%= show_svg("arrow.svg") %>
+        </div>
+        <span class="font-weight-bold ml-2" style="vertical-align: middle">
+          PICK - SKU: <%= @product_variant.sku %> (<%= @active_carton.carton_detail.index %> / <%= @active_carton.carton_detail.product.carton_details.maximum(:index) %>)
+        </span>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Rack</p>
+        <%= location.rack %>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Level</p>
+        <%= location.level %>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Bin</p>
+        <%= location.bin %>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Qty</p>
+        <%= carton_location.quantity.nil? ? 0 : carton_location.quantity %>
+      </div>
+      <div class="col-12">
+        <%= form_tag quantity_pick_admin_warehouses_path, id: "carton-pick" + carton_location.id.to_s, class: "form-horizontal form-bordered" do |f| %>
+          <div class="row">
+            <div class="col-6">
+              <label>Quantity</label>
+              <%= number_field_tag "loc_id[#{carton_location.id}]", "", class: "form-control", max: [carton_location.quantity, @active_carton.to_do_quantity].min %>
+              <%= hidden_field_tag "carton_id[#{@active_carton.id}]", "" %>
+            </div>
+            <div class="col-6">
+              <label>&nbsp;</label>
+              <button class="btn btn-secondary w-100" name="button" type="submit">Subtract</button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="row mx-0 toggle-content warehouse-modal rounded" data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-" + location.rack + "-" + location.level + "-" + location.bin + "-put" %>">
+      <div class="col-12 mb-3">
+        <div class="text-white bg-light-grey rounded-circle rounded-circle-2 d-inline-block toggle-view" data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-" + location.rack + "-" + location.level + "-" + location.bin + "-put" %>" style="vertical-align: middle">
+          <%= show_svg("arrow.svg") %>
+        </div>
+        <span class="font-weight-bold ml-2" style="vertical-align: middle">
+          PUT - SKU: <%= @product_variant.sku %> (<%= @active_carton.carton_detail.index %> / <%= @active_carton.carton_detail.product.carton_details.maximum(:index) %>)
+        </span>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Rack</p>
+        <%= location.rack %>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Level</p>
+        <%= location.level %>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Bin</p>
+        <%= location.bin %>
+      </div>
+      <div class="col-2 mb-3 text-center">
+        <p class="font-weight-bold">Qty</p>
+        <%= carton_location.quantity.nil? ? 0 : carton_location.quantity %>
+      </div>
+      <div class="col-12">
+        <%= form_tag quantity_put_admin_warehouses_path, id: "carton-put" + carton_location.id.to_s, class: "form-horizontal form-bordered" do |f| %>
+          <div class="row">
+            <div class="col-6">
+              <label>Quantity</label>
+              <%= number_field_tag "loc_id[#{carton_location.id}]", "", class: "form-control", max: @active_carton.received_quantity %>
+              <%= hidden_field_tag "carton_id[#{@active_carton.id}]", "" %>
+            </div>
+            <div class="col-6">
+              <label>&nbsp;</label>
+              <button class="btn btn-secondary w-100" name="button" type="submit">Add</button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+    
+  <div class="row mx-0 mb-3 toggle-content warehouse-modal rounded" data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-pick" %>">
+    <div class="col-12 mb-2">
+      <div class="text-white bg-light-grey rounded-circle rounded-circle-2 d-inline-block toggle-view" data-toggle="<%= @product_variant.sku + "-carton" + @active_carton.id.to_s + "-pick" %>" style="vertical-align: middle">
+        <%= show_svg("arrow.svg") %>
+      </div>
+      <span class="font-weight-bold ml-2" style="vertical-align: middle">
+        PICK - SKU: <%= @product_variant.sku %> (<%= @active_carton.carton_detail.index %> / <%= @active_carton.carton_detail.product.carton_details.maximum(:index) %>)
+      </span>
+    </div>
+    <div class="col-12 mb-2">
+      <p>
+        <span class="font-weight-bold">Received Quantity:</span>
+        <%= @active_carton.received_quantity.nil? ? 0 : @active_carton.received_quantity %>
+      </p>
+    </div>
+    <div class="col-12">
+      <%= form_tag received_quantity_pick_admin_warehouses_path(received_quantity: "pick"), class: "form-horizontal form-bordered" do |f| %>
+        <div class="row">
+          <div class="col-6">
+            <label>Quantity</label>
+            <%= number_field_tag "loc_id[#{@active_carton.id}]", "", class: "form-control", max: [@active_carton.to_do_quantity, @active_carton.received_quantity.to_i].min %>
+            <%= hidden_field_tag "carton_id[#{@active_carton.id}]", "" %>
+          </div>
+          <div class="col-6">
+            <label>&nbsp;</label>
+            <button class="btn btn-secondary w-100" name="button" type="submit">Subtract</button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+    
+  <% if @search_location.present? %>
+    <%= render partial: "search_location", locals: { product_variant: @product_variant, search_location: @search_location, active_carton: @active_carton } %>
+  <% elsif @not_found.present? %>
+    <div class="row rounded">
+      <div class="col-12">
+        <p>Location not found.</p>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<!-- search location modal -->
+<div class="modal" id="searchLocationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog" style="width: 300px">
+    <%= form_tag(variant_search_admin_warehouses_path, method: :get) do %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Search Location</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">      
+            <div class="col-4 mb-3 text-center">
+              <h6>Rack</h6>
+              <%= text_field_tag :rack, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3 text-center">
+              <h6>Level</h6>
+              <%= text_field_tag :level, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3 text-center">
+              <h6>Bin</h6>
+              <%= text_field_tag :bin, "", class: "form-control" %>
+            </div>
+            <div class="col-12">
+              <%= hidden_field_tag :variant_id, @product_variant.id %>
+              <% if @active_carton.present? %>
+                <%= hidden_field_tag :active_carton_id, @active_carton.id %>
+              <% end %>
+              <%= submit_tag "Submit", class: "btn btn-primary w-100" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

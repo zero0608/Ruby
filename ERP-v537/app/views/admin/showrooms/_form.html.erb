@@ -1,0 +1,34 @@
+<% if @showroom.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @showroom.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-3 mb-3">
+    <%= f.label :name, "Name" %>
+    <%= f.text_field :name, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :abbreviation, "Showroom Code" %>
+    <%= f.text_field :abbreviation, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :store, "Store" %>
+    <%= f.select :store, options_for_select({ "US" => "us", "Canada" => "canada" }, f.object.store), { include_blank: true }, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :warehouse_id, "Warehouse" %>
+    <%= f.select :warehouse_id, options_for_select(Warehouse.all.map { |w| [w.name, w.id] }, f.object.warehouse_id), { include_blank: true }, { class: "form-control", required: true } %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_showrooms_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

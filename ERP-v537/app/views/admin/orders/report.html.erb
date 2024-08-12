@@ -1,0 +1,49 @@
+<div class="container p-4">
+  <div class="row">
+    <div class="col-12 mb-4">
+      <h5>Report Export</h5>
+    </div>
+    <div class="col-2">
+      <h5 class="mb-4">Categories</h5>
+      <a href="<%= report_admin_orders_path(report_type: "order") %>">
+        <div class="card card-red-clay btn-primary mb-4">
+          <div class="card-body p-4">
+            <p class="h5 m-0 font-weight-bold">CUSTOMER ORDER</p>
+          </div>
+        </div>
+      </a>
+      <a href="<%= report_admin_orders_path(report_type: "shipment") %>">
+        <div class="card card-red-clay btn-primary mb-4">
+          <div class="card-body p-4">
+            <p class="h5 m-0 font-weight-bold">ORDER SHIPMENT</p>
+          </div>
+        </div>
+      </a>
+      <a href="<%= report_admin_orders_path(report_type: "issue") %>">
+        <div class="card card-red-clay btn-primary mb-4">
+          <div class="card-body p-4">
+            <p class="h5 m-0 font-weight-bold">CLAIM</p>
+          </div>
+        </div>
+      </a>
+      <a href="<%= report_admin_orders_path(report_type: "container") %>">
+        <div class="card card-red-clay btn-primary mb-4">
+          <div class="card-body p-4">
+            <p class="h5 m-0 font-weight-bold">CONTAINER</p>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-10 border-left">
+      <% if params[:report_type] == "order" %>
+        <%= render partial: "report_order" %>
+      <% elsif params[:report_type] == "shipment" %>
+        <%= render partial: "report_shipment" %>
+      <% elsif params[:report_type] == "issue" %>
+        <%= render partial: "report_issue" %>
+      <% elsif params[:report_type] == "container" %>
+        <%= render partial: "report_container" %>
+      <% end %>
+    </div>
+  </div>
+</div>

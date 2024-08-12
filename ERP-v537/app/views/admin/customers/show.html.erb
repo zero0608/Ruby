@@ -1,0 +1,425 @@
+<div class="container px-4 flex-auto d-flex flex-column">
+  <div class="row flex-auto">
+    <div class="col-12 col-lg-3 mb-3 mb-lg-0 d-flex flex-column">
+      <div class="p-3 flex-auto" id="customer-section" style="background: #eee">
+        <%= render partial: "customer_information", locals: { customer: @customer, current_user: current_user } %>
+      </div>
+    </div>
+    <div class="col-12 col-lg-9 mb-3">
+      <div class="row">
+        <div class="col-12 text-right">
+          <a href="<%= new_admin_invoice_path(customer_id: @customer.id) %>">
+            <button class="btn btn-primary mr-4">New Lead</button>
+          </a>
+          <span class="btn btn-primary" data-toggle="modal" data-target="#appointmentModal">Appointment</span>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-12 mb-3 border-bottom">
+          <span class="header2">Lead History</span>
+        </div>
+        <div class="col-2">
+          <span class="text-light-grey">Invoice</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Lead Amount</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Created Date</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Stage</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Owner</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Source</span>
+        </div>
+        <div class="col-3">
+          <span class="text-light-grey">Lead Notes</span>
+        </div>
+      </div>
+
+      <div class="row mb-5">
+        <% @customer.invoices.order(created_at: :desc).each do |invoice| %>
+          <div class="col-2 mb-3">
+            <%= link_to invoice&.invoice_number, edit_admin_invoice_path(invoice.id) %>
+          </div>
+          <div class="col mb-3">
+            <%= number_to_currency(invoice&.full_amount) %>
+          </div>
+          <div class="col mb-3">
+            <%= invoice&.created_at&.strftime("%B %d, %Y") %>
+          </div>
+          <div class="col mb-3">
+            <% case invoice&.status %>
+              <% when "new_lead" %>
+                <span class="text-blue">
+                  <%= invoice&.status&.titleize %>
+                </span>
+              <% when "quote_offered" %>
+                <span class="text-blue">
+                  <%= invoice&.status&.titleize %>
+                </span>
+              <% when "deposit" %>
+                <span class="text-yellow">
+                  <%= invoice&.status&.titleize %>
+                </span>
+              <% when "full_payment" %>
+                <span class="text-green">
+                  <%= invoice&.status&.titleize %>
+                </span>
+              <% when "no_sale" %>
+                <span class="text-black">
+                  <%= invoice&.status&.titleize %>
+                </span>
+            <% end %>
+          </div>
+          <div class="col mb-3">
+            <%= invoice&.employee&.full_name %>
+          </div>
+          <div class="col mb-3">
+          </div>
+          <div class="col-3 mb-3">
+            <%= invoice&.notes %>
+          </div>
+          <div class="w-100"></div>
+        <% end %>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-3 border-bottom">
+          <span class="header2">Order History</span>
+        </div>
+        <div class="col-2">
+          <span class="text-light-grey">Order</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Order Amount</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Order Date</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Status</span>
+        </div>
+        <div class="col-3">
+          <span class="text-light-grey">Lead</span>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <% @customer.orders.order(:name).each do |order| %>
+          <div class="col-2 mb-3">
+            <%= link_to order&.name, edit_admin_order_path(name: order&.name) %>
+          </div>
+          <div class="col mb-3">
+          </div>
+          <div class="col mb-3">
+            <%= order&.created_at&.strftime("%B %d, %Y") %>
+          </div>
+          <div class="col mb-3">
+            <% case order&.status %>
+              <% when "new_order" %>
+                <span class="text-blue">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "pending_payment" %>
+                <span class="text-blue">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "in_progress" %>
+                <!-- all shipped -->
+                <% if order&.order_status == "Order Fulfilled" %>
+                  <span class="text-green">
+                    <%= order&.order_status&.titleize %>
+                  </span>
+
+                <!-- partial shipped -->
+                <% elsif order.order_status == "Partial Shipped" %>
+                  <span class="text-green">
+                    <%= order&.order_status&.titleize %>
+                  </span>
+
+                <% elsif order.order_status == "Staging" %>
+                  <span class="text-blue">
+                    <%= order&.order_status&.titleize %>
+                  </span>
+
+                <% elsif order.order_status == "Partial Cancel" %>
+                  <span class="text-blue">
+                    <%= order&.order_status&.titleize %>
+                  </span>
+
+                <% elsif order.shipping_details.last.status == "not_ready" %>
+                  <span class="text-grey">
+                    Not Ready
+                  </span>
+
+                <% elsif order.shipping_details.last.status == "staging" %>
+                  <span class="text-blue">
+                    Staging
+                  </span>
+
+                <% elsif order.shipping_details.last.status == "ready_to_ship" %>
+                  <span class="text-red">
+                    Ready to Ship
+                  </span>
+
+                <% elsif order.shipping_details.last.status == "booked" %>
+                  <span class="text-navy">
+                    Booked
+                  </span>
+
+                <% elsif order.shipping_details.last.status == "ready_for_pickup" %>
+                  <span class="text-green">
+                    Ready for Pickup
+                  </span>
+
+                <% elsif order.shipping_details.last.status == "closed" %>
+                  <span class="text-black">
+                    Closed
+                  </span>
+
+                <% else %>
+                  <span class="text-navy">
+                    <%= order.shipping_details.last.status&.titleize %>
+                  </span>
+                <% end %>
+
+              <% when "cancel_request" %>
+                <span class="text-red">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "cancel_confirmed" %>
+                <span class="text-red">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "rejected" %>
+                <span class="text-black">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "delayed" %>
+                <span class="text-red">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "hold_request" %>
+                <span class="text-red">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "hold_confirmed" %>
+                <span class="text-red">
+                  <%= order&.status&.titleize %>
+                </span>
+
+              <% when "completed" %>
+                <span class="text-green">
+                  <%= order&.status&.titleize %>
+                </span>
+            <% end %>
+          </div>
+          <div class="col-3 mb-3">
+            <%= link_to order&.invoice&.invoice_number, edit_admin_invoice_path(order&.invoice&.id) if order.invoice.present? %>
+          </div>
+          <div class="w-100"></div>
+        <% end %>
+      </div>
+
+      <div class="row">
+        <div class="col-12 mb-3 border-bottom">
+          <span class="header2">Appointment History</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Appointment Date</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Appointment Time</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Appointment Type</span>
+        </div>
+        <div class="col">
+          <span class="text-light-grey">Booked With</span>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <% @customer.appointments.sort_by { |a| DateTime.new(a.appointment_date.year, a.appointment_date.month, a.appointment_date.day, a.appointment_time.hour, a.appointment_time.min) }.reverse_each do |appointment| %>
+          <div class="col mb-3">
+            <%= appointment.appointment_date.strftime("%B %d, %Y") %>
+          </div>
+          <div class="col mb-3">
+            <%= appointment.appointment_time.strftime("%l:%M %p") %> -
+            <%= (appointment.appointment_time + 30.minutes).strftime("%l:%M %p") %>
+          </div>
+          <div class="col mb-3">
+            <% case appointment.appointment_type %>
+              <% when "in_store" %>
+                <span class="font-weight-bold text-green"><%= appointment.appointment_type.titleize %></span><br>
+              <% when "virtual" %>
+                <span class="font-weight-bold text-red-clay"><%= appointment.appointment_type.titleize %></span><br>
+              <% when "phone" %>
+                <span class="font-weight-bold text-blue"><%= appointment.appointment_type.titleize %></span><br>
+            <% end %>
+          </div>
+          <div class="col mb-3">
+            <%= appointment.employee.full_name %>
+          </div>
+          <div class="w-100"></div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= form_for [:admin, Appointment.new], html: { class: "form-horizontal form-bordered" } do |f| %>
+  <div class="modal" id="appointmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content switch-content active" data-switch-group="appointment-modal" data-switch-index="main">
+        <div class="modal-header">
+          <span class="header2 modal-title">Appointment</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0 align-items-end">
+            <div class="col-12 mb-3">
+              <span class="header2"><%= @customer.full_name %></span>
+              <%= f.hidden_field :customer_id, value: @customer.id %>
+              <%= f.hidden_field :showroom_id, value: current_showroom["id"] %>
+            </div>
+            <div class="col-6 col-md-4 mb-3">
+              <span class="text-light-grey">Book With</span><br>
+              <span class="header2 text-black">
+                <%= f.select :employee_id, options_for_select(Employee.where(exit_date: nil).where.not(sales_permission: nil).eager_load(:showroom_manage_permissions).where("employees.showroom_id = ? OR (showroom_manage_permissions.showroom_id = ? AND showroom_manage_permissions.permission IS TRUE)", current_showroom["id"], current_showroom["id"]).order(:first_name).map { |w| [w.full_name, w.id] }, :selected => @appointment_employee_id), {}, class: "form-control", data: { reflex: "change->AppointmentReflex#update_appointment_employee", reflex_root: "#appointment-modal-time" }, required: true %>
+              </span>
+            </div>
+            <div class="col-6 col-md-4 mb-3">
+              <span class="text-light-grey">Select Date</span><br>
+              <span class="header2 text-black">
+                <%= f.date_field :appointment_date, value: @appointment_date, class: "form-control", data: { reflex: "change->AppointmentReflex#update_appointment_date", reflex_root: "#appointment-modal-time" }, required: true %>
+              </span>
+            </div>
+            <div class="col-12 col-md-4 mb-3">
+              <p class="d-none d-md-block">&nbsp;</p>
+              <button type="button" class="btn btn-primary switch-tab" data-switch-group="appointment-modal" data-switch-index="time">Select Time</button>
+            </div>
+            <div class="col-12 mb-3">
+              <span class="text-light-grey">Appointment Type</span>
+              <%= f.select :appointment_type, options_for_select(Appointment.appointment_types.keys.map { |w| [w.titleize, w] }, ""), { include_blank: true }, required: true, class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <span class="text-light-grey">Notes</span>
+              <%= f.text_area :notes, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+      <div class="modal-content switch-content" id="appointment-modal-time" data-switch-group="appointment-modal" data-switch-index="time">
+        <div class="modal-header">
+          <span class="header2 modal-title">Appointment</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "10:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "10:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_10:00">10:00 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "10:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "10:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_10:30">10:30 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "11:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "11:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_11:00">11:00 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "11:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "11:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_11:30">11:30 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "12:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "12:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_12:00">12:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "12:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "12:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_12:30">12:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "13:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "13:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_13:00">01:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "13:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "13:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_13:30">01:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "14:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "14:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_14:00">02:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "14:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "14:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_14:30">02:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "15:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "15:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_15:00">03:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "15:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "15:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_15:30">03:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "16:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "16:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_16:00">04:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "16:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "16:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_16:30">04:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "17:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "17:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_17:00">05:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "17:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "17:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_17:30">05:30 PM</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary switch-tab mr-4" data-switch-group="appointment-modal" data-switch-index="main">Back</button>
+          <button type="button" class="btn btn-primary switch-tab" data-switch-group="appointment-modal" data-switch-index="main">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<style>
+  input[type="radio"]~label {
+    color: var(--black);
+    background: var(--off-white);
+  }
+
+  input[type="radio"]:checked~label {
+    color: white;
+    background: var(--blue);
+  }
+</style>

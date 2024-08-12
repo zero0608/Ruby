@@ -1,0 +1,38 @@
+<div class="container px-4">
+  <div class="row">
+    <div class="col-12 mb-3">
+      <span class="header1">Transfer Order</span>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 10%">Name</th>
+              <th style="width: 15%">From Warehouse</th>
+              <th style="width: 15%">Destination Warehouse</th>
+              <th style="width: 10%">Order Date</th>
+              <th style="width: 10%">ETC Date</th>
+              <th style="width: 30%">Status</th>
+              <th style="width: 10%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @transfer_orders.each do |order| %>
+              <tr>
+                <td><%= link_to order.name, admin_warehouse_transfer_order_path(order.id) %></td>
+                <td><%= order.from_warehouse.name %></td>
+                <td><%= order.to_warehouse.name %></td>
+                <td><%= order.created_at.to_date %></td>
+                <td><%= order.etc_date.to_date %></td>
+                <td><%= order.status.titleize %></td>
+                <td><%= link_to "Received", shipped_transfer_admin_warehouse_transfer_orders_path(transfer_order_id: order.id), class: "btn btn-primary" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

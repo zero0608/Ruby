@@ -1,0 +1,103 @@
+<div class="row pb-3 position-fixed w-100 bg-white" style="z-index: 2; left: 15px; right: 15px">
+  <div class="col-6">
+    <p class="header1 d-inline-block mr-4">Purchase Orders</p>
+    <div class="search-bar d-inline-block w-50">
+      <input type="text" placeholder="Search..." class="form-control" data-reflex="debounced:input->PurchaseReflex#search_orders" data-store-type="<%= current_store %>" data-user-id="<%= current_user.id %>">
+      <section class="search-results" id="purchase-header-results"></section>
+    </div>
+  </div>
+      
+  <div class="col-6 text-right">
+    <% if current_user.user_group.orders_cru && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+      <a href="<%= new_admin_purchase_path %>">
+        <button class="btn btn-primary">
+          <%= show_svg("plus.svg") %>
+          Create Purchase
+        </button>
+      </a>
+    <% end %>
+
+    <div class="dropdown ml-4">
+      <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+        Export <%= show_svg("arrow.svg") %>
+      </div>
+      <div class="dropdown-menu">
+        <div class="dropdown-item" data-toggle="modal" data-target="#exportPurchaseOrder">
+          All Purchase Orders Report
+        </div>
+      </div>
+    </div>
+
+    <% if params[:action] == "purchase" %>
+      <div class="dropdown ml-4">
+        <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+          Sort By: Status <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="dropdown-menu dropdown-menu-right">
+          <a href="<%= purchase_admin_supplier_path(@supplier, item_type: "not_started") %>">
+            <div class="dropdown-item">
+              Not Started (<%= @PurchaseItem.joins(:purchase).where(status: "not_started", purchases: { supplier_id: @supplier.id, store: current_store }).count %>)
+            </div>
+          </a>
+            
+          <a href="<%= purchase_admin_supplier_path(@supplier, item_type: "in_production") %>">
+            <div class="dropdown-item">
+              In Production (<%= @PurchaseItem.joins(:purchase).where(status: "in_production", purchases: { supplier_id: @supplier.id, store: current_store }).count %>)
+            </div>
+          </a>
+
+          <a href="<%= purchase_admin_supplier_path(@supplier, item_type: "over_5_days") %>">
+            <div class="dropdown-item">
+              Over 5 Days (<%= @PurchaseItem.joins(:purchase).where(status: ["not_started", "in_production"], purchases: { supplier_id: @supplier.id, store: current_store }).where("purchases.created_at < ?", Time.now - 5.days).count %>)
+            </div>
+          </a>
+
+          <a href="<%= purchase_admin_supplier_path(@supplier, item_type: "container_ready") %>">
+            <div class="dropdown-item">
+              Container Ready (<%= @PurchaseItem.joins(:purchase).where(status: "container_ready", purchases: { supplier_id: @supplier.id, store: current_store }).count %>)
+            </div>
+          </a>
+        </div>
+      </div>
+    <% end %>
+  </div>
+    
+  <div class="col-12">
+    <% Supplier.order(:name).each do |supplier| %>
+      <a class="underline-hover <%= "active" if (@supplier.present? && @supplier == supplier) || (@purchase.present? && @purchase.supplier == supplier) %>" href="<%= purchase_admin_supplier_path(supplier) %>">
+        <%= supplier.name %> (<%= PurchaseItem.eager_load(:line_item, line_item: [:order]).where("line_item_id IS NULL or (orders.status != ? and orders.status != ?)", Order.statuses[:cancel_confirmed], Order.statuses[:completed]).joins(:purchase).where(status: ["not_started", "in_production"], purchases: { supplier_id: supplier.id, store: current_store }).count %>)
+      </a>
+    <% end %>
+  </div>
+</div>
+
+<div class="modal fade" id="exportPurchaseOrder" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag report_logistics_export_admin_orders_path(format: "csv", report_type: "purchase_order"), target: "_blank" do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Date Range</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-6 mb-3">
+              <label>Start Date</label>
+              <%= date_field_tag :start_date, "", class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>End Date</label>
+              <%= date_field_tag :end_date, "", class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

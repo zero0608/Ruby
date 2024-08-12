@@ -1,0 +1,5 @@
+<span><%= audit.created_at.strftime("%B %d, %Y") %> <%= audit.created_at.strftime("%I:%M %P") %></span>
+<p class="text-black">
+  <span class="font-weight-bold"><%= audit.username.present? ? audit.try(:username).to_s.try(:humanize) + " " : "System " %></span>
+  <span><%= audit.auditable_type == "Comment" ? "added a new comment:" : "made an update:" %></span>
+</p>

@@ -1,0 +1,243 @@
+<div class="sb-topnav navbar">
+  <div class="container p-0 h-100">
+    <div class="col-12 col-md-4 col-lg-3">
+      <div class="d-inline-block w-50 mr-lg-3">
+        <%= link_to admin_tasks_path do %>
+          <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+        <% end %>
+      </div>
+      <% if current_user.employee.sales_permission == "manager" %>      
+        <div class="hover-toggle float-right float-lg-none">
+          <span class="header2">
+            <%= current_showroom["store"] == "us" ? "EMUS" : "EMCA" %>
+            <span class="mx-2" style="border-right: 2px solid black"></span>
+            <%= current_showroom["name"] %>
+          </span>
+          <div class="hover-container">
+            <div class="hover-menu">
+              <% current_user.employee.showroom_manage_permissions.where(permission: true).each do |permission| %>
+                <a href="<%= dashboard_redirect_showroom_path(showroom_id: permission.showroom_id) %>">
+                  <div class="hover-item">
+                    <%= permission.showroom.store == "us" ? "EMUS" : "EMCA" %>
+                    <span class="mx-2" style="border-right: 1px solid black"></span>
+                    <%= permission.showroom.name %>
+                  </div>
+                </a>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <span class="header2 float-right float-lg-none">
+          <%= current_showroom["store"] == "us" ? "EMUS" : "EMCA" %>
+          <span class="mx-2" style="border-right: 1px solid black"></span>
+          <%= current_showroom["name"] %>
+        </span>
+      <% end %>
+    </div>
+
+    <div class="col-12 col-md-5 col-xl-6 d-flex justify-content-center justify-content-lg-end">
+      <a href="<%= admin_sales_path %>" class="text-grey mr-5 underline-hover <%= "active" if controller.controller_name == "sales" %>">Dashboard</a>
+      <a href="<%= admin_appointments_path %>" class="text-grey mr-5 underline-hover <%= "active" if controller.controller_name == "appointments" %>">Appointments</a>
+    </div>
+
+    <div class="col-12 col-md-3 d-flex justify-content-center justify-content-md-end">
+      <div class="dropdown mr-3">
+        <div class="dropdown-toggle search-toggle arrow-none rotate-none" data-toggle="dropdown">
+          <span class="text-blue" style="vertical-align: -webkit-baseline-middle">Search Customer</span>
+        </div>
+        <div class="dropdown-menu dropdown-menu-full position-fixed mt-0 rounded-0 border-0" style="background: #fafafa">
+          <div class="container bg-off-white d-flex flex-column h-100 py-3">
+            <div class="row">
+              <div class="col-6 col-lg-4 offset-3 offset-lg-4 mb-3">
+                <div class="search-bar">
+                  <input type="text" placeholder="Search Customer" class="form-control border-top-0 border-left-0 border-right-0 rounded-0 bg-off-white" data-reflex="debounced:input->CustomerReflex#search_customer" data-current-store="<%= current_store %>">
+                </div>
+              </div>
+              <div class="col-12 col-md-3 col-lg-4 mb-3 text-right">
+                <a class="btn btn-secondary mr-3" data-toggle="modal" data-target="#newCustomerHeaderModal">
+                  New Customer
+                </a>
+                <div class="d-inline-block dropdown-toggle arrow-none rotate-none" data-toggle="dropdown">
+                  <%= show_svg("close.svg") %>
+                </div>
+              </div>
+            </div>
+            <section class="search-results flex-auto d-flex flex-column" id="customer-results"></section>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown mr-3">
+        <div class="dropdown-toggle search-toggle arrow-none rotate-none" data-toggle="dropdown">
+          <span class="text-blue" style="vertical-align: -webkit-baseline-middle">Search Product</span>
+        </div>
+        <div class="dropdown-menu dropdown-menu-full position-fixed mt-0 rounded-0 border-0" style="background: #fafafa">
+          <div class="container bg-off-white d-flex flex-column h-100 py-3">
+            <div class="row">
+              <div class="col-6 col-lg-4 offset-3 offset-lg-4 mb-3">
+                <div class="search-bar">
+                  <input type="text" placeholder="Search Product" class="form-control border-top-0 border-left-0 border-right-0 rounded-0 bg-off-white" data-reflex="debounced:input->SaleReflex#search_product" data-current-store="<%= current_store %>" data-warehouse-id="<%= current_showroom["warehouse_id"] %>">
+                </div>
+              </div>
+              <div class="col-2 offset-1 offset-lg-2 mb-3 position-relative text-right">
+                <div class="position-absolute dropdown-toggle arrow-none rotate-none" data-toggle="dropdown" style="right: 1rem">
+                  <%= show_svg("close.svg") %>
+                </div>
+              </div>
+            </div>
+            <section class="search-results flex-auto d-flex flex-column" id="product-results"></section>
+          </div>
+        </div>
+      </div>
+
+      <div class="dropdown pt-2">
+        <div class="dropdown-toggle notification-toggle arrow-none rotate-none mr-4" data-toggle="dropdown">
+          <%= show_svg("notification.svg") %>
+        </div>
+
+        <div class="dropdown-menu dropdown-menu-right">
+          <form id="notification" style="width: 350px">
+            <div class="row mx-0" style="max-height: 450px; overflow-y: auto">
+              <% if @notifications.present? %>
+                <div class="col-12 text-right">
+                  <a class="text-black" data-reflex="click->NotificationReflex#clear_all_notifications" data-user-id="<%= current_user.id %>"  data-reflex-root="#notification">Clear All</a>
+                </div>
+                <%= render partial: "includes/notifications", notifications: @notifications %>
+              <% else %>
+                <div class="col-12">
+                  There are no notifications.
+                </div>
+              <% end %>
+            </div>
+
+            <div class="row mx-0 border-top">
+              <div class="col-12 p-3">
+                <a data-toggle="modal" data-target="#notificationModal">
+                  Notification Settings
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="dropdown pt-2">
+        <div class="dropdown-toggle arrow-none rotate-none" data-toggle="dropdown">
+          <div class="rounded-circle bg-light-blue" style="height: 20px; width: 20px">
+            <span class="header2 text-blue"><%= current_user.full_name[0] %></span>
+          </div>
+        </div>
+        
+        <div class="dropdown-menu dropdown-menu-right">
+          <div class="switch-content active" data-switch-group="user-profile" data-switch-index="main" style="width: 300px">
+            <div class="row no-gutters">
+              <div class="col-12 text-right">
+                <a href="<%= destroy_user_session_path %>" class="text-grey p-3 d-inline-block" id="sign_out" data-method="delete">
+                  Sign Out
+                </a>
+                <style>
+                  #sign_out:hover { background: var(--light-grey) }
+                </style>
+              </div>
+              <div class="col-6">
+                <div class="rounded-circle bg-light-blue mx-auto" style="height: 7.5rem; width: 7.5rem">
+                  <span class="header1 text-blue" style="font-size: 25px">
+                    <%= current_user.full_name[0] %>
+                  </span>
+                </div>
+              </div>
+              <div class="col-6">
+                <p>
+                  <span class="header2 text-black"><%= current_user.full_name %></span><br>
+                  <span class="text-grey"><%= current_user.email %></span>
+                </p>
+                <p>
+                  <a class="switch-tab prevent" data-switch-group="user-profile" data-switch-index="password">Change Password</a><br>
+                  <a href="<%= enable_2fa_admin_user_path(current_user) %>">2FA</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="switch-content" data-switch-group="user-profile" data-switch-index="password" style="width: 300px">
+            <%= form_for current_user, url: update_password_admin_user_path(current_user), html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+              <% if current_user.errors.any? %>
+                <div class="alert alert-danger" role="alert">
+                  <% current_user.errors.full_messages.each do |message| %>
+                    <%= message %><br>
+                  <% end %>
+                </div>
+              <% end %>
+              <div class="row mx-0 my-3">
+                <div class="col-12 mb-3">
+                  <p class="header2">Change Password</p>
+                </div>
+                <div class="col-12 mb-3">
+                  <%= f.label :password %>
+                  <%= f.password_field :password, class: "form-control", required: true %>
+                </div>
+                <div class="col-12 mb-3">
+                  <%= f.label :password_confirmation %>
+                  <%= f.password_field :password_confirmation, class: "form-control", required: true %>
+                </div>
+                <div class="col-12 mb-3 text-center">
+                  <a class="btn btn-secondary mr-4 switch-tab" data-switch-group="user-profile" data-switch-index="main">Cancel</a>
+                  <%= f.submit "Submit", class: "btn btn-primary" %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%=render "admin/customers/new_customer" %>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    if ($(".unread-notification").length > 0) {
+      $(".notification-toggle").prepend('<div class="new-notification-indicator"></div>');
+    }
+  });
+  
+  $(".notification-toggle").on("click", function() {
+    $(this).children(".new-notification-indicator").remove();
+  });
+
+  $(".search-toggle").on("click", function() {
+    $(this).next().find("input").focus();
+  });
+</script>
+
+<style>
+  .dropdown-menu-full {
+    top: 80px;
+  }
+
+  .dropdown-menu.dropdown-menu-full.show {
+    height: calc(100% - 80px);
+    max-height: calc(100% - 80px);
+  }
+
+  @media (min-width: 768px) {
+    .dropdown-menu-full {
+      top: 40px;
+    }
+
+    .dropdown-menu.dropdown-menu-full.show {
+      height: calc(100% - 40px);
+      max-height: calc(100% - 40px);
+    }
+  }
+
+  .dropdown-menu-full input {
+    border: none;
+    border-bottom: solid 1px var(--light-grey);
+  }
+
+  .dropdown-menu-full input:focus {
+    border: none;
+    border-bottom: solid 1px var(--grey);
+  }
+</style>

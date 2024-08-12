@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <% if params[:ship_status].present? && params[:ship_status] == 'staging' %>
+    <title>Packing List</title>
+  <% elsif params[:ship_status].present? && params[:ship_status] == 'booked' %>
+    <title>BOL</title>
+  <% end %>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <%#= wicked_pdf_stylesheet_pack_tag 'pdf' %>
+  <%#= wicked_pdf_javascript_pack_tag 'pdf' %>
+</head>
+<body>
+  <%= yield %>
+</body>
+</html>

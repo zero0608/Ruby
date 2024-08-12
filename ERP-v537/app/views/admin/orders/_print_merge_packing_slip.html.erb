@@ -1,0 +1,341 @@
+<style type="text/css">
+  input[type="checkbox"]:not(:checked) ~ table {
+    visibility: hidden;
+  }
+
+  html { font-size: 18px; }
+</style>
+
+<div class="printer-preview-content p-4" contenteditable="true" title="Click to edit text (changes will be printed but not saved)">
+  <div class="row mb-4">
+    <div class="col-4">
+      <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+    </div>
+
+    <div class="col-8 text-right">
+      <h3 class="font-weight-normal"><%= @directory.company %> Packing Slip</h3>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <p>
+          <span class="mr-2">Order:</span>
+          <span class="h5 font-weight-bold">
+            <%= @merge_packing_slip.store == "us" ? "EMUS" : "EMCA" %>-TRF<%= @merge_packing_slip.index.to_s.rjust(3, "0") %>
+          </span>
+        </p>
+      </div>
+
+      <div class="col-6">
+        <p class="font-weight-bold">
+          <span class="h5 font-weight-bold mr-2">Ship To</span><br>
+          <% if @directory.present? %>
+            <%= @directory.company %><br>
+            <%= @directory.address1 %><br>
+            <%= @directory.city %>, <%= @directory.address2 %><br>
+            <%= @directory.country %> <%= @directory.zip %><br>
+            Tel: <%= @directory.phone %>
+          <% end %>
+        </p>
+      </div>
+      
+      <div class="col-6">
+        <p>
+          <span class="font-weight-bold mr-2">Bill To</span><br>
+          Northbanq Design<br>
+          3810 Jacombs Rd, Unit 110<br>
+          Richmond, BC V6V 1Y6<br>
+          Tel: 1-844-403-0392
+        </p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-2 mb-2 border-bottom">Index</div>
+      <div class="col-3 mb-2 border-bottom">Order</div>
+      <div class="col-6 mb-2 border-bottom">Item Description</div>
+      <div class="col-1 mb-2 border-bottom">Qty</div>
+      
+      <% @shipping_details.each_with_index do |sp, i| %>
+        <div class="col-2 mb-2 border-bottom"><%= i + 1 %></div>
+        <div class="col-3 mb-2 border-bottom"><%= sp.order&.name %></div>
+        <div class="col-7 mb-2 border-bottom">
+          <div class="row">
+            <% sp.try(:line_items).each do |item| %>
+              <div class="col-10">
+                <p>
+                  <span class="font-weight-bold"><%= item&.title %></span><br>
+                  <%= item&.sku&.upcase %>
+                </p>
+              </div>
+              <div class="col-2">
+                x <%= item&.quantity %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<p style="page-break-before: always"></p>
+
+<% @shipping_details.each do |sp| %>
+  <div class="printer-preview-content p-4" contenteditable="true" title="Click to edit text (changes will be printed but not saved)">
+    <div class="row mb-4">
+      <div class="col-4">
+        <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+      </div>
+
+      <div class="col-8 text-right">
+        <h3 class="font-weight-normal">Customer Packing Slip</h3>
+        <h5>Order Date<span class="font-weight-normal"> <%= sp.order&.created_at&.to_date&.strftime("%B %d, %Y") %></span></h5>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <p><span class="mr-2">Order:</span><span class="h5 font-weight-bold"><%= sp.order&.name %></span></p>
+
+        <p><span class="mr-2">Shipping Method:</span><span class="h5 font-weight-bold"><%= sp.order&.shipping_line&.title %></span></p>
+      </div>
+
+      <div class="col-6">
+        <p class="font-weight-bold">
+          <span class="font-weight-normal mr-2">Bill To:</span><span class="h5 font-weight-bold"><%= sp.order&.billing_address&.full_name&.titleize %></span><br>
+          <%= sp.order&.billing_address&.address1&.tr('[]','')&.tr('" "', ' ')&.titleize %>, <%= sp.order&.billing_address&.city&.titleize %> <%= sp.order&.billing_address&.address2&.titleize %><br>
+          <%= sp.order&.billing_address&.country %> <%= sp.order&.billing_address&.zip&.upcase %><br>
+          Tel: <%= sp.order&.billing_address&.phone %>
+        </p>
+      </div>
+
+      <div class="col-6">
+        <p class="font-weight-bold">
+          <span class="font-weight-normal mr-2">Ship To:</span><span class="h5 font-weight-bold"><%= sp.order&.shipping_address&.full_name&.titleize %></span><br>
+          <%= sp.order&.shipping_address&.address1&.tr('[]','')&.tr('" "', ' ')&.titleize %>, <%= sp.order&.shipping_address&.city&.titleize %> <%= sp.order&.shipping_address&.address2&.titleize %><br>
+          <%= sp.order&.shipping_address&.country %> <%= sp.order&.shipping_address&.zip&.upcase %><br>
+          Tel: <%= sp.order&.shipping_address&.phone %>
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <table class="table table-borderless table-striped">
+          <thead>
+            <tr>
+              <th style="width: 10%">Incl.</th>
+              <th style="width: 80%">Item Description</th>
+              <th style="width: 10%">Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sp.try(:line_items).each do |item| %>
+              <tr>
+                <td colspan=3>
+                  <input type="checkbox" name="<%= sp.order&.name %>-<%= item&.sku&.upcase %>" style="height: 25px; width: 25px; margin: 25px 0;" checked>
+                  <table class="table-borderless" style="width: 90%; float: right">
+                    <tr style="background: none">
+                      <td style="width: 90%">
+                        <span class="h5 font-weight-bold"><%= item&.sku&.upcase %></span><br>
+                        <span><%= item&.title %></span>
+                      </td>
+                      <td style="width: 10%">
+                        <span>x <%= item&.quantity %></span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p style="page-break-before: always"></p>
+
+  <div class="printer-preview-content p-4" contenteditable="true" title="Click to edit text (changes will be printed but not saved)">
+    <div class="row mb-4">
+      <div class="col-4">
+        <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+      </div>
+
+      <div class="col-8 text-right">
+        <h3 class="font-weight-normal">Customer Packing Slip</h3>
+        <h5>Order Date<span class="font-weight-normal"> <%= sp.order&.created_at&.to_date&.strftime("%B %d, %Y") %></span></h5>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <p><span class="mr-2">Order:</span><span class="h5 font-weight-bold"><%= sp.order&.name %></span></p>
+
+        <p><span class="mr-2">Shipping Method:</span><span class="h5 font-weight-bold"><%= sp.order&.shipping_line&.title %></span></p>
+      </div>
+
+      <div class="col-6">
+        <p class="font-weight-bold">
+          <span class="font-weight-normal mr-2">Bill To:</span><span class="h5 font-weight-bold"><%= sp.order&.billing_address&.full_name&.titleize %></span><br>
+          <%= sp.order&.billing_address&.address1&.tr('[]','')&.tr('" "', ' ')&.titleize %>, <%= sp.order&.billing_address&.city&.titleize %> <%= sp.order&.billing_address&.address2&.titleize %><br>
+          <%= sp.order&.billing_address&.country %> <%= sp.order&.billing_address&.zip&.upcase %><br>
+          Tel: <%= sp.order&.billing_address&.phone %>
+        </p>
+      </div>
+
+      <div class="col-6">
+        <p class="font-weight-bold">
+          <span class="font-weight-normal mr-2">Ship To:</span><span class="h5 font-weight-bold"><%= sp.order&.shipping_address&.full_name&.titleize %></span><br>
+          <%= sp.order&.shipping_address&.address1&.tr('[]','')&.tr('" "', ' ')&.titleize %>, <%= sp.order&.shipping_address&.city&.titleize %> <%= sp.order&.shipping_address&.address2&.titleize %><br>
+          <%= sp.order&.shipping_address&.country %> <%= sp.order&.shipping_address&.zip&.upcase %><br>
+          Tel: <%= sp.order&.shipping_address&.phone %>
+        </p>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12">
+        <table class="table table-borderless table-striped">
+          <thead>
+            <tr>
+              <th style="width: 10%">Incl.</th>
+              <th style="width: 80%">Item Description</th>
+              <th style="width: 10%">Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sp.try(:line_items).each do |item| %>
+              <tr>
+                <td colspan=3>
+                  <input type="checkbox" name="<%= sp.order&.name %>-<%= item&.sku&.upcase %>" style="height: 25px; width: 25px; margin: 25px 0;" checked>
+                  <table class="table-borderless" style="width: 90%; float: right">
+                    <tr style="background: none">
+                      <td style="width: 90%">
+                        <span class="h5 font-weight-bold"><%= item&.sku&.upcase %></span><br>
+                        <span><%= item&.title %></span>
+                      </td>
+                      <td style="width: 10%">
+                        <span>x <%= item&.quantity %></span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <p class="font-weight-bold">Packing Instructions</p>
+        <ul>
+          <% sp&.pallet_shippings.each_with_index do |ps, index| %>
+            <li>
+              <% if ps.pallet_type == nil %>
+                Pack #<%= index + 1 %> (Pallet):
+              <% else %>
+                Pack #<%= index + 1 %> (<%= ps.pallet_type.titleize %>):
+              <% end %>
+              L <%= ps.length.to_s + "in." if ps.length.present? %> x W <%= ps.width.to_s + "in." if ps.width.present? %> x H <%= ps.height.to_s + "in." if ps.height.present? %>
+            </li>
+          <% end %>
+
+          <% sp.order.try(:line_items).each do |item| %>
+            <% if item.try(:audits).present? && item.try(:audits).last.try(:audited_changes).keys == ['order_id'] %>
+              <li><%= item.title %> (<%= item&.sku&.upcase %>) label change from <%= Order.find(item.audits.last.audited_changes.values[0][0]).try(:name) %></li>
+            <% end %>
+          <% end %>
+
+          <% if sp.order.try(:status) == "hold_confirmed" %>
+            <li>Hold until <%= sp.order.try(:hold_until_date).strftime('%B %d, %Y') %></li>
+          <% end %>
+
+          <% if sp&.local_pickup == "1" %>
+            <li>Local Pickup</li>
+          <% end %>
+
+          <% if sp&.remote == "1" %>
+            <li>Remote Shipping</li>
+          <% end %>
+        </ul>
+      </div>
+
+      <div class="col-12">
+        <p class="font-weight-bold">Shipping Notes</p>
+        <span style="padding-inline-start: 30px"><%= sp.try(:shipping_notes) %></span>
+      </div>
+    </div>
+  </div>
+
+  <p style="page-break-before: always"></p>
+
+  <div class="printer-preview-content p-4" contenteditable="true" title="Click to edit text (changes will be printed but not saved)">
+    <div class="row">
+      <div class="col-8 mb-3">
+        <h3 class="font-weight-normal">DELIVERY SLIP</h3>
+      </div>
+      <div class="col-4 mb-3">
+        <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+      </div>
+      <div class="col-12 mb-3">
+        <p class="mb-4">
+          Order Number: <b><%= sp.order&.name %></b><br>
+          Total Number of Pieces:
+          <b><%= sp.line_items.sum { |li| li.quantity.to_i * Product&.find_by(id: li.product_id)&.carton_details&.count.to_i } %></b>
+        </p>
+        <p class="mb-4">
+          By signing this delivery slip, you acknowledge and confirm the following:
+        </p>
+        <li class="mb-4">
+          I have received all box(es) and item(s) in good condition.
+        </li>
+        <p class="mb-4 font-italic">
+          (<b>IMPORTANT:</b> Please keep the packaging if you're considering a return. Returns will only be accepted with the original packaging or if the items are well-packaged and in good condition.)
+        </p>
+        <li class="mb-4">
+          I confirm that all furniture received and assembled is in good condition, free from damage or defects. 
+        </li>
+        <li class="mb-4">
+          I acknowledge that the delivery was completed without any incidents or damage to property.
+        </li>
+      </div>
+      <div class="col-12 mb-5">
+        <p>If you have any questions or concerns regarding your delivery or product, please contact our customer care team at <b>1-844-403-0392</b> before signing your delivery confirmation. Our team of professionals would be delighted to assist you and ensure that your product meets your expectations.</p>
+        <p>Thank you for choosing Eternity Modern.</p>
+      </div>
+      <div class="col-5 mb-5">
+        <p class="w-100 border-top"></p>
+        <p>Customer Signature</p>
+      </div>
+      <div class="col-5 mb-5 offset-2">
+        <p class="w-100 border-top"></p>
+        <p>Date</p>
+      </div>
+      <div class="col-5 mb-5">
+        <p class="w-100 border-top"></p>
+        <p>Customer Name (PRINTED)</p>
+      </div>
+    </div>
+  </div>
+
+  <% unless sp == @shipping_details.last %>
+    <p style="page-break-before: always"></p>
+  <% end %>
+<% end %>
+
+<script type='text/javascript'>
+  $("input[type='checkbox']").on('click', function() {
+    var name = this.name;
+    var check = this.checked;
+
+    $("input[type='checkbox']").each(function() {
+      if (this.name == name) {
+        $(this).prop('checked', check);
+      }
+    });
+	}) 
+</script>

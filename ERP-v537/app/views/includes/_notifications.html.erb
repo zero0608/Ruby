@@ -1,0 +1,165 @@
+<% if @notifications.present? %>
+  <% @notifications.each do |notification| %>
+    <% begin %>
+      <div class="notification-item <%= "unread-notification" if !notification.read_at.present? %> col-12 py-3 d-flex no-gutters">
+        <div class="col-10">
+          <a class="<%= notification.read_at.present? ? "text-black" : "text-grey" %>" href=<%= admin_read_notification_path(id: notification.id) %> id=<%= "#{notification.id}" %>>
+            <% case notification.params[:content] %>
+              <% when "tag_comment" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you in Order <%= "#{notification.params[:order].name}" %>
+                </span>
+            
+              <% when "tag_issue" %>
+                <% if notification.params[:message].present? %>
+                  <span>
+                    <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you Claim Ticket ISS-<%= "#{notification.params[:issue].id}" %> <%= ("for " + Issue.find_by(id: notification.params[:issue].id)&.order&.customer&.full_name + ", " + Issue.find_by(id: notification.params[:issue].id)&.order&.name) if Issue.find_by(id: notification.params[:issue].id).present? %>
+                  </span>
+                <% else %>
+                  <span>
+                    <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> assigned you Claim Ticket ISS-<%= "#{notification.params[:issue].id}" %>
+                  </span>
+                <% end %>
+            
+              <% when "tag_return" %>
+                <% if notification.params[:message].present? %>
+                  <% ret = Return.find_by(id: notification.params[:return]) %>
+                  <span>
+                    <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you Return Ticket <%= (ret.customer_return ? "CRT-" : "RT-") + ret.order.name + "-" + (ret.order.returns.where(customer_return: ret.customer_return).order(created_at: :desc).index(ret) + 1).to_s.rjust(2, "0") %> <%= "for " + "ISS" + (ret.order.store == "us" ? "US" : "CA") + ret.issue.id.to_s %>
+                  </span>
+                <% end %>
+
+              <% when "tag_purchase" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you in Purchase <% if notification.params[:purchase].store == "us" %><%= "TUS" + "#{notification.params[:purchase].id}" %><% else %><%= "TCA" + "#{notification.params[:purchase].id}" %><% end %>
+                </span>
+      
+              <% when "tag_product_variant" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you in <%= ProductVariant.find_by(id: notification.params[:product_variant])&.title %>
+                </span>
+      
+              <% when "announcement" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> made an announcement
+                </span>
+              
+              <% when "one_ready_to_ship" %>
+                <span>
+                  Order <%= "#{notification.params[:order].name}" %> assigned to Ready to Ship
+                </span>
+            
+              <% when "many_ready_to_ship" %>
+                <span>
+                  <%= "#{notification.params[:order]}" %> of orders assigned to Ready to Ship
+                </span>
+      
+              <% when "one_booked" %>
+                <span>
+                  Order <%= "#{notification.params[:order].name}" %> assigned to Booked
+                </span>
+            
+              <% when "many_booked" %>
+                <span>
+                  <%= "#{notification.params[:order]}" %> of orders assigned to Booked
+                </span>
+          
+              <% when "one_shipped" %>
+                <span>
+                  Order <%= "#{notification.params[:order].name}" %> assigned to Shipped
+                </span>
+            
+              <% when "many_shipped" %>
+                <span>
+                  <%= "#{notification.params[:order]}" %> of orders assigned to Shipped
+                </span>
+            
+              <% when "arriving" %>
+                <span>
+                  Container <%= "#{notification.params[:container].container_number}" %> estimated arrival to DC on <%= "#{notification.params[:container].arriving_to_dc}" %>
+                </span>
+            
+              <% when "arrived" %>
+                <span>
+                  Container <%= "#{notification.params[:container].container_number}" %> received
+                </span>
+            
+              <% when "cancel_request" %>
+                <span>
+                  Cancel Requested for <%= "#{notification.params[:order].name}" %>
+                </span>
+            
+              <% when "cancel_confirm" %>
+                <span>
+                  Cancel Request for <%= "#{notification.params[:order].name}" %> confirmed
+                </span>
+            
+              <% when "hold_request" %>
+                <span>
+                  Hold Requested for <%= "#{notification.params[:order].name}" %>
+                </span>
+            
+              <% when "hold_confirm" %>
+                <span>
+                  Hold Request for <%= "#{notification.params[:order].name}" %> confirmed
+                </span>
+
+              <% when "leave_create" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> requested <%= "#{notification.params[:message]}" %> leave
+                </span>
+
+              <% when "leave_update" %>
+                <span>
+                  Your leave request is <%= "#{notification.params[:message]}" %>
+                </span>
+                
+              <% when "expense_create" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> submitted an expense request
+                </span>
+                
+              <% when "expense_update" %>
+                <span>
+                  Your expense request is <%= "#{notification.params[:message]}" %>
+                </span>
+
+              <% when "create_task" %>
+                <span>
+                  <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> assigned a task to you
+                </span>
+
+              <% when "update_task" %>
+                <span>
+                  Task "<%= "#{notification.params[:message]}" %>" has been updated.
+                </span>
+              
+              <% when "pending_payment" %>
+                <span>
+                  Please confirm Pending Payment Order <%= "#{notification.params[:order].name}" %>
+                </span>
+
+              <% when "task_reminder" %>
+                <span>
+                  Task "<%= "#{notification.params[:message]}" %>" will be due on <%= Task.find_by(id: notification.params[:task_id])&.due_date&.strftime("%B %d, %Y") %>
+                </span>
+            <% end %>
+            <br>
+            <span>
+              <%= time_ago_in_words(notification.created_at) %> ago
+            </span>
+          </a>
+        </div>
+
+        <div class="col-2 text-right">
+          <a data-reflex="click->NotificationReflex#clear_notification" data-notification-id="<%= notification.id %>"  data-reflex-root="#notification">
+            <%= show_svg("close.svg") %>
+          </a>
+        </div>
+      </div>
+    <% rescue ActiveRecord::RecordNotFound %>
+      <% notification.destroy %>
+      <% controller.redirect_to root_path %>
+    <% end %>
+  <% end %>
+<% end %>

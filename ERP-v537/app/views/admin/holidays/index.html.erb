@@ -1,0 +1,62 @@
+<div class="container px-4">
+  <%= render partial: "/admin/tasks/navigation", local: { current_user: current_user } %>
+  
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-12">
+      <%= render partial: "/admin/departments/hr_navigation" %>
+    </div>
+  </div>
+
+  <%= form_for "update_calendar", :url => update_calendar_admin_leaves_path, html: { class: "form-horizontal position-relative", id: "update_calendar", style: "top: calc(57px + 1rem)" } do |f| %>
+    <div class="row">
+      <div class="col-12">
+        <div class="table-responsive">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 45%">Name</th>
+                <th style="width: 45%">Date</th>
+                <th class="text-center" style="width: 10%">
+                  <a data-reflex="click->HolidayReflex#create">
+                    <%= show_svg("plus.svg") %>
+                  </a>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <% Holiday.all.order(:date).each_with_index do |h, i| %>
+                <tr>
+                  <td><%= f.text_field (i.to_s + "-name"), value: h.name, class: "form-control w-75", data: { reflex: "change->HolidayReflex#update", id: h.id, type: "name" } %></td>
+                  <td><%= f.date_field (i.to_s + "-date"), value: h.date, class: "form-control w-75", data: { reflex: "change->HolidayReflex#update", id: h.id, type: "date" } %></td>
+                  <td class="text-center">
+                    <a data-reflex="click->HolidayReflex#delete" data-id="<%= h.id %>">
+                      <%= show_svg("delete.svg") %>
+                    </a>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <p>** Holidays in the above list will be added to the calendar.</p>
+        </div>
+      </div>
+      <div class="col-6">        
+        <label class="checkbox checkbox-blue mr-2" style="top: 2.5%">
+          <%= f.check_box :birthday %>
+          <span class="checkmark"></span>
+        </label>
+        <%= f.label :birthday, "Add employee birthdays to calendar?", class: "text-black" %><br>
+        <p>** An employee's birthday will be added to the calendar.</p>
+
+        <label class="checkbox checkbox-blue mr-2" style="top: 2.5%">
+          <%= f.check_box :pto %>
+          <span class="checkmark"></span>
+        </label>
+
+        <%= f.label :pto, "Reset employee PTO for new year?", class: "text-black" %><br>
+        <p>** An employee's PTO / Personal / Sick days will be set to their maximum. If an employee has less than 5 PTO days remaining, they will be carried over.</p>
+        <%= f.submit "Update", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+</div>

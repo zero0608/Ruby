@@ -1,0 +1,46 @@
+<% if @category.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @category.errors.full_messages.each do |message|%>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-6 mb-3">
+    <%= f.label :title, "Title" %>
+    <%= f.text_field :title, class: "form-control", required: true %>
+  </div>
+  <div class="w-100"></div>
+
+  <% if params[:action] == "edit" %>
+    <div class="col-6 mb-3">
+      <button class="btn btn-primary" type="button" data-reflex="click->CategoryReflex#build_sub_categories" data-category-id="<%= f.object.id %>" data-user-id="<%= current_user.id %>">
+        <%= show_svg("plus.svg") %>
+        Add Sub-Categories
+      </button>
+
+      <% if f.object.subcategories.present? %>
+        <div class="table-responsive">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th>Sub-Category Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= f.fields_for :subcategories, f.object.subcategories.order(:created_at) do |subcategory_attributes| %>
+                <%= render "subcategories", ff: subcategory_attributes %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_categories_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

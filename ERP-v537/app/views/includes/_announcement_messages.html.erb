@@ -1,0 +1,114 @@
+<% if @notifications.present? %>
+  <% position = 0 %>
+  <% @notifications.order(created_at: :desc).each do |notification| %>
+    <% unless notification.read_at.present? %>
+      <% case notification.params[:content] %>
+        <% when "announcement" %>
+          <div class="alert alert-primary fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <%= notification.params[:description] %>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+
+        <% when "tag_comment" %>
+          <div class="alert alert-warning fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you in order <%= "#{notification.params[:order].name}" %><%= ": " + sanitize(notification.params[:message], tags:[]) if sanitize(notification.params[:message], tags:[]).present? %>
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+
+        <% when "tag_issue" %>
+          <div class="alert alert-warning fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <% if notification.params[:message].present? %>
+                <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you Claim Ticket <%= "#{notification.params[:issue].id}" %><%= ": " + sanitize(notification.params[:message], tags:[]) if sanitize(notification.params[:message], tags:[]).present? %>
+              <% else %>
+                <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> assigned you Claim Ticket <%= "#{notification.params[:issue].id}" %>
+              <% end %>
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+
+        <% when "tag_purchase" %>
+          <div class="alert alert-warning fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %> tagged you in purchase <% if notification.params[:purchase].store == "us" %><%= "TUS" + "#{notification.params[:purchase].id}" %><% else %><%= "TCA" + "#{notification.params[:purchase].id}" %><% end %><%= ": " + sanitize(notification.params[:message], tags:[]) if sanitize(notification.params[:message], tags:[]).present? %>
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+            
+        <% when "cancel_request" %>
+          <div class="alert alert-danger fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              Cancel Requested for <%= "#{notification.params[:order].name}" %><%= ": " + notification.params[:message] if notification.params[:message].present? %>
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+            
+        <% when "cancel_confirm" %>
+          <div class="alert alert-danger fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              Cancel Request for <%= "#{notification.params[:order].name}" %> confirmed
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+            
+        <% when "hold_request" %>
+          <div class="alert alert-danger fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              Hold Requested for <%= "#{notification.params[:order].name}" %><%= ": " + notification.params[:message] if notification.params[:message].present? %>
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+            
+        <% when "hold_confirm" %>
+          <div class="alert alert-danger fade show" role="alert" style="position: absolute; top: <%= position * 40 + 40 %>px">
+            <a href="<%= admin_read_notification_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              Hold Request for <%= "#{notification.params[:order].name}" %> confirmed
+            </a>
+            <a href="<%= admin_read_in_announcement_path(id: notification.id) %>" id=<%= "#{notification.id}" %>>
+              <button type="button" class="close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </a>
+          </div>
+          <% position += 1 %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

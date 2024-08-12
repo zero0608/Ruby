@@ -1,0 +1,116 @@
+<div class="container px-4">
+  <%= render partial: "/admin/tasks/navigation", local: { current_user: current_user } %>
+
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-6">
+      <%= render partial: "/admin/departments/hr_navigation" %>
+    </div>
+    <div class="col-6 text-right">
+      <a href="<%= expense_history_admin_departments_path %>">View History</a>
+    </div>
+  </div>
+
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <% if @expenses.count > 0 %>
+      <% @expenses.where(status: ["Pending", nil]).each do |expense| %>
+        <div class="col-3 mb-3">
+          <div class="p-3 border-light-blue rounded">
+            <div class="row mb-3 no-gutters">
+              <div class="col-2">
+                <div class="rounded-circle rounded-circle-3 bg-light-blue">
+                <span class="header2 text-blue"><%= expense.employee.full_name[0] %></span>
+                </div>
+              </div>
+              <div class="col-6 text-black">
+                <span class="header2"><%= expense.employee.full_name %></span><br>
+                <span><%= expense.employee.department.name %></span>
+              </div>
+              <div class="col-4 text-right">
+                <span class="font-italic">
+                  Date of Expense:<br>
+                  <%= expense.expense_date&.strftime("%B %d, %Y") %>
+                </span>
+              </div>
+            </div>
+            <div class="w-100 mb-3" style="border-bottom: solid 2px var(--blue)"></div>
+            <div class="row mb-3 no-gutters" style="height: 165px; overflow: auto">
+              <div class="col-3">
+                <span>Subtotal</span>
+                <p class="text-black">
+                  <%= number_to_currency(expense.amount.to_f - expense.gst.to_f - expense.pst.to_f - expense.tips.to_f) %>
+                </p>
+              </div>
+              <div class="col-3">
+                <span>Tax</span>
+                <p class="text-black">
+                  <%= number_to_currency(expense.gst.to_f + expense.pst.to_f) %>
+                </p>
+              </div>
+              <div class="col-3">
+                <span>Tips</span>
+                <p class="text-black">
+                  <%= number_to_currency(expense.tips.to_f) %>
+                </p>
+              </div>
+              <div class="col-3">
+                <span>Invoice Total</span>
+                <p class="text-black">
+                  <%= number_to_currency(expense.amount.to_f) %>
+                </p>
+              </div>
+              <div class="col-6">
+                <span>Type</span>
+                <p class="text-black"><%= expense.expense_type&.title %></p>
+              </div>
+              <div class="col-6">
+                <span>Category</span>
+                <p class="text-black"><%= expense.expense_category&.title %></p>
+              </div>
+              <div class="col-6">
+                <span>Sub-Category</span>
+                <p class="text-black"><%= expense.expense_subcategory&.title %></p>
+              </div>
+              <div class="col-6">
+                <span>Payment Method</span>
+                <p class="text-black"><%= expense.expense_payment_method&.title %></p>
+              </div>
+              <div class="col-12">
+                <span>Submission Date</span>
+                <p class="text-black"><%= expense.created_at.strftime("%B %d, %Y") %></p>
+              </div>
+              <div class="col-12">
+                <span>Comment</span>
+                <p class="text-black"><%= expense.notes %></p>
+              </div>
+              <div class="col-12">
+                <span>File(s)</span><br>
+                <% expense.files.each do |doc| %>
+                  <% if doc.created_at? %>
+                    <%= link_to doc.filename, doc, target: :_blank %><br>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+            <div class="w-100 mb-3" style="border-bottom: solid 2px var(--blue)"></div>
+            <div class="w-100 text-center">
+              <button class="btn btn-secondary mr-4" data-reflex="click->ExpenseReflex#decline_expense" data-expense-id="<%= expense.id %>">Decline</button>
+              <%= link_to "Approve", expense_request_admin_departments_path(expense_id: expense.id), class: "btn btn-primary", remote: true %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <p>There are no pending expense requests.</p>
+    <% end %>
+  </div>
+
+  <div id="approve_expense"></div>
+</div>
+
+<script type="text/javascript">
+  $(document).on("click", ".full_amount", function() {
+    var expense_id = $(this).data("expense-id");
+    var amount = $(".request_amount[data-expense-id=" + expense_id + "]").data("amount");
+    $("#expense-" + expense_id + "-approve-amount").val(parseFloat(amount));
+  });
+</script>

@@ -1,0 +1,433 @@
+<div class="table-responsive d-flex auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 9%">Order Number</th>
+        <th style="width: 9%">Customer</th>
+        <% if params[:ship_status] == "staging" %>
+          <th style="width: 5%">QS/MTO</th>
+          <th style="width: 10%">SKU</th>
+        <% else %>
+          <th style="width: 15%">SKU</th>
+        <% end %>
+        <th style="width: 10%">Order Date</th>
+        <% if params[:ship_status] == "booked" %>
+          <th style="width: 10%">Carrier</th>
+        <% else %>
+          <th style="width: 10%">State/city</th>
+        <% end %>
+        <th style="width: 10%">ETC Date</th>
+        <th style="width: 9%">Shipping Method</th>
+        <th style="width: 9%">Order Amount</th>
+        <th style="width: 5%">Status</th>
+        <% if params[:ship_status] == "not_ready" %>
+          <th style="width: 14%">Days +/-</th>
+        <% elsif params[:ship_status] == "staging" %>
+          <th style="width: 5%">Days +/-</th>
+          <th style="width: 5%">Printed</th>
+          <th style="width: 4%">
+            <input id="check_all" class="btw" type="checkbox">
+          </th>
+        <% elsif params[:ship_status] == "ready_to_ship" %>
+          <th style="width: 10%">Days +/-</th>
+          <th style="width: 4%">
+            <input id="check_all" class="btw" type="checkbox">
+          </th>
+        <% elsif params[:ship_status] == "booked" %>
+          <th style="width: 10%">Printed</th>
+          <th style="width: 4%">
+            <input id="check_all" class="btw" type="checkbox">
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @shipping_details = @shipping_details.eager_load(:order).where.not(orders: { order_type: "SW" }) %>
+      <% @shipping_details = @shipping_details.eager_load(order: %i[shipping_address]).where(shipping_addresses: { address2: @state_filter.split(",").uniq }) if @state_filter.present? && @state_filter != "," %>
+      <% @shipping_details = @shipping_details.eager_load(:order).where.not(orders: { status: ["cancel_request", "cancel_confirmed"] }).order(created_at: :desc) %>
+      <% if params[:ship_status] == "staging" || params[:ship_status] == "ready_to_ship" %>
+        <% @shipping_details = @shipping_details&.sort_by { |s| [(s.order.shipping_address&.address2.present? ? s.order.shipping_address&.address2&.strip&.downcase : ""), (s.order.shipping_address&.city.present? ? s.order.shipping_address&.city&.strip&.downcase : ""), (s.eta_from.present? ? (Date.today - s.eta_from).to_i : 0) * -1] } %>
+      <% elsif params[:ship_status] == "booked" %>
+        <% @shipping_details = @shipping_details.sort_by { |s| s&.carrier&.name.present? ? s.carrier.name : "" } %>
+      <% end %>
+      <% @shipping_details.each do |shipping_detail| %>
+        <tr>
+          <td><%= link_to shipping_detail.order.name, edit_admin_order_path(shipping_detail.order), data: { turbolinks: false } %></td>
+          <td>
+            <%= shipping_detail.order&.customer&.full_name&.titleize %>
+            <% if shipping_detail.order&.customer&.risk_indicator.present? %>
+              <br>
+              <% case shipping_detail.order&.customer&.risk_indicator&.risk_type.downcase %>
+                <% when "chargeback" %>
+                  <span class="badge badge-outline-black">
+                    Chargeback
+                  </span>
+                <% when "suspicious" %>
+                  <span class="badge badge-outline-yellow">
+                    Suspicious
+                  </span>
+                <% when "fraud" %>
+                  <span class="badge badge-outline-red">
+                    Fraud
+                  </span>
+              <% end %>
+            <% end %>
+          </td>
+          <% if params[:ship_status] == "staging" %>
+            <td><%= shipping_detail.order&.kind_of_order %></td>
+          <% end %>
+          <td><%= shipping_detail.try(:line_items).pluck(:sku).try(:flatten).join(", ").upcase if shipping_detail.line_items.present? %></td>
+          <td><%= shipping_detail.order&.created_at.strftime("%B %d, %Y") %></td>
+          <% if params[:ship_status] == "booked" %>
+            <td><%= shipping_detail&.carrier&.name %></td>
+          <% else %>
+            <td class="city-states">
+              <%= shipping_detail.order.shipping_address&.address2 %>, <%= shipping_detail.order.shipping_address&.city %>
+            </td>
+          <% end %>
+          <td>
+            <span class="<%= "text-red" if shipping_detail.eta_to.present? && shipping_detail.eta_to&.to_date < Date.today %>">
+              <% if shipping_detail.eta_from&.to_date&.year == shipping_detail.eta_to&.to_date&.year %>
+                <%= shipping_detail.eta_from&.strftime("%B %d") %> - <%= shipping_detail.eta_to&.strftime("%B %d, %Y") %>
+              <% else %>
+                <%= shipping_detail.eta_from&.strftime("%B %d, %Y") %> - <%= shipping_detail.eta_to&.strftime("%B %d, %Y") %>
+              <% end %>
+            </span>
+          </td>
+          <td>
+            <% if shipping_detail.order&.shipping_line&.title&.downcase&.include? "white glove" or shipping_detail.white_glove_delivery %>
+              <span class="badge badge-outline-black">White Glove</span>
+            <% elsif ["curbside", "contactless"].any? { |w| shipping_detail.order&.shipping_line&.title&.downcase&.include? w } %>
+              <span class="badge badge-outline-green">Curbside</span>
+            <% elsif shipping_detail.order&.shipping_line&.title&.downcase&.include? "admin shipping method - free" %>
+              <span class="badge badge-outline-navy">Admin - Free Ship</span>
+            <% elsif shipping_detail.order&.shipping_line&.title&.downcase&.include? "local" %>
+              <span class="badge badge-outline-yellow">Local Pickup</span>
+            <% else %>
+              <%= shipping_detail.order&.shipping_line&.title %>
+            <% end %>
+            <% if shipping_detail.order.line_items.joins(:variant).where(variant: { oversized: true }).present? %>
+              <span class="badge badge-outline-red">OS</span>
+            <% end %>
+
+            <% if shipping_detail.local_pickup == "1" %>
+              <span class="bg-blue text-white ml-2 px-1 font-weight-bold" title="Local Delivery" style="border-radius: 3px; cursor: default; vertical-align: text-bottom">L</span>
+            <% end %>
+              
+            <% if shipping_detail.remote == "1" %>
+              <span class="bg-blue text-white ml-2 px-1 font-weight-bold" title="Remote Shipping" style="border-radius: 3px; cursor: default; vertical-align: text-bottom">R</span>
+            <% end %>
+            
+            <% if shipping_detail.upgrade == "pending" %>
+              <span class="bg-yellow text-white uil-upload-alt ml-2 px-1 font-weight-bold" title="Upgrade Pending" style="border-radius: 3px; vertical-align: text-bottom"></span>
+            <% elsif shipping_detail.upgrade == "accepted" %>
+              <span class="bg-green text-white uil-upload-alt ml-2 px-1 font-weight-bold" title="Upgrade Accepted" style="border-radius: 3px; vertical-align: text-bottom"></span>
+            <% elsif shipping_detail.upgrade == "declined" %>
+              <span class="bg-red text-white uil-upload-alt ml-2 px-1 font-weight-bold" title="Upgrade Declined" style="border-radius: 3px; vertical-align: text-bottom"></span>
+            <% end %>
+          </td>
+          <td>
+            <% sum = 0 %>
+            <% if shipping_detail.order.line_items.present? %>
+              <% shipping_detail.order.line_items.where(order_from: nil).each_with_index do |item, i| %>
+                <% sum = sum + mul(item.try(:price), item.try(:quantity)) %>
+              <% end %>
+            <% end %>
+              
+            <% if shipping_detail.order.discount_codes.present? %>
+              <% if shipping_detail.order.discount_codes["discount_amount"].to_f.negative?() %>
+                <% sum = sum + shipping_detail.order.discount_codes["discount_amount"].to_f %>
+              <% else %>
+                <% sum = sum - shipping_detail.order.discount_codes["discount_amount"].to_f %>
+              <% end %>
+            <% end %>
+              
+            <% if shipping_detail.order.shipping_line.present? %>
+              <% sum = sum + shipping_detail.order.try(:shipping_line).try(:price).to_f %>
+            <% end %>
+
+            <% if shipping_detail.order.tax_lines.present? %>
+              <% sum = sum + shipping_detail.order.tax_lines['price'].to_f %>
+            <% end %>
+
+            <% if shipping_detail.order.refunds.present? && shipping_detail.order.order_adjustments.present? %>
+              <% shipping_detail.order.refunds.each do |ref| %>
+                <% shipping_detail.order.order_adjustments.each do |adj| %>
+                  <% sum = sum + (adj.amount).to_f %>
+                <% end %>
+              <% end %>
+            <% end %>  
+            <%= number_to_currency(sum) %>
+          </td>
+          <td>
+            <% case shipping_detail.order&.status %>
+              <% when "new_order" %>
+                <span class="badge badge-outline-light-grey mr-2">
+                  <%= shipping_detail.order&.status&.titleize %>
+                </span>
+
+              <% when "in_progress" %>
+                <% case shipping_detail.order&.order_status %>
+                  <% when "not_ready" %>
+                    <span class="badge badge-outline-light-grey mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "staging" %>
+                    <span class="badge badge-outline-blue mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+                  
+                  <% when "ready_to_ship" %>
+                    <span class="badge badge-outline-red mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "booked" %>
+                    <span class="badge badge-outline-navy mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "ready_for_pickup" %>
+                    <span class="badge badge-outline-green mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "shipped" %>
+                    <span class="badge badge-outline-green mr-2">
+                      Order Fulfilled
+                    </span>
+
+                  <% when "unbooked" %>
+                    <span class="badge badge-outline-navy mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "cancelled" %>
+                    <span class="badge badge-outline-red mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "hold" %>
+                    <span class="badge badge-outline-red mr-2">
+                      On Hold
+                    </span>
+
+                  <% when "closed" %>
+                    <span class="badge badge-outline-black mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "partial_shipped" %>
+                    <span class="badge badge-outline-green mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% when "partial_cancelled" %>
+                    <span class="badge badge-outline-blue mr-3">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+
+                  <% else %>
+                    <span class="badge badge-outline-navy mr-2">
+                      <%= shipping_detail.order&.order_status&.titleize %>
+                    </span>
+                <% end %>
+
+              <% when "cancel_confirmed" %>
+                <span class="badge badge-outline-red mr-2">
+                  Cancelled
+                </span>
+
+              <% when "delayed" %>
+                <span class="badge badge-outline-red mr-2">
+                  <%= shipping_detail.order&.status&.titleize %>
+                </span>
+
+              <% when "hold_confirmed" %>
+                <span class="badge badge-outline-red mr-2">
+                  On Hold
+                </span>
+
+              <% when "completed" %>
+                <span class="badge badge-outline-green mr-2">
+                  Shipped
+                </span>
+              
+              <% when "cancel_request" %>
+                <span class="badge badge-outline-red mr-2">
+                  <%= shipping_detail.order&.status&.titleize %>
+                </span>
+
+              <% when "rejected" %>
+                <span class="badge badge-outline-black mr-2">
+                  Cancel Rejected
+                </span>
+
+              <% when "hold_request" %>
+                <span class="badge badge-outline-red mr-2">
+                  <%= shipping_detail.order&.status&.titleize %>
+                </span>
+
+              <% when "pending_payment" %>
+                <span class="badge badge-outline-blue mr-2">
+                  <%= shipping_detail.order&.status&.titleize %>
+                </span>
+            <% end %>
+          </td>
+          <% if params[:ship_status] == "not_ready" %>
+            <td>
+              <% if shipping_detail.order.eta.present? %>
+                <% if (Date.today - shipping_detail.order.eta).to_i > 0 %>
+                  <span class="text-red">
+                    <%= "+" + ((Date.today - shipping_detail.order.eta).to_i + 1).to_s %>
+                  </span>
+                <% else %>
+                  <span class="text-green">
+                    <%= (Date.today - shipping_detail.order.eta).to_i.to_s %>
+                  </span>
+                <% end %>
+              <% end %>
+            </td>
+          <% elsif params[:ship_status] == "staging" %>
+            <td>
+              <% if shipping_detail.order.eta.present? %>
+                <% if (Date.today - shipping_detail.order.eta).to_i > 0 %>
+                  <span class="text-red">
+                    <%= "+" + ((Date.today - shipping_detail.order.eta).to_i + 1).to_s %>
+                  </span>
+                <% else %>
+                  <span class="text-green">
+                    <%= (Date.today - shipping_detail.order.eta).to_i.to_s %>
+                  </span>
+                <% end %>
+              <% end %>
+            </td>
+            <td><%= shipping_detail.printed_packing_slip ? "Printed" : "-" %></td>
+            <td><%= check_box_tag "shipping_ids[]", shipping_detail.id %></td>
+          <% elsif params[:ship_status] == "ready_to_ship" %>
+            <td>
+              <% if shipping_detail.order.eta.present? %>
+                <% if (Date.today - shipping_detail.order.eta).to_i > 0 %>
+                  <span class="text-red">
+                    <%= "+" + ((Date.today - shipping_detail.order.eta).to_i + 1).to_s %>
+                  </span>
+                <% else %>
+                  <span class="text-green">
+                    <%= (Date.today - shipping_detail.order.eta).to_i.to_s %>
+                  </span>
+                <% end %>
+              <% end %>
+            </td>
+            <td><%= check_box_tag "shipping_ids[]", shipping_detail.id %></td>
+          <% elsif params[:ship_status] == "booked" %>
+            <td><%= shipping_detail.printed_bol ? "Printed" : "-" %></td>
+            <td><%= check_box_tag "shipping_ids[]", shipping_detail.id %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @pagy.present? %>
+  <% if @pagy.count > 1 %>
+    <div id="page-nav">
+      <%= render partial: "order_paginator", locals: { current_user: current_user } %>
+    </div>
+  <% end %>
+<% end %>
+
+<script type='text/javascript'>
+  function merge_packing_slip(e) {
+    var ship_ids = [];
+
+    $('input[name="shipping_ids[]"]:checked').each(function() {
+      ship_ids.push($(this).val());
+    });
+    
+    if (ship_ids.length < 1) {
+      alert('Please select at least one order.');
+      e.stopPropagation();
+    }
+    $("#mergeModal #ship_ids").val(ship_ids);
+    $("#lookup").attr("data-ship-ids", ship_ids);
+    $(".merge-select").attr("data-ship-ids", ship_ids);
+  }
+
+  function print_ship() {
+    var ship_ids = [];
+    var print_upload = [];
+
+    $('input[name="shipping_ids[]"]:checked').each(function() {
+        ship_ids.push($(this).val());
+    });
+
+    $('input[name="print_upload[]"]:checked').each(function() {
+        print_upload.push($(this).data('link'));
+    });
+
+    if (ship_ids.length < 1 && print_upload.length < 1) {
+      alert('Please select at least one order.')
+
+    } else {
+      if (ship_ids.length > 0) {
+        window.open('<%= pdf_admin_orders_path(ship_status: params[:ship_status]) %>&ship_ids='+[ship_ids], 'print', 'height=750px, width=1000px');
+      }
+
+      if (print_upload.length > 0) {
+        window.open(print_upload, '_blank');
+      }
+      location.reload();
+    }
+  }
+
+  function carrier_list() {
+    var ship_ids = [];
+    $('input[type="checkbox"]:checked').each(function(){
+        ship_ids.push($(this).val());
+    });
+    if(ship_ids.length < 1){
+      alert('Please select at least one order.')
+    }else{
+      window.location.replace('<%= order_status_admin_orders_path(ship_status: 'ready_for_pickup', format: :html) %>&ship_ids='+[ship_ids]);
+    }
+  }
+
+  function book_order() {
+    var ship_ids = [];
+    $('input[type="checkbox"]:checked').each(function(){
+        ship_ids.push($(this).val());
+    });
+    if(ship_ids.length < 1){
+      alert('Please select at least one order.')
+    }else{
+      window.location.replace('<%= order_status_admin_orders_path(ship_status: 'staging', format: :html) %>&ship_ids='+[ship_ids]);
+    }
+  }
+
+  function ready_to_ship() {
+    var ship_ids = [];
+    $('input[type="checkbox"]:checked').each(function(){
+        ship_ids.push($(this).val());
+    });
+    if(ship_ids.length < 1){
+      alert('Please select at least one order.')
+    }else{
+      window.location.replace('<%= order_status_admin_orders_path(ship_status: 'ready_to_ship', format: :html) %>&ship_ids='+[ship_ids]);
+    }
+  }
+
+  function booked_in() {
+    var ship_ids = [];
+    $('input[type="checkbox"]:checked').each(function(){
+        ship_ids.push($(this).val());
+    });
+    if(ship_ids.length < 1){
+      alert('Please select at least one order.')
+    }else{
+      window.location.replace('<%= order_status_admin_orders_path(ship_status: 'booked', format: :html) %>&ship_ids='+[ship_ids]);
+    }
+  }
+  
+</script>

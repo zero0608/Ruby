@@ -1,0 +1,52 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <div class="row mb-3">
+    <div class="col-12">
+      <p class="header1">Reserved</p>
+    </div>
+
+    <div class="col-12">
+      <a href="<%= reserved_skus_admin_orders_path(reserve_status: "reserved") %>">
+        <span class="underline-hover <%= "active" if params[:reserve_status] == "reserved" %>">
+          Reserved (<%= @reserved.count %>)
+        </span>
+      </a>
+
+      <a href="<%= reserved_skus_admin_orders_path(reserve_status: "to_be_reserved") %>">
+        <span class="underline-hover <%= "active" if params[:reserve_status] == "to_be_reserved" %>">
+          To Be Reserved (<%= @to_be_reserved.count %>)
+        </span>
+      </a>
+    </div>
+  </div>
+    
+  <div class="table-responsive flex-auto">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 20%">Order Number</th>
+          <th style="width: 30%">Description</th>
+          <th style="width: 10%">SKU</th>
+          <th style="width: 10%">Qty</th>
+          <th style="width: 15%">Order Date</th>
+          <th style="width: 15%">Reserved</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @reserved_line_items.order(:created_at).each do |item| %>
+          <tr>
+            <td><%= link_to item&.order&.name, edit_admin_order_path(item.order), data: { turbolinks: false } %></td>
+            <td><%= item&.title %></td>
+            <td><%= item&.sku %></td>
+            <td><%= item&.quantity&.to_i %></td>
+            <td><%= item&.order&.created_at.to_date.strftime("%B %d, %Y") %></td>
+            <td>
+              <%= form_for [:admin, item] do |f| %>
+                <%= f.select :reserve, options_for_select({"To Be Reserved" => false, "WH Reserved" => true}, item.reserve), {}, class: "form-control", onchange: "this.form.submit()" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div> 

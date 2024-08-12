@@ -1,0 +1,26 @@
+<% if @swatch_product.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @swatch_product.errors.full_messages.each do |message|%>
+        <%= message %><br>
+    <%end%>
+  </div>
+<%end%>
+<%= f.hidden_field :store, value: current_store %>
+
+<div class="row">
+  <div class="col-3 mb-4">
+    <%= f.label "SKU", class: "text-info" %>
+    <%= f.text_field :swatch_sku, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-4">
+    <%= f.label "Description", class: "text-info" %>
+    <%= f.text_area :description, class: "form-control", required: true %>
+  </div>
+  
+  <div class="col-12">
+    <%= link_to 'Cancel', admin_swatch_products_path, class: 'btn btn-secondary mr-3' %>
+    <%= f.submit 'Submit', class: 'btn btn-primary' %>
+  </div>
+</div>
+

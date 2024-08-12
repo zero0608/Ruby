@@ -1,0 +1,24 @@
+<div class="container px-4">
+  <%= render partial: "admin/orders/navigation_product" %>
+
+  <% if params[:return_status] == "overstock" %>
+    <section class="position-relative" id="overstock" style="top: calc(57px + 1rem)">
+      <%= render partial: "emca_overstock", locals: { current_user: current_user } %>
+    </section>
+
+  <% elsif params[:return_status] == "marketplace" %>
+    <section class="position-relative" id="marketplace" style="top: calc(57px + 1rem)">
+      <%= render partial: "emca_marketplace", locals: { market_product: @market_product, current_user: current_user } %>
+    </section>
+
+  <% elsif params[:type] == "swatch" %>
+    <section class="d-flex flex-column position-relative" id="emca_swatch_result" style="height: calc(100vh - 60px - 56px - 1rem); top: calc(57px + 1rem)">
+      <%= render partial: "emca_swatch_result", locals: { pagy: @pagy, current_user: @current_user } %>
+    </section>
+
+  <% else %>
+    <section class="d-flex flex-column position-relative" id="emca_stock_result" style="height: calc(100vh - 60px - 56px - 1rem); top: calc(57px + 1rem)">
+      <%= render partial: "emca_stock_result", locals: { pagy: @pagy, current_user: @current_user } %>
+    </section>
+  <% end %>
+</div>

@@ -1,0 +1,87 @@
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 15%">Container</th>
+        <th style="width: 15%">Ocean Carrier</th>
+        <th style="width: 15%">Reference</th>
+        <th style="width: 15%">Received Date</th>
+        <th style="width: 15%">Container Total</th>
+        <th style="width: 25%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @postings.each do |posting| %>
+        <tr>
+          <td><%= link_to (posting&.container.store == "us" ? "CTUS" : "CTCA") + posting&.container.container_number.to_s, edit_admin_container_path(posting&.container&.id) %></td>
+          <td><%= posting&.container&.ocean_carrier&.name %></td>
+          <td><%= posting&.container&.carrier_serial_number %></td>
+          <td><%= posting&.container&.received_date&.to_date&.strftime("%B %d, %Y") %></td>
+          <td><%= number_to_currency(posting&.container&.container_charges.sum(:quote)) %></td>
+          <td>
+            <%= link_to "Paid", container_posting_admin_finance_containers_path(paid: "yes", container_id: posting.container.id, posting_id: posting.id), class: "btn btn-secondary" %>
+            <div class="toggle-view border-blue float-right rounded-circle rounded-circle-2" data-toggle="<%= posting.id %>" style="top: 3px">
+              <span class="dripicons-plus text-blue" style="top: 45%"></span>
+            </div>
+          </td>
+        </tr>
+        <tr class="toggle-content" data-toggle="<%= posting.id %>">
+          <td colspan=6>
+            <%= form_for posting.container, url:  container_record_admin_finance_containers_path(container_id: posting.container.id, finance: 'posting'), html: { class: "form-horizontal form-bordered" } do |ff| %>
+              <table class="table table-borderless table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 10%">Charge</th>
+                    <th style="width: 10%">Quote</th>
+                    <th style="width: 10%">Invoice Number</th>
+                    <th style="width: 10%">Invoice Amount</th>
+                    <th style="width: 10%">Tax</th>
+                    <th style="width: 10%">Difference</th>
+                    <th style="width: 10%">Posted</th>
+                    <th style="width: 30%">Invoice</th>
+                  </tr>
+                </thead>
+                <tbody>                  
+                  <%= ff.fields_for :container_charges, ff.object.container_charges.order(:created_at), html: { class: "form-horizontal form-bordered" } do |f| %>
+                    <tr>
+                      <td><%= f.text_field :charge, class: "form-control", disabled: true %></td>
+                      <td><%= f.text_field :quote, class: "form-control", disabled: true %></td>
+                      <td><%= f.text_field :invoice_number, data: { reflex: "change->ContainerReflex#charges_update", reflex_dataset: "combined", reflex_root: "#edit_container_" + ff.object.id.to_s, container_id: posting.container.id, store_type: current_store }, class: "form-control" %></td>
+                      <td><%= f.text_field :invoice_amount, data: { reflex: "change->ContainerReflex#charges_update", reflex_dataset: "combined", reflex_root: "#edit_container_" + ff.object.id.to_s, container_id: posting.container.id, store_type: current_store }, class: "form-control" %></td>
+                      <td><%= f.text_field :tax_amount, data: { reflex: "change->ContainerReflex#charges_update", reflex_dataset: "combined", reflex_root: "#edit_container_" + ff.object.id.to_s, container_id: posting.container.id, store_type: current_store }, class: "form-control" %></td>
+                      <td><%= f.text_field :invoice_difference, value: f.object&.quote.to_f - f.object&.invoice_amount.to_f, class: "form-control", disabled: true %></td>
+                      <td>
+                        <input id="<%= "posted-" + f.object.id.to_s %>" type="checkbox" data-switch="blue" data-id="<%= f.object.id %>" data-reflex="change->ContainerReflex#post" data-reflex-root="#edit_container_<%= ff.object.id.to_s %>" <%= "checked" if f.object.posted %>>
+                        <label for="<%= "posted-" + f.object.id.to_s %>">&nbsp;</label>
+                      </td>
+                      <td>
+                        <div class="file-input-container d-inline">
+                          <%= f.file_field :files, multiple: true, class: "d-none", accept: ".pdf, .jpeg, .jpg, .png" %>
+                          <a class="file-input">Upload</a>
+                        </div>
+                        <% if f.object.files.present? %>
+							            <span class="pr-4 mr-4 border-right"></span>
+                          <% f.object.files.each do |doc| %>
+                            <% if doc.created_at? %>
+                              <%= link_to doc.filename, doc, class: "mr-4", target: :_blank %>
+                            <% end %>
+                          <% end %>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            <% end %>
+          </td>
+        </tr>     
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<style>
+  tr:hover .rounded-circle {
+    border: solid 1px var(--blue);
+  }
+</style>

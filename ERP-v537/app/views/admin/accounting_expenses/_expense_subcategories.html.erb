@@ -1,0 +1,15 @@
+<div class="row <%= "border-bottom" unless ff.object.expense_subcategories.count == fff.index + 1 %>">
+  <div class="col-6">
+    <%= fff.text_field :title, data: { reflex: "change->AccountingExpenseReflex#update_category", type_id: f.object.id }, class: "form-control my-3 w-50 d-inline-block" %>
+    <button class="btn btn-primary d-inline-block ml-4" type="button" data-reflex="click->AccountingExpenseReflex#build_payment_relation" data-subcategory-id="<%= fff.object.id %>" data-user-id="<%= current_user.id %>">
+      <%= show_svg("plus.svg") %>
+      Add Payment Method
+    </button>
+  </div>
+
+  <div class="col-6">
+    <%= fff.fields_for :expense_payment_relations, fff.object.expense_payment_relations do |payment_relation_attributes| %>
+      <%= render "expense_payment_relations", ffff: payment_relation_attributes, fff: fff, ff: ff, f: f %>
+    <% end %>
+  </div>
+</div>

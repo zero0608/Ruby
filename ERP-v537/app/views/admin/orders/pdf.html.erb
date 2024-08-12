@@ -1,0 +1,38 @@
+<style type="text/css">
+  @media print {
+    div {
+      float: none !important;
+      position: static !important;
+    }
+
+    .btn {
+      display: none;
+    }
+  }
+
+  .sb-topnav {
+    display: none;
+  }
+
+  #layoutSidenav {
+    position: static;
+    max-width: 800px;
+    padding: 1.5rem 0;
+    margin: 0 auto;
+    -webkit-print-color-adjust: exact;
+  }
+</style>
+
+<div class="mb-4 text-right">
+  <button class="btn btn-primary dripicons-print" onclick="window.print()"> Print</button>
+</div>
+
+<% if params[:ship_status] == 'staging' %>
+  <%= render "print_packing_list" %>
+
+<% elsif params[:ship_status] == 'booked' %>
+  <%= render "print_bol" %>
+
+<% elsif params[:ship_status] == "ready_to_ship" %>
+  <%= render "print_merge_packing_slip" %>
+<% end %>

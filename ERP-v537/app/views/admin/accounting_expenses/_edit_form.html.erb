@@ -1,0 +1,27 @@
+<div class="row">
+  <div class="col-6 mb-3">
+    <%= f.label :title, "Expense Type" %><br>
+    <%= f.text_field :title, class: "form-control w-50 d-inline-block", data: { reflex: "change->AccountingExpenseReflex#update_category", type_id: f.object.id } %>
+    <button class="btn btn-primary d-inline-block ml-4" type="button" data-reflex="click->AccountingExpenseReflex#build_categories" data-type-id="<%= f.object.id %>" data-user-id="<%= current_user.id %>">
+      <%= show_svg("plus.svg") %>
+      Add Category
+    </button>
+  </div>
+
+  <div class="col-12 mb-3"> 
+    <div class="row border-bottom">
+      <div class="col-4">
+        <label>Category</label>
+      </div>
+      <div class="col-4">
+        <label>Sub-Category</label>
+      </div>
+      <div class="col-4">
+        <label>Payment Method</label>
+      </div>
+    </div>
+    <%= f.fields_for :expense_categories, f.object.expense_categories.order(:created_at) do |category_attributes| %>
+      <%= render "expense_categories", ff: category_attributes, f: f %>
+    <% end %>
+  </div>
+</div>

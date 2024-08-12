@@ -1,0 +1,160 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-12 mb-3">
+        <span class="header1">Pick Inventory</span>
+      </div>
+      <div class="col-10 mb-3">
+        <span class="header1">
+          <%= @carton.product_variant&.sku&.upcase %>
+        </span><br>
+        <span class="text-light-grey">
+          <%= @carton.product_variant&.title %>
+        </span>
+      </div>
+      <div class="col-2 mb-3 text-right">
+        <span class="header2">pick</span><br>
+        <span class="header1 font-weight-bold">
+          <%= @carton.product_variant.to_do_quantity.nil? ? 0 : @carton.product_variant.to_do_quantity %>
+        </span>
+      </div>
+
+      <div class="col-12 mb-3">
+        <span class="header2">
+          Carton <%= @carton.carton_detail.index %> / <%= @carton.carton_detail.product.carton_details.maximum(:index) %>
+          (pick <%= @carton.to_do_quantity %>)
+        </span>
+      </div>
+      
+      <div class="col-12 mb-3" style="max-height: 300px; overflow-y: auto">
+        <% @carton.carton_locations.eager_load(:product_location).order("product_locations.rack, product_locations.level, product_locations.bin").each do |carton_location| %>
+          <div class="row no-gutters mb-3 p-3 border-grey bg-white rounded-5 carton-location" data-carton-location="<%= carton_location.id %>">
+            <div class="col-3">
+              <span class="text-light-grey">
+                Rack
+              </span><br>
+              <span class="header1 rack">
+                <%= carton_location.product_location.rack %>
+              </span>
+            </div>
+            <div class="col-3">
+              <span class="text-light-grey">
+                Level
+              </span><br>
+              <span class="header1 level">
+                <%= carton_location.product_location.level %>
+              </span>
+            </div>
+            <div class="col-5">
+              <span class="text-light-grey">
+                Bin
+              </span><br>
+              <span class="header1 bin">
+                <%= carton_location.product_location.bin %>
+              </span>
+            </div>
+            <div class="col-1">
+              <span class="text-light-grey">
+                Qty
+              </span><br>
+              <span class="header1 stock">
+                <%= carton_location.quantity.nil? ? 0 : carton_location.quantity %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%= form_tag quantity_pick_admin_warehouses_path(carton_id: @carton.id), class: "col-12" do |f| %>
+        <%= hidden_field_tag :carton_location_id, "" %>
+        <div class="row">
+          <div class="col-4 mb-3">
+            <span class="text-light-grey">
+              Rack
+            </span>
+            <%= text_field_tag :rack, "", class: "form-control border-black header1 text-center", style: "height: 5rem", disabled: true %>
+          </div>
+          <div class="col-4 mb-3">
+            <span class="text-light-grey">
+              Level
+            </span>
+            <%= text_field_tag :level, "", class: "form-control border-black header1 text-center", style: "height: 5rem", disabled: true %>
+          </div>
+          <div class="col-4 mb-3">
+            <span class="text-light-grey">
+              Bin
+            </span>
+            <%= text_field_tag :bin, "", class: "form-control border-black header1 text-center", style: "height: 5rem", disabled: true %>
+          </div>
+          <div class="col-7">
+            <span class="text-light-grey">
+              Pick Quantity
+            </span>
+            <%= number_field_tag :quantity, "", class: "form-control border-black header1 text-center", style: "height: 5rem", min: 0, max: @carton.to_do_quantity, disabled: true %>
+          </div>
+          <div class="col-5">
+            <span>&nbsp;</span>
+            <button type="button" class="btn text-red bg-light-red font-weight-bold w-100" style="font-size: 30px !important; height: 5rem" data-toggle="modal" data-target="#confirm">-</button>
+          </div>
+
+          <div class="col-12 mb-3">
+            <span class="text-light-grey">
+              Remaining: <span id="remaining">0</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="modal" id="confirm" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog" style="max-width: calc(100% - 20px); position: absolute; transform: none !important; top: initial; bottom: 1rem; left: 10px">
+            <div class="modal-content" style="background: none">
+              <div class="row mx-0">
+                <div class="col-12 mb-2">
+                  <button type="submit" class="btn text-red bg-light-red w-100 rounded-5" style="font-size: 15px; height: 5rem">
+                    Deduct <span id="total"></span> from stock
+                  </button>
+                </div>
+                <div class="col-12">
+                  <button type="button" class="btn btn-secondary mr-4 w-100 rounded-5" data-dismiss="modal" style="font-size: 15px; height: 5rem">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= @carton.product_variant.cartons.count > 1 ? variant_pick_admin_warehouses_path(variant_id: @carton.product_variant.id) : outstanding_pick_admin_warehouses_path %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(".carton-location").on("click", function() {
+    $("#carton_location_id").val($(this).data("carton-location"));
+    $("#rack").val($(this).find(".rack").text().trim());
+    $("#level").val($(this).find(".level").text().trim());
+    $("#bin").val($(this).find(".bin").text().trim());
+    $("#quantity").attr("disabled", false);
+    $("#quantity").attr("required", true);
+    $("#quantity").attr("max", Math.min(parseInt($(this).find(".stock").text().trim()), parseInt(<%= @carton.to_do_quantity %>)));
+    $("#remaining").text($(this).find(".stock").text().trim());
+  });
+  
+  $("#quantity").on("change", function() {
+    $("#remaining").text(parseInt($("#remaining").text()) - parseInt($("#quantity").val()));
+    
+    $("#total").text($(this).val());
+  });
+</script>

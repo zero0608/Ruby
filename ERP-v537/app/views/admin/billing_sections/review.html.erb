@@ -1,0 +1,98 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <div class="row mb-3">
+    <div class="col-6">
+      <p class="header1 mr-4 d-inline-block">Shipping</p>
+      <div class="search-bar d-inline-block">
+        <input type="text" placeholder="Search Order..." class="form-control" data-reflex="debounced:input->BillingSectionReflex#review_search" data-current-store="<%= current_store %>">
+      </div>
+      <button class="btn btn-primary ml-2" data-toggle="modal" data-target="#addOrderModal">
+        <%= show_svg("plus.svg") %>
+        Add Order
+      </button>
+    </div>
+    <div class="col-6 text-right">
+      <div class="dropdown">
+        <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+          Filter: Agents <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="dropdown-menu dropdown-menu-right filter-menu">
+          <% TruckBroker.where(country: current_store).each do |truck_broker| %>
+            <% review_id = Array.new %>
+            <% ReviewSection.where(store: current_store, responded: nil, white_glove: false).each do |review| %>
+              <% if review.order_id.present? %>
+                <% review_id.push(review.id) if review.shipping_detail&.shipping_quotes&.find_by(selected: true)&.truck_broker_id == truck_broker.id %>
+              <% elsif review.return_id.present? %>
+                <% review_id.push(review.id) if review.return&.carrier&.truck_broker_id == truck_broker.id %>
+              <% elsif review.consolidation_id.present? %>
+                <% review_id.push(review.id) if review.consolidation.shipping_details.first&.shipping_quotes&.find_by(selected: true)&.truck_broker_id == truck_broker.id %>
+              <% end %>
+            <% end %>
+
+            <% if ReviewSection.where(id: review_id).count > 0 %>
+              <div class="dropdown-item" data-reflex="click->BillingSectionReflex#filter_data" data-user-id="<%= current_user.id %>" data-current-store="<%= current_store %>" data-truck-broker-id="<%= truck_broker.id %>" data-white-glove="false">
+                <%= truck_broker.name %> (<%= ReviewSection.where(id: review_id).count %>)
+              </div>
+            <% end %>
+          <% end %>
+          <div class="dropdown-divider"></div>
+          <span clas="dropdown-header">WGD</span>
+          <% WhiteGloveDirectory.where(store: current_store).each do |directory| %>
+            <% review_id = Array.new %>
+            <% ReviewSection.where(store: current_store, responded: nil, white_glove: true).each do |review| %>
+              <% if review.order_id.present? %>
+                <% review_id.push(review.id) if review.shipping_detail&.white_glove_directory_id == directory.id %>
+              <% elsif review.return_id.present? %>
+                <% review_id.push(review.id) if review.return&.white_glove_directory_id == directory.id %>
+              <% elsif review.consolidation_id.present? %>
+                <% review_id.push(review.id) if review.consolidation.shipping_details.first&.white_glove_directory_id == directory.id %>
+              <% end %>
+            <% end %>
+
+            <% if ReviewSection.where(id: review_id).count > 0 %>
+              <div class="dropdown-item" data-reflex="click->BillingSectionReflex#filter_data" data-user-id="<%= current_user.id %>" data-current-store="<%= current_store %>" data-truck-broker-id="<%= directory.id %>" data-white-glove="true">
+                <%= directory.company_name %> (<%= ReviewSection.where(id: review_id).count %>)
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <%= render partial: "navigation" %>
+    </div>
+  </div>
+  <section class="d-flex flex-column flex-auto" id="filter-review">
+    <%= render partial: "filter_review", locals: { pagy: @pagy, reviews: @reviews, filter: @filter, current_user: @current_user } %>
+  </section>
+</div>
+
+<div id="review"></div>
+
+<div class="modal" id="addOrderModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content modal-full-size">
+      <div class="modal-header">
+        <span class="header2 modal-title">Add Order</span>
+        <button type="button" class="close" data-dismiss="modal">
+          <span class="text-black"><%= show_svg("close.svg") %></span>
+        </button>
+      </div>
+      <div class="modal-body d-flex flex-column">
+        <div class="row mx-0 mb-3">
+          <div class="col-12">
+            <div class="search-bar mb-2">
+              <input type="text" placeholder="Search Order..." class="form-control" data-reflex="debounced:input->BillingSectionReflex#search_add_order">
+            </div>
+          </div>
+          <div class="col-12">
+            <i>** Please make sure broker and carrier details on order page are filled out before adding orders to review section.</i>
+          </div>
+        </div>
+
+        <section class="flex-auto" id="search-add-order-results">
+          <%= render partial: "add_orders" %>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<script type="text/javascript"  src=" https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
+<div class="container px-4">
+  <%= render partial: "admin/orders/navigation_product" %>
+  <%= render partial: "product_details", locals: { current_user: current_user } %>
+</div>

@@ -1,0 +1,11 @@
+---
+:concurrency: 15
+:queues:
+  - new_order
+  - order_status
+  - order_status_mto
+  - container_creation
+  - product_update
+  - order_update
+  - sku_update
+  - default

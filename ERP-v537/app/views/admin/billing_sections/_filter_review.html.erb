@@ -1,0 +1,560 @@
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 11%">Order ID</th>
+        <th style="width: 11%">Customer</th>
+        <th style="width: 11%">Shipped Date</th>
+        <th style="width: 12%">Amount</th>
+        <th style="width: 11.5%">Shipping Method</th>
+        <% if @filter.present? && @filter == "WGD" %>
+          <th style="width: 10%">WGD Carrier</th>
+          <th style="width: 22%">WGD Quote</th>
+        <% else %>
+          <th style="width: 10%">Broker</th>
+          <th style="width: 11%">Shipping Carrier</th>
+          <th style="width: 11%">Freight Carrier Quote</th>
+        <% end %>
+        <th style="width: 11.5%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @reviews.each do |review| %>
+        <% if review.shipping_detail_id.present? || review.order_id.present? %>
+          <% order = review&.shipping_detail&.order || review&.order %>
+          <tr>
+            <td><%= link_to order.name, edit_admin_order_path(order) %></td>
+            <td><%= order.customer.full_name %></td>
+            <td><%= review&.shipping_detail&.shipped_date&.strftime("%B %d, %Y") %></td>
+            <td><%= number_to_currency((order&.line_items.pluck(:price).reject(&:blank?).map(&:to_i).zip(order&.line_items.pluck(:quantity).reject(&:blank?).map(&:to_i)).map{|x, y| x.to_f * y}).sum) %></td>
+            <td><%= order&.shipping_line&.title %></td>
+            <% if review.white_glove %>
+              <td><%= review&.shipping_detail&.white_glove_directory&.company_name %></td>
+              <td><%= number_to_currency(review&.shipping_detail&.white_glove_fee.to_f) %></td>
+            <% else %>
+              <td><%= review&.shipping_detail&.shipping_quotes&.find_by(selected: true)&.truck_broker&.name %></td>
+              <td><%= review&.shipping_detail&.shipping_quotes&.find_by(selected: true)&.carrier&.name %></td>
+              <td><%= number_to_currency(review&.shipping_detail&.actual_invoiced.to_f) %></td>
+            <% end %>
+            <td>
+              <div class="dropdown">
+                <div class="dropdown-toggle arrow-none" data-toggle="dropdown">
+                  <i class="dripicons-dots-3"></i>
+                </div>
+                <div class="dropdown-menu">
+                  <%= link_to "Approve", review_admin_billing_sections_path(selected_review: review.id, type: "approve"), class: "dropdown-item", remote: true %>
+                  <%= link_to "Dispute", review_admin_billing_sections_path(selected_review: review.id, type: "dispute"), class: "dropdown-item", remote: true %>
+                  <div class="dropdown-item" data-reflex="click->BillingSectionReflex#remove_review" data-review-id="<%= review.id %>">
+                    Remove
+                  </div>
+                </div>
+              </div>
+              <div class="toggle-view border-blue float-right rounded-circle rounded-circle-2" data-toggle="<%= review.id %>" style="top: 3px">
+                <span class="dripicons-plus text-blue" style="top: 45%"></span>
+              </div>
+            </td>
+          </tr>
+          <tr class="toggle-content" data-toggle="<%= review.id %>">
+            <td colspan=9>
+              <div class="row no-gutters">
+                <% if review.white_glove %>
+                  <% @invoice = review.shipping_detail.invoice_for_wgd || review.shipping_detail.create_invoice_for_wgd %>
+                <% else %>
+                  <% @invoice = review.shipping_detail.invoice_for_billing || review.shipping_detail.create_invoice_for_billing %>
+                <% end %>
+                <div class="col-8">
+                  <%= form_for(@invoice, url: upload_doc_admin_billing_sections_path(order_id: review.order_id, shipping_detail_id: review.shipping_detail_id, invoice: "yes", section: "review", invoice_id: @invoice.id, invoice_white_glove: review.white_glove), method: :post, html: { id: "upload_doc_" + @invoice.id.to_s, class: "form-horizontal form-bordered" }) do |f| %>
+                    <div class="row">
+                      <div class="col-6" style="border-right: solid 1px var(--black)">
+                        <div class="row">
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Number</label>
+                            <%= f.text_field :invoice_number, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Date</label>
+                            <%= f.date_field :invoice_date, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Due Date</label>
+                            <%= f.date_field :invoice_due_date, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Amount</label>
+                            <%= f.number_field :invoice_amount, class: "form-control", step: :any %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label><%= review.store == "us" ? "Tax" : "GST/HST" %></label>
+                            <%= f.number_field :tax, class: "form-control", step: :any %>
+                          </div>
+                          <% if review.store == "canada" %>
+                            <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                              <label>QST</label>
+                              <%= f.number_field :qst, class: "form-control", step: :any %>
+                            </div>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="col-6" style="border-right: solid 1px var(--black)">
+                        <div class="row">
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Difference</label>
+                            <% if review.white_glove %>
+                              <p><%= number_to_currency(review&.shipping_detail&.white_glove_fee.to_f - @invoice.invoice_amount.to_f) %></p>
+                            <% else %>
+                              <p><%= number_to_currency(review&.shipping_detail&.actual_invoiced.to_f - @invoice.invoice_amount.to_f) %></p>
+                            <% end %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Subtotal</label>
+                            <p><%= number_to_currency(@invoice.invoice_amount.to_f - @invoice.tax.to_f - @invoice.qst.to_f) %></p>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Order Date</label>
+                            <p><%= order.created_at&.strftime("%B %d, %Y") %></p>
+                          </div>
+                          <div class="col-6" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <div class="file-input-container">
+                              <label class="mr-2">Invoice Document</label>
+                              <%= f.file_field :files, multiple: true, class: "file-temp d-none", accept: ".pdf, .jpeg, .jpg, .png" %>
+                              <a class="file-input">Upload</a>
+                            </div>
+                            <div class="file-name"></div>
+                            <% @invoice.files.each do |doc| %>
+                              <% if doc.created_at? %>
+                                <%= link_to doc.filename, doc, target: :_blank %>
+                                <%= link_to delete_upload_admin_billing_sections_path(doc_id: doc), class: "ml-2", method: :delete, data: { confirm: "Are you sure you want to delete this file?" } do %>
+                                  <%= show_svg("close.svg") %>
+                                <% end %><br>
+                              <% end %>
+                            <% end %>
+                          </div>
+                          <div class="col-6" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Bill of Lading</label>
+                            <% if review&.shipping_detail&.files.present? %>
+                              <% review&.shipping_detail&.files.each do |doc| %>
+                                <% if doc.created_at? %>
+                                  <br><%= link_to doc.filename, doc, target: :_blank %>
+                                  <%= link_to delete_upload_admin_billing_sections_path(doc_id: doc), class: "ml-2", method: :delete, data: { confirm: "Are you sure you want to delete this file?" } do %>
+                                    <%= show_svg("close.svg") %>
+                                  <% end %>
+                                <% end %>
+                              <% end %>
+                            <% end %>
+                          </div>
+                        </div>
+                      </div>
+                          
+                      <div class="col-12">
+                        <%= f.submit "Update Invoice", class: "btn btn-primary" %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+                    
+                <div class="col-4 pl-3">
+                  <label class="pl-3">Updates</label>
+                  <div class="timeline-container">
+                    <div class="row mx-0 timeline timeline-line">
+                      <% order.associated_audits.order(created_at: :desc).each do |audit| %>
+                        <% if audit.auditable_type == "Comment" && audit.audited_changes %>
+                          <% if audit.audited_changes["description"]&.start_with?("Shipping invoice") %>
+                            <div class="col-2 mb-5">
+                              <%= render partial: "/admin/comments/timeline_icon" %>
+                            </div>
+                            <div class="col-10 mb-5">
+                              <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+                              <p><%= audit.audited_changes["description"]&.html_safe if audit.audited_changes["description"].present? %></p>
+                            </div>
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        <% elsif review.return_id.present? %>
+          <% re = review.return %>
+          <tr>
+            <td>
+              <%= link_to (re.customer_return ? "CRT-" : "RT-") + re.order.name + "-" + (re.order.returns.where(customer_return: re.customer_return).order(created_at: :desc).index(re) + 1).to_s.rjust(2, "0"), edit_admin_return_path(re.id) %>
+            </td>
+            <td><%= re.order.customer.full_name %></td>
+            <td><%= re.return_date %></td>
+            <td><%= number_to_currency(re.return_quote.to_f) %></td>
+            <% if re.white_glove_directory_id.present? %>
+              <td>White Glove Delivery</td>
+              <td><%= re&.white_glove_directory&.company_name %></td>
+            <% else %>
+              <td>Curbside Delivery</td>
+              <td><%= re&.carrier&.truck_broker&.name %></td>
+              <td><%= re&.carrier&.name %></td>
+            <% end %>
+            <td><%= number_to_currency(re.shipping_cost.to_f) %></td>
+            <td>
+              <div class="dropdown">
+                <div class="dropdown-toggle arrow-none" data-toggle="dropdown">
+                  <i class="dripicons-dots-3"></i>
+                </div>
+                <div class="dropdown-menu">
+                  <%= link_to "Pay", review_admin_billing_sections_path(selected_review: review.id, type: "approve"), class: "dropdown-item", remote: true %>
+                  <%= link_to "Dispute", review_admin_billing_sections_path(selected_review: review.id, type: "dispute"), class: "dropdown-item", remote: true %>
+                  <div class="dropdown-item" data-reflex="click->BillingSectionReflex#remove_review" data-review-id="<%= review.id %>">
+                    Remove
+                  </div>
+                </div>
+              </div>
+              <div class="toggle-view border-blue float-right rounded-circle rounded-circle-2" data-toggle="<%= review.id %>" style="top: 3px">
+                <span class="dripicons-plus text-blue" style="top: 45%"></span>
+              </div>
+            </td>
+          </tr>
+          <tr class="toggle-content" data-toggle="<%= review.id %>">
+            <td colspan=9>
+              <div class="row no-gutters">
+                <% if review.white_glove %>
+                  <% @invoice = re.invoice_for_wgd || re.create_invoice_for_wgd %>
+                <% else %>
+                  <% @invoice = re.invoice_for_billing || re.create_invoice_for_billing %>
+                <% end %>
+                <div class="col-8">
+                  <%= form_for(@invoice, url: upload_doc_admin_billing_sections_path(return_id: review.return_id, invoice: "yes", section: "review", invoice_id: @invoice.id, invoice_white_glove: review.white_glove), method: :post, html: { id: "upload_doc_" + @invoice.id.to_s, class: "form-horizontal form-bordered" }) do |f| %>
+                    <div class="row">
+                      <div class="col-6" style="border-right: solid 1px var(--black)">
+                        <div class="row">
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Number</label>
+                            <%= f.text_field :invoice_number, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Date</label>
+                            <%= f.date_field :invoice_date, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Due Date</label>
+                            <%= f.date_field :invoice_due_date, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Amount</label>
+                            <%= f.number_field :invoice_amount, class: "form-control", step: :any %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label><%= review.store == "us" ? "Tax" : "GST/HST" %></label>
+                            <%= f.number_field :tax, class: "form-control", step: :any %>
+                          </div>
+                          <% if review.store == "canada" %>
+                            <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                              <label>QST</label>
+                              <%= f.number_field :qst, class: "form-control", step: :any %>
+                            </div>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="col-6" style="border-right: solid 1px var(--black)">
+                        <div class="row">
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Difference</label>
+                            <p><%= number_to_currency(re.shipping_cost.to_f - @invoice.invoice_amount.to_f) %></p>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Subtotal</label>
+                            <p><%= number_to_currency(@invoice.invoice_amount.to_f - @invoice.tax.to_f - @invoice.qst.to_f) %></p>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Order Date</label>
+                            <p><%= re.created_at&.strftime("%B %d, %Y") %></p>
+                          </div>
+                          <div class="col-6" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <div class="file-input-container">
+                              <label class="mr-2">Invoice Document</label>
+                              <%= f.file_field :files, multiple: true, class: "file-temp d-none", accept: ".pdf, .jpeg, .jpg, .png" %>
+                              <a class="file-input">Upload</a>
+                            </div>
+                            <div class="file-name"></div>
+                            <% @invoice.files.each do |doc| %>
+                              <% if doc.created_at? %>
+                                <%= link_to doc.filename, doc, target: :_blank %>
+                                <%= link_to delete_upload_admin_billing_sections_path(doc_id: doc), class: "ml-2", method: :delete, data: { confirm: "Are you sure you want to delete this file?" } do %>
+                                  <%= show_svg("close.svg") %>
+                                <% end %><br>
+                              <% end %>
+                            <% end %>
+                          </div>
+                          <div class="col-6" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Bill of Lading</label>
+                            <% if re&.files.present? %>
+                              <% re&.files.each do |doc| %>
+                                <% if doc.created_at? %>
+                                  <br><%= link_to doc.filename, doc, target: :_blank %>
+                                  <%= link_to delete_upload_admin_billing_sections_path(doc_id: doc), class: "ml-2", method: :delete, data: { confirm: "Are you sure you want to delete this file?" } do %>
+                                    <%= show_svg("close.svg") %>
+                                  <% end %>
+                                <% end %>
+                              <% end %>
+                            <% end %>
+                          </div>
+                        </div>
+                      </div>
+                          
+                      <div class="col-12">
+                        <%= f.submit "Submit", class: "btn btn-primary" %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+                    
+                <div class="col-4 pl-3">
+                  <label class="pl-3">Updates</label>
+                  <div class="timeline-container">
+                    <div class="row mx-0 timeline timeline-line">
+                      <% re.associated_audits.order(created_at: :desc).each do |audit| %>
+                        <% if audit.auditable_type == "Comment" && audit.audited_changes %>
+                          <% if audit.audited_changes["description"]&.start_with?("Shipping invoice") %>
+                            <div class="col-2 mb-5">
+                              <%= render partial: "/admin/comments/timeline_icon" %>
+                            </div>
+                            <div class="col-10 mb-5">
+                              <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+                              <p><%= audit.audited_changes["description"]&.html_safe if audit.audited_changes["description"].present? %></p>
+                            </div>
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        <% elsif review.consolidation_id.present? %>
+          <% consolidation = review.consolidation %>
+          <tr>
+            <td><%= consolidation.name %></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Consolidated</td>
+            <% if review.white_glove %>
+              <td><%= consolidation.shipping_details.first&.white_glove_directory&.company_name %></td>
+            <% else %>
+              <td><%= consolidation.shipping_details.first&.shipping_quotes&.find_by(selected: true)&.truck_broker&.name %></td>
+              <td><%= consolidation.shipping_details.first&.shipping_quotes&.find_by(selected: true)&.carrier&.name %></td>
+            <% end %>
+            <td>
+              <% if review.white_glove %>
+                <%= number_to_currency(consolidation.shipping_details.sum { |sd| sd.white_glove_fee.to_f }) %>
+              <% else %>
+                <%= number_to_currency(consolidation.shipping_details.sum { |sd| sd.actual_invoiced.to_f }) %>
+              <% end %>
+            </td>
+            <td>
+              <div class="dropdown">
+                <div class="dropdown-toggle arrow-none" data-toggle="dropdown">
+                  <i class="dripicons-dots-3"></i>
+                </div>
+                <div class="dropdown-menu">
+                  <%= link_to "Pay", review_admin_billing_sections_path(selected_review: review.id, type: "approve"), class: "dropdown-item", remote: true %>
+                  <%= link_to "Dispute", review_admin_billing_sections_path(selected_review: review.id, type: "dispute"), class: "dropdown-item", remote: true %>
+                  <div class="dropdown-item" data-reflex="click->BillingSectionReflex#remove_review" data-review-id="<%= review.id %>">
+                    Remove
+                  </div>
+                </div>
+              </div>
+              <div class="toggle-view border-blue float-right rounded-circle rounded-circle-2" data-toggle="<%= review.id %>" style="top: 3px">
+                <span class="dripicons-plus text-blue" style="top: 45%"></span>
+              </div>
+            </td>
+          </tr>
+          <tr class="toggle-content" data-toggle="<%= review.id %>">
+            <td colspan=9>
+              <div class="row no-gutters">
+                <% if review.white_glove %>
+                  <% @invoice = consolidation.invoice_for_wgd || consolidation.create_invoice_for_wgd %>
+                <% else %>
+                  <% @invoice = consolidation.invoice_for_billing || consolidation.create_invoice_for_billing %>
+                <% end %>
+                <div class="col-8" style="border-right: solid 1px var(--black)">
+                  <%= form_for(@invoice, url: upload_doc_admin_billing_sections_path(consolidation_id: review.consolidation_id, invoice: "yes", section: "review", invoice_id: @invoice.id, invoice_white_glove: review.white_glove), method: :post, html: { id: "upload_doc_" + @invoice.id.to_s, class: "form-horizontal form-bordered" }) do |f| %>
+                    <div class="row">
+                      <div class="col-6" style="border-right: solid 1px var(--black)">
+                        <div class="row">
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Number</label>
+                            <%= f.text_field :invoice_number, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Date</label>
+                            <%= f.date_field :invoice_date, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Due Date</label>
+                            <%= f.date_field :invoice_due_date, class: "form-control" %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Amount</label>
+                            <%= f.number_field :invoice_amount, class: "form-control", step: :any %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label><%= review.store == "us" ? "Tax" : "GST/HST" %></label>
+                            <%= f.number_field :tax, class: "form-control", step: :any %>
+                          </div>
+                          <% if review.store == "canada" %>
+                            <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                              <label>QST</label>
+                              <%= f.number_field :qst, class: "form-control", step: :any %>
+                            </div>
+                          <% end %>
+                        </div>
+                      </div>
+
+                      <div class="col-6">
+                        <div class="row">
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Difference</label>
+                            <% if review.white_glove %>
+                              <p><%= number_to_currency(consolidation.shipping_details.sum { |sd| sd.white_glove_fee.to_f } - @invoice.invoice_amount.to_f) %></p>
+                            <% else %>
+                              <p><%= number_to_currency(consolidation.shipping_details.sum { |sd| sd.actual_invoiced.to_f } - @invoice.invoice_amount.to_f) %></p>
+                            <% end %>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Invoice Subtotal</label>
+                            <p><%= number_to_currency(@invoice.invoice_amount.to_f - @invoice.tax.to_f - @invoice.qst.to_f) %></p>
+                          </div>
+                          <div class="col-4" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Order Date</label>
+                            <p></p>
+                          </div>
+                          <div class="col-6" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <div class="file-input-container">
+                              <label class="mr-2">Invoice Document</label>
+                              <%= f.file_field :files, multiple: true, class: "file-temp d-none", accept: ".pdf, .jpeg, .jpg, .png" %>
+                              <a class="file-input">Upload</a>
+                            </div>
+                            <div class="file-name"></div>
+                            <% @invoice.files.each do |doc| %>
+                              <% if doc.created_at? %>
+                                <%= link_to doc.filename, doc, target: :_blank %>
+                                <%= link_to delete_upload_admin_billing_sections_path(doc_id: doc), class: "ml-2", method: :delete, data: { confirm: "Are you sure you want to delete this file?" } do %>
+                                  <%= show_svg("close.svg") %>
+                                <% end %><br>
+                              <% end %>
+                            <% end %>
+                          </div>
+                          <div class="col-6" style="height: 7.5rem; overflow-x: hidden; overflow-y: auto">
+                            <label>Bill of Lading</label>
+                            <% if consolidation.shipping_details.first&.files.present? %>
+                              <% consolidation.shipping_details.first&.files.each do |doc| %>
+                                <% if doc.created_at? %>
+                                  <br><%= link_to doc.filename, doc, target: :_blank %>
+                                  <%= link_to delete_upload_admin_billing_sections_path(doc_id: doc), class: "ml-2", method: :delete, data: { confirm: "Are you sure you want to delete this file?" } do %>
+                                    <%= show_svg("close.svg") %>
+                                  <% end %>
+                                <% end %>
+                              <% end %>
+                            <% end %>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12 mb-3">
+                        <%= f.submit "Submit", class: "btn btn-primary" %>
+                      </div>
+                      <div class="col-6">
+                        <div class="table-responsive">
+                          <table>
+                            <tr>
+                              <th style="width: 40%">Order</th>
+                              <th style="width: 40%">Quote</th>
+                              <th style="width: 20%"></th>
+                            </tr>
+                            <% consolidation.shipping_details.each do |sd| %>
+                              <tr>
+                                <td><%= sd.order.name + " (" + (get_shipping sd) + ")" %></td>
+                                <td>
+                                  <% sum = 0 %>
+                                  <% if sd.order.line_items.present? %>
+                                    <% sd.order.line_items.where(order_from: nil).each_with_index do |item, i| %>
+                                      <% sum = sum + mul(item&.price, item&.quantity) %>
+                                    <% end %>
+                                  <% end %>
+                                      
+                                  <% if sd.order.discount_codes.present? %>
+                                    <% sum = sum - sd.order.discount_codes["discount_amount"].to_f.abs %>
+                                  <% end %>
+                                      
+                                  <% if sd.order.shipping_line.present? %>
+                                    <% sum = sum + sd.order&.shipping_line&.price.to_f %>
+                                  <% end %>
+
+                                  <% if sd.order.tax_lines.present? %>
+                                    <% sum = sum + sd.order.tax_lines["price"].to_f %>
+                                  <% end %>
+
+                                  <% if sd.order.refunds.present? && sd.order.order_adjustments.present? %>
+                                    <% sd.order.refunds.each do |ref| %>
+                                      <% sd.order.order_adjustments.each do |adj| %>
+                                        <% sum = sum + (adj.amount).to_f %>
+                                      <% end %>
+                                    <% end %>
+                                  <% end %>  
+                                  <%= number_to_currency(sum) %>
+                                </td>
+                                <td>
+                                  <button class="btn btn-primary" type="button" data-reflex="click->BillingSectionReflex#dispute_consolidate_shipping" data-consolidation-id="<%= consolidation.id %>" data-shipping-id="<%= sd.id %>">Dispute</button>
+                                </td>
+                              </tr>
+                            <% end %>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+                    
+                <div class="col-4 pl-3">
+                  <label class="pl-3">Updates</label>
+                  <div class="timeline-container">
+                    <div class="row mx-0 timeline timeline-line">
+                      <% consolidation.own_and_associated_audits.order(created_at: :desc).each do |audit| %>
+                        <% if audit.auditable_type == "Comment" && audit.audited_changes %>
+                          <% if audit.audited_changes["description"]&.start_with?("Shipping invoice") %>
+                            <div class="col-2 mb-5">
+                              <%= render partial: "/admin/comments/timeline_icon" %>
+                            </div>
+                            <div class="col-10 mb-5">
+                              <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+                              <p><%= audit.audited_changes["description"]&.html_safe if audit.audited_changes["description"].present? %></p>
+                            </div>
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+  
+<% if @pagy.present? %>
+  <% if @pagy.count > 1 %>
+    <div id="page-nav">
+      <%= render partial: "review_paginator", locals: { current_user: current_user } %>
+    </div>
+  <% end %>
+<% end %>
+
+<style>
+  tr:hover .rounded-circle { border: solid 1px var(--blue); }
+</style>

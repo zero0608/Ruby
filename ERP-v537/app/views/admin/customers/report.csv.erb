@@ -1,0 +1,5 @@
+<%- headers = ["Customer Name", "Order Number", "Lead ID", "Order Date", "Order Value", "Sales Type", "Sales Staff"] -%>
+<%= CSV.generate_line headers -%>
+<%- @orders.each do |order| -%>
+<%= CSV.generate_line([order&.customer&.full_name, order&.name, order&.invoice&.invoice_number, order&.created_at&.strftime("%B %d, %Y"), number_to_currency(order.line_items.where(order_from: nil).sum { |item| ((item&.price.to_f * item&.quantity.to_i) unless (item.sku.include?("mulberry") || item.title.include?("Mulberry") || item.sku.include?("custom") || ShipmentCode.pluck(:sku_for_discount).include?(item.sku))).to_f } - (order.discount_codes["discount_amount"].to_f.abs if order.discount_codes.present?).to_f), order&.invoice&.source&.titleize, order&.employee&.full_name]).html_safe -%>
+<%- end -%>

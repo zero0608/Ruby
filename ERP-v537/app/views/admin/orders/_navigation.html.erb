@@ -1,0 +1,225 @@
+<% @total_shipping_details = ShippingDetail.eager_load(:order, :line_items, order: [:customer, :shipping_details]).where("(orders.store ILIKE ?) or (line_items.order_from ILIKE ?)", current_store, nil).where.not(status: "cancelled", orders: { status: ["cancel_request", "cancel_confirmed", "hold_request", "hold_confirmed", "completed"] }).where.not("line_items.created_at < ?", Date.parse("2021-10-31")).where.not(orders: { order_type: "SW" }) %>
+
+<% @total_shipping_details = @total_shipping_details.eager_load(:line_items).where("(line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?) and (line_items.sku NOT ILIKE ?)", "WAREHOUSE-HOLD", "RECONSIGNMENT-FEE", "SHIPPING-FOR-COM", "REMOTE-SHIPPING", "REDELIVERY-FEE", "HANDLING-FEE", "STORAGE-FEE", "%warranty%", "WGS001", "HLD001", "HFE001", "E-PMNT") %>
+
+<% if params[:action] == "edit" %>
+  <div class="row pb-3 position-fixed w-100 bg-white" style="z-index: 2; left: 15px; right: 15px">
+<% else %>
+  <div class="row mb-3">
+<% end %>
+  <div class="col-6">
+    <p class="header1">Orders</p>
+  </div>
+  <div class="col-6 text-right">
+    <% if current_user.user_group.orders_cru && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+      <% if params[:ship_status] == "staging" %>
+        <div class="dropdown ml-4">
+          <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+            Update <%= show_svg("arrow.svg") %>
+          </div>
+          <div class="dropdown-menu dropdown-menu-right">
+            <div class="dropdown-item" onclick="ready_to_ship()">Ready To Ship</div>
+            <div class="dropdown-item" onclick="print_ship()">Print Packing Slip</div>
+          </div>
+        </div>
+        <span class="pr-4 mr-4 border-right"></span>
+
+      <% elsif params[:ship_status] == "ready_to_ship" %>
+        <%= render "state_filter" %>
+        <div class="dropdown ml-4">
+          <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+            Update <%= show_svg("arrow.svg") %>
+          </div>
+          <div class="dropdown-menu dropdown-menu-right">
+            <div class="dropdown-item" onclick="booked_in()">Booked</div>
+            <div class="dropdown-item" data-toggle="modal" data-target="#mergeModal" onclick="merge_packing_slip(event);">
+              WG Packing Slip
+            </div>
+          </div>
+        </div>
+        <span class="pr-4 mr-4 border-right"></span>
+
+      <% elsif params[:ship_status] == "booked" %>
+        <%= render "state_filter" %>
+        <div class="dropdown ml-4">
+          <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+            Update <%= show_svg("arrow.svg") %>
+          </div>
+          <div class="dropdown-menu dropdown-menu-right">
+            <div class="dropdown-item" onclick="carrier_list()">Ready for Pickup</div>
+            <div class="dropdown-item" onclick="print_ship()">Print BOL</div>
+          </div>
+        </div>
+        <span class="pr-4 mr-4 border-right"></span>
+
+      <% elsif params[:ship_status] == "ready_for_pickup" %>
+        <div class="hover-toggle ml-4">
+          Filter: Carrier <span class="text-blue"><%= show_svg("arrow.svg") %></span>
+          <div class="hover-container dropdown-menu-right">
+            <div class="hover-menu">
+              <% Carrier.where(country: current_store, inactive: false).order(:name).each do |carrier| %>
+                <div class="hover-item text-left" data-reflex="click->OrderReflex#carrier" data-carrier-id="<%= carrier.id %>" data-user-id="<%= current_user.id %>" data-store-type="<%= current_store %>" data-reflex-dataset="combined">
+                  <%= carrier.name.titleize %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown ml-4">
+          <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+            Update <%= show_svg("arrow.svg") %>
+          </div>
+          <div class="dropdown-menu dropdown-menu-right">
+            <div class="dropdown-item" onclick="shipped()">Shipped</div>
+          </div>
+        </div>
+        <span class="pr-4 mr-4 border-right"></span>
+      <% end %>
+    <% end %>
+      
+    <div class="dropdown">
+      <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+        Reports <%= show_svg("arrow.svg") %>
+      </div>
+      <div class="dropdown-menu">
+        <a data-toggle="modal" data-target="#exportShipOrder">
+          <div class="dropdown-item">Order - Shipment</div>
+        </a>
+        <a data-toggle="modal" data-target="#exportShipOrderEmail">
+          <div class="dropdown-item">Order - Product</div>
+        </a>
+      </div>
+    </div>
+
+    <% if current_user.user_group.orders_cru && current_user.user_group.permission_us && current_user.user_group.permission_ca %>
+      <a href="<%= get_all_orders_admin_orders_path %>">
+        <button class="btn btn-primary ml-4">
+          <%= show_svg("plus.svg") %>
+          Import Orders
+        </button>
+      </a>
+    <% end %>
+  </div>
+
+  <div class="col-12">
+    <a class="underline-hover <%= params[:ship_status].present? ? ("active" if params[:ship_status] == "not_ready") : ("active" if (@order.present? && (@order.order_status == "not_ready" || (@order.order_status == "split_shipping" && @order.shipping_details.first.status == "not_ready")))) %>" href="<%= shipping_list_admin_orders_path(ship_status: "not_ready") %>">
+      Not Ready (<%= @total_shipping_details.where(status: :not_ready).count %>)
+    </a>
+
+    <a class="underline-hover <%= params[:ship_status].present? ? ("active" if params[:ship_status] == "staging") : ("active" if (@order.present? && (@order.order_status == "staging" || (@order.order_status == "split_shipping" && @order.shipping_details.first.status == "staging")))) %>" href="<%= shipping_list_admin_orders_path(ship_status: "staging") %>">
+      Staging (<%= @total_shipping_details.where(status: :staging).count %>)
+    </a>
+            
+    <a class="underline-hover <%= params[:ship_status].present? ? ("active" if params[:ship_status] == "ready_to_ship") : ("active" if (@order.present? && (@order.order_status == "ready_to_ship" || (@order.order_status == "split_shipping" && @order.shipping_details.first.status == "ready_to_ship")))) %>" href="<%= shipping_list_admin_orders_path(ship_status: "ready_to_ship") %>">
+      Ready To Ship (<%= @total_shipping_details.where(status: :ready_to_ship).count %>)
+    </a>
+            
+    <a class="underline-hover <%= params[:ship_status].present? ? ("active" if params[:ship_status] == "booked") : ("active" if (@order.present? && (@order.order_status == "booked" || (@order.order_status == "split_shipping" && @order.shipping_details.first.status == "booked")))) %>" href="<%= shipping_list_admin_orders_path(ship_status: "booked") %>">
+      Booked (<%= @total_shipping_details.where(status: :booked).count %>)
+    </a>
+            
+    <a class="underline-hover <%= params[:ship_status].present? ? ("active" if params[:ship_status] == "ready_for_pickup") : ("active" if (@order.present? && (@order.order_status == "ready_for_pickup" || (@order.order_status == "split_shipping" && @order.shipping_details.first.status == "ready_for_pickup")))) %>" href="<%= shipping_list_admin_orders_path(ship_status: "ready_for_pickup") %>">
+      Ready For Pickup (<%= @total_shipping_details.where(status: :ready_for_pickup).count %>)
+    </a>
+            
+    <a class="underline-hover <%= params[:ship_status].present? ? ("active" if params[:ship_status] == "shipped") : ("active" if (@order.present? && (@order.order_status == "shipped" || (@order.order_status == "split_shipping" && @order.shipping_details.first.status == "shipped")))) %>" href="<%= shipping_list_admin_orders_path(ship_status: "shipped") %>">
+      Shipped - This Week (<%= @total_shipping_details.eager_load(:order).joins(:order).where(status: "shipped").where(shipped_date: (Time.now.at_beginning_of_week)..(Time.now.at_end_of_week)).count %>)
+    </a>
+  </div>
+</div>
+
+<div class="modal" id="exportShipOrder" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag report_logistics_export_admin_orders_path(format: "csv", report_type: "order"), target: "_blank" do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Date Range</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-3 mb-3">
+              <label>Start Date</label>
+              <%= date_field_tag :start_date, "", class: "form-control" %>
+            </div>
+            <div class="col-3 mb-3">
+              <label>End Date</label>
+              <%= date_field_tag :end_date, "", class: "form-control" %>
+            </div>
+            <div class="col-3 mb-3">
+              <label>State</label>
+              <%= select_tag :select_state, options_from_collection_for_select(TaxRate.where(store: current_store), "state", "state"), prompt: "Select All", class: "form-control" %>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Status</label>
+              <%= select_tag :status, options_for_select(ShippingDetail.statuses.map {|k, v| [k.humanize.capitalize, v]} + [["Pending Payment", 20]]), prompt: "Select All", class: "form-control" %>
+            </div>
+            <div class="col-12">
+              <div class="state-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= hidden_field_tag :state %>
+          <%= submit_tag "Submit", class: "btn btn-primary report-button" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="modal" id="exportShipOrderEmail" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag report_logistics_export_admin_orders_path(format: "csv", report_type: "email_order"), target: "_blank" do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Date Range</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-6 mb-3">
+              <label>Start Date</label>
+              <%= date_field_tag :start_date, "", class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>End Date</label>
+              <%= date_field_tag :end_date, "", class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary report-button" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(".report-button").on("click", function() {
+    location.reload();
+  });
+
+  $("#exportShipOrder form").on("submit", function(e) {
+    var v = "";
+    $(".state-list .tag").each(function() {
+      v += $(this).data("val");
+      v += ",";
+    });
+    $("#state").val(v);
+  });
+
+  $("#select_state").on("change", function() {
+    if ($(this).val() != "" && $(".tag[data-val='" + $(this).val() + "']").length < 1) {
+      $(".state-list").append('<span class="tag" data-val="' + $("#select_state").val() + '">@' + $("#select_state").val() + '<span class="user-list-remove"><%= show_svg("close.svg") %></span></span>');
+    }
+  });
+</script>

@@ -1,0 +1,74 @@
+<div class="container px-4">
+  <div class="row mb-3">
+    <div class="col-12">
+      <p class="header1">BOL</p>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+					<thead>
+						<tr>
+							<th>Document Name</th>
+							<th>Order Number</th>
+							<th>Order Date</th>
+							<th>Shipped Date</th>
+							<th></th>
+							<th style="width: 8%">
+								<input id="check_all" class="btw" type="checkbox">
+							</th>
+							<th></th>
+							<th>
+								<div class="dropdown ml-4">
+									<div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+										Update <%= show_svg("arrow.svg") %>
+									</div>
+									<div class="dropdown-menu dropdown-menu-right">
+										<div class="dropdown-item" onclick="bols()">Download</div>
+									</div>
+								</div>
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% @shipping_details.each do |shipping_detail| %>
+							<% if shipping_detail.files.present? && shipping_detail.order.store == current_store %>
+								<% shipping_detail.files.each do |doc| %>
+									<tr> 
+										<% if doc.created_at? %>
+											<td><%= link_to doc.filename, doc, target: :_blank  %></td>
+											<td><%= shipping_detail&.order&.name %></td>
+											<td><%= shipping_detail&.order&.created_at.strftime('%B %d, %Y') %></td>
+											<td><%= shipping_detail&.shipped_date&.strftime('%B %d, %Y') %></td>
+											<td>
+												<%= link_to 'Download', rails_blob_path(doc, disposition: 'attachment') %>
+											</td>
+											<td>
+												<%= check_box_tag "shipping_ids[]", shipping_detail.id %>
+											</td>
+										<% end %>
+									</tr>
+								<% end %>
+							<% end %>
+						<% end %>
+					</tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type='text/javascript'>
+  function bols() {
+    var ship_ids = [];
+    $('input[type="checkbox"]:checked').each(function() {
+        ship_ids.push($(this).val());
+    });
+    if (ship_ids.length < 1) {
+      alert('Please select at least one order.')
+    } else {
+      window.location.replace('<%= bol_admin_documents_path(ship_status: 'bol', format: :html) %>&ship_ids='+[ship_ids]);
+    }
+  }
+</script>

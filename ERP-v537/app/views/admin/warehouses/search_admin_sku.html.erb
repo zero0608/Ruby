@@ -1,0 +1,33 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-12 mb-3">
+        <p class="header1">Search SKU</p>
+        <input type="text" class="form-control" style="height: 5rem" data-reflex="debounced:input->WarehouseReflex#search_admin_sku" data-user-id="<%= current_user.id %>">
+      </div>
+      <div class="col-12 mb-3">
+        <span class="text-light-grey">Results</span>
+      </div>
+      <div class="col-12 mb-3 border-bottom"></div>
+    </div>
+
+    <section id="warehouse-search-admin-sku">
+      <%= render partial: "search_admin_skus", locals: { product_variants: @product_variants, current_user: @current_user } %>
+    </section>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= admin_admin_warehouses_path %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>

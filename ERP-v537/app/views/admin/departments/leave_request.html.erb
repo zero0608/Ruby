@@ -1,0 +1,65 @@
+<div class="container px-4">
+  <div class="row mb-3">
+    <div class="col-12">
+      <span class="header1">Leave Requests</span>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <% if Leave.joins(:employee).where(employees: { department_id: @department.id }).where(status: "Pending").count > 0 %>
+      <% Leave.joins(:employee).where(employees: { department_id: @department.id }).where(status: "Pending").each do |leave| %>
+        <div class="col-3 mb-3">
+          <div class="row mx-0 p-5 border">
+            <div class="col-12 mb-3">
+              <h6><%= leave.employee.full_name %></h6>
+              <span class="font-italic">Date of Request: <%= leave.created_at.strftime("%B %d, %Y") %></span>
+            </div>
+            <div class="w-100 border-bottom mb-3"></div>
+            <div class="col-6 mb-3">
+              <span class="header2">TYPE LEAVE</span>
+            </div>
+            <div class="col-6 mb-3">
+              <span><%= leave.leave_type %> Leave</span>
+            </div>
+            <div class="col-6 mb-3">
+              <label>FROM</label><br>
+              <span><%= leave.start_date.strftime("%B %d, %Y") %></span>
+            </div>
+            <div class="col-6 mb-3">
+              <label>TO</label><br>
+              <span><%= leave.end_date.strftime("%B %d, %Y") %></span>
+            </div>
+            <div class="col-6 mb-3">
+              <label>DURATION</label><br>
+              <span>
+                <%= leave.duration == leave.duration.to_i ? leave.duration.to_i : leave.duration %>
+                <%= "Day".pluralize(leave.duration) %>
+              </span>
+            </div>
+            <div class="col-6 mb-4">
+              <label>STATUS</label><br>
+              <% case leave.status %>
+                <% when "Pending" %>
+                  <span class="badge badge-outline-red">Pending</span>
+                <% when "Approved" %>
+                  <span class="badge badge-outline-green">Approved</span>
+                <% when "Declined" %>
+                  <span class="badge badge-outline-black">Declined</span>
+              <% end %>
+            </div>
+            <div class="w-100 border-bottom mb-3"></div>
+            <div class="col-6">
+              <button class="btn btn-secondary" data-reflex="click->DepartmentReflex#decline_leave" data-user-id="<%= current_user.id %>" data-leave-id="<%= leave.id %>">Decline</button>
+            </div>
+            <div class="col-6">
+              <button class="btn btn-primary" data-reflex="click->DepartmentReflex#approve_leave" data-user-id="<%= current_user.id %>" data-leave-id="<%= leave.id %>">Approve</button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="col-12">
+        <p>No leave request at the moment.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

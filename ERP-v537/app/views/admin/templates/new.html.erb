@@ -1,0 +1,20 @@
+<div class="container px-4">
+  <%= render partial: "/admin/tasks/navigation", local: { current_user: current_user } %>
+  
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-12">
+      <%= render partial: "/admin/departments/hr_navigation" %>
+    </div>
+  </div>
+
+  <div class="row position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-2" style="height: 550px; overflow: auto">
+      <%= render partial: "list" %>
+    </div>
+    <div class="col-10">
+      <%= form_for @template, url: { action: "create" }, html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+        <%= render partial: "form", locals: { f: f, current_user: current_user } %>
+      <% end %>
+    </div>
+  </div>
+</div>

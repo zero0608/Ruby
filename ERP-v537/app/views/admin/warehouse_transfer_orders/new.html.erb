@@ -1,0 +1,9 @@
+<div class="container px-4">
+  <div class="row">
+    <div class="col-12">
+      <%= form_for @transfer_order, url: { action: "create" }, id: "create_transfer_order", html: { class: "form-horizontal form-bordered" } do |f| %>
+        <%= render partial: "form", locals: { f: f, current_user: current_user, warehouse: @warehouse, warehouse_variants: @warehouse_variants } %>
+      <% end %>
+    </div>
+  </div>
+</div>

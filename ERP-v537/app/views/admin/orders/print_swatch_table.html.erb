@@ -1,0 +1,80 @@
+<style type="text/css">
+  @media print {
+    .btn {
+      display: none;
+    }
+  }
+  
+  .sb-topnav, #layoutSidenav_nav {
+    display: none !important;
+  }
+
+  #layoutSidenav_content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .printer-preview-content {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .table-bordered,
+  .table-bordered th,
+  .table-bordered td {
+    border: 1px solid #ccc;
+  }
+</style>
+
+<div class="mb-4 text-right" style="max-width: 1000px; margin: 0 auto">
+  <button class="btn btn-primary dripicons-print" onclick="window.print()"> Print</button>
+</div>
+
+<div class="row mx-0 mb-4 p-3 clr-white">
+  <div class="col-12">
+    <div class="row">
+      <div class="col-12">
+        <div class="table-responsive">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th>
+                  <%= "Order Date" %>
+                </th>
+                <th>
+                  <%= "Description" %>
+                </th>
+                <th>
+                  <%= "SKU" %>
+                </th>
+                <th>
+                  <%= "Shipping Name" %>
+                </th>
+                <th>
+                  <%= "Shipping Address" %>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @line_items.each do |item| %>
+                <% if item.title.present? && item.sku.present? && (item.title.include? 'Swatch' or item.sku.length < 3) %>
+                  <tr>
+                    <td><%= item&.order&.created_at&.to_date.strftime('%Y/%m/%d') %></td>
+                    <td><%= item&.title%></td>
+                    <td><%= item&.sku%></td>
+                    <td><%= item&.order&.shipping_address&.full_name%></td>
+                    <td>
+                      <%= item.order.shipping_address.address1.tr('[]','').tr('" "', ' ') %>
+                      <%= item.order.shipping_address.city %> <%= item.order.shipping_address.address2%><br>
+                      <%= item.order.shipping_address.country %> - <%= item.order.shipping_address.zip %>
+                    </td>
+                  </tr>
+                <% end %>                  
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

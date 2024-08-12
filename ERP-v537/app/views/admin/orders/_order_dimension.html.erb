@@ -1,0 +1,30 @@
+<h5>Order Dimensions</h5>
+<div class="table-responsive">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Height</th>
+        <th>Width</th>
+        <th>Length</th>
+        <th>Weight</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @order.line_items.eager_load(product: [:cartons]).each do |item| %>
+        <tr>
+          <% if item.try(:product).try(:cartons).present? %>
+            <td><%= item.title %></td>
+            <% item.try(:product).try(:carton_details).each do |carton_detail| %>
+              <td><%= carton_detail.length %></td>
+              <td><%= carton_detail.width %></td>
+              <td><%= carton_detail.height %></td>
+              <td><%= carton_detail.weight %></td>
+            <% end %>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+

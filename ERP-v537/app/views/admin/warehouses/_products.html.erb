@@ -1,0 +1,27 @@
+<div class="modal" id="productPurchaseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog" style="width: 300px">
+    <%= form_tag unassigned_locations_admin_warehouses_path(location_id: location.id), html: { class: "form-horizontal form-bordered" } do |f| %>
+      <div class="modal-content modal-full-size">
+        <div class="modal-header">        
+          <span class="header2 modal-title">Search Product</span>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-12">
+              <div class="search-bar d-inline-block">
+                <input type="text" placeholder="search..." class="form-control" data-reflex="debounced:input->WarehouseReflex#search_product" data-user-id="<%= current_user.id %>" data-store-type="<%= current_store %>" data-location-id="<%= location.id %>">
+              </div>
+            </div>
+          </div>
+          <section id="purchase-result">
+            <% render partial: "search_product", locals: { location: location, current_user: current_user} %>
+          </section>
+        </div>      
+        <div class="modal-footer">
+          <%= link_to "Cancel", show_location_admin_warehouses_path(location_id: location.id), class: "btn btn-secondary mr-4" %>
+          <%= submit_tag "Assign", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

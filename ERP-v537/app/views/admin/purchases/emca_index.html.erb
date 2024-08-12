@@ -1,0 +1,80 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <div class="row mb-3">
+    <div class="col-6">
+      <p class="header1 d-inline-block mr-4">
+        <%= current_user.supplier? ? "订单" : "Purchase Order" %>
+      </p>
+      <div class="search-bar d-inline-block">
+        <input type="text" placeholder="Search..." class="form-control" data-reflex="debounced:input->PurchaseReflex#search_orders" data-store-type="<%= current_store %>" data-user-id="<%= current_user.id %>">
+      </div>
+    </div>
+      
+    <div class="col-6 text-right">
+      <% if current_user.user_group.inventory_cru && current_user.user_group.permission_ca && current_store == "canada" %>
+        <a href="<%= new_admin_purchase_path %>">
+          <button class="btn btn-primary mr-4">
+            <%= show_svg("plus.svg") %>
+            Create Purchase
+          </button>
+        </a>
+      <% end %>
+
+      <div class="dropdown">
+        <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+          Export <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="dropdown-menu dropdown-menu-right">
+          <div class="dropdown-item" data-toggle="modal" data-target="#exportPurchaseOrder">
+            Purchase Orders Report
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-12">
+      <span class="underline-hover active">All Purchases</span>
+      <% Supplier.all.each do |supplier| %>
+        <a href="<%= purchase_admin_supplier_path(supplier) %>">
+          <span class="underline-hover">
+            <%= supplier.name %> (<%= PurchaseItem.eager_load(:line_item, line_item: [:order]).where("line_item_id IS NULL or (orders.status != ? and orders.status != ?)", Order.statuses[:cancel_confirmed], Order.statuses[:completed]).joins(:purchase).where(status: ["not_started", "in_production"], purchases: { supplier_id: supplier.id, store: current_store }).count %>)
+          </span>
+        </a>
+      <% end %>
+    </div>
+  </div>
+
+  <section class="d-flex flex-column flex-auto" id="emca-purchase-list-results">
+    <%= render partial: "emca_purchase_results", locals: { pagy: @pagy, purchases: @purchases, current_user: current_user } %>
+  </section>
+</div>
+
+<div class="modal fade" id="exportPurchaseOrder" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag report_logistics_export_admin_orders_path(format: "csv", report_type: "purchase_order"), target: "_blank" do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Date Range</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-6 mb-3">
+              <label>Start Date</label>
+              <%= date_field_tag :start_date, "", class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>End Date</label>
+              <%= date_field_tag :end_date, "", class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

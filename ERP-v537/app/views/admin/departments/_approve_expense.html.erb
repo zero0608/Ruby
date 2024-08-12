@@ -1,0 +1,69 @@
+<div class="modal" id="approveModal-<%= @expense.id %>" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-thin">
+    <%= form_for @expense, url: approve_admin_expense_path(@expense), method: :post, html: { class: "form-horizontal form-bordered" } do |f| %>
+      <div class="modal-content">
+        <%= f.hidden_field :approver_id, value: current_user.employee_id %>
+        <div class="modal-header">
+          <span class="header2 modal-title">Approve Expense</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-3 mb-3">
+              <label>Requester</label>
+              <p><%= @expense.employee.full_name %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Category</label>
+              <p><%= @expense.expense_category&.title %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Sub-Category</label>
+              <p><%= @expense.expense_subcategory&.title %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Payment Method</label>
+              <p><%= @expense.expense_payment_method&.title %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Subtotal Amount</label>
+              <p><%= number_to_currency(@expense.amount.to_f - @expense.gst.to_f - @expense.pst.to_f - @expense.tips.to_f) %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Tax Amount</label>
+              <p><%= number_to_currency(@expense.gst.to_f + @expense.pst.to_f) %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Tips</label>
+              <p><%= number_to_currency(@expense.tips.to_f) %></p>
+            </div>
+            <div class="col-3 mb-3">
+              <label>Invoice Total</label>
+              <p class="request_amount" data-expense-id="<%= @expense.id %>" data-amount="<%= @expense.amount.to_f %>">
+                <%= number_to_currency(@expense.amount.to_f) %>
+              </p>
+            </div>
+            <div class="col-8 mb-3">
+              <label>Approved Amount</label>
+              <%= f.number_field :approve_amount, class: "form-control", id: "expense-" + @expense.id.to_s + "-approve-amount", step: :any %>
+            </div>
+            <div class="col-4 mb-3 text-right">
+              <label class="d-block">&nbsp;</label>
+              <button class="btn btn-primary full_amount" type="button" data-expense-id="<%= @expense.id %>">Full Amount</button>
+            </div>
+            <div class="col-12 mb-3">
+              <label>Comments</label>
+              <%= f.text_area :notes, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal" aria-label="Close">Cancel</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

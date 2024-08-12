@@ -1,0 +1,4 @@
+<% if params[:expense_id].present? %>
+    $("#approve_expense").append("<%= escape_javascript(render partial: "approve_expense", locals: { expense: @expense }) %>");
+    $("#approveModal-<%= @expense.id %>").modal("show");
+<% end %>

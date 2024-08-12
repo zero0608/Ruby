@@ -1,0 +1,108 @@
+<div class="container px-4">
+  <div class="row mb-3">
+    <div class="col-6">
+      <span class="header1">
+        Arriving - <%= current_store == "us" ? "EMUS" : "canada" %>
+      </span>
+    </div>
+    <div class="col-6 text-right">
+      <div class="dropdown mr-4">
+        <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+          <%= @con_label %> <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="dropdown-menu dropdown-menu-right">
+          <div class="dropdown-item" data-reflex="click->DashboardReflex#con_this_week">This Week</div>
+          <div class="dropdown-item" data-reflex="click->DashboardReflex#con_next_week">Next Week</div>
+          <div class="dropdown-item" data-reflex="click->DashboardReflex#con_this_month">This Month</div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+          Sort By: Status <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="drodpwon-menu dropdown-menu-right">
+          <a href="<%= arriving_admin_containers_path %>">
+            <div class="dropdown-item">
+              Arriving - This Week (<%= Container.where(store: current_store).where(arriving_to_dc: (Time.now.at_beginning_of_week)..(Time.now.at_end_of_week)).where.not(status: :arrived).count %>)
+            </div>
+          </a>
+          
+          <a href="<%= admin_containers_path(container_status: "en_route") %>">
+            <div class="dropdown-item">
+              En Route (<%= Container.where(store: "us", status: "en_route").count %>)
+            </div>
+          </a>
+
+          <a href="<%= admin_containers_path(container_status: "container_ready") %>">
+            <div class="dropdown-item">
+              Container Ready (<%= Container.where(store: "us", status: "container_ready").count %>)
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-2 mb-3">
+      <div class="search-bar">
+        <input type="text" placeholder="Search Container..." class="form-control" data-reflex="debounced:input->ContainerReflex#arriving_search" data-store-type="<%= current_store %>">
+      </div>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="d-flex" style="overflow: auto">
+        <% if @con_arriving.present? %>
+          <% @con_arriving.order(:arriving_to_dc).each do |container| %>
+            <div class="col-2 pl-0">
+              <a href="<%= edit_admin_container_path(container) %>">
+                <div class="card">
+                  <div class="card-body row no-gutters">
+                    <div class="col-4">
+                      <div class="bg-blue rounded-circle rounded-circle-4">
+                        <span class="header1 text-white uil-ship"></span>
+                      </div>
+                    </div>
+            
+                    <div class="col-8 text-right">
+                      <span class="header2 text-blue">
+                        <%= container.store == "us" ? "CTUS" + container.container_number.to_s : "CTCA" + container.container_number.to_s %>
+                      </span><br>
+                      <span><%= container.arriving_to_dc.to_date.strftime("%B %d, %Y") %></span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          <% end %>
+        <% else %>
+          <p>There are no arriving containers for the time period selected.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <section id="container-arriving-results">
+    <%= render partial: "arriving_results", locals: { current_user: current_user } %>
+  </section>
+</div>
+
+<script type="text/javascript">
+  $(".print_container").on('click', function() {
+    window.open('<%= pdf_admin_containers_path() %>?container_id=' + $(this).data("container"), 'print', 'height=750px, width=1000px');  
+  });
+</script>
+
+<script type="text/javascript">
+  $(".received-button").on('click', function() {
+    $(this).addClass('disabled')
+    window.location.href='<%= arriving_admin_containers_path %>?container_id=' + $(this).data("container")
+    document.getElementById('loaderOverlay').style.display = "flex";
+  });
+
+  window.onload = function(){
+    console.log(document.getElementById('loaderOverlay').style.display);
+    document.getElementById('loaderOverlay').style.display = 'none';
+  }
+  
+</script>

@@ -1,0 +1,62 @@
+<div class="row">
+  <div class="col-12 mb-4">
+    <h5>Container Report</h5>
+  </div>
+  <div class="col-3 mb-4">
+    <label class="mr-2">Start Date</label>
+    <input type="date" class="form-control d-inline-block" style="width: calc(100% - 60px - 0.5rem)" value="<%= (@report_start_date - 8.hours).to_date %>" data-end-date="<%= @report_end_date %>" data-reflex="change->OrderReflex#update_report_start_date">
+  </div>
+  <div class="col-3 mb-4">
+    <label class="mr-2">End Date</label>
+    <input type="date" class="form-control d-inline-block" style="width: calc(100% - 60px - 0.5rem)" value="<%= (@report_end_date - 8.hours).to_date %>" data-start_date="<%= @report_start_date %>" data-reflex="change->OrderReflex#update_report_end_date">
+  </div>
+  <div class="col-2 mb-4">
+    <div class="drop-toggle w-100">
+      <%= @report_label %>
+      <i class="dripicons-chevron-down" style="left: auto; right: 25px"></i>
+    </div>
+    <div class="drop-menu" style="width: calc(100% - 30px)">
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_today">Today</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_7_days">Past 7 Days</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_30_days">Past 30 Days</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_90_days">Past 90 Days</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_year_to_date">Year To Date</div>
+    </div>
+  </div>
+  <div class="col-4 mb-4">
+    <%= link_to "Export", report_admin_orders_path(format: "csv", report_type: "container", report_start_date: @report_start_date, report_end_date: @report_end_date), class: "btn btn-primary" %>
+  </div>
+  <% containers_view = Container.where("(containers.created_at > ?) and (containers.created_at < ?)", @report_start_date, @report_end_date) %>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= containers_view.count %></h3>
+        <span>Containers</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= containers_view.where(status: "arrived").count %></h3>
+        <span>Arrived Containers</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= containers_view.where(status: "en_route").count %></h3>
+        <span>Enroute Containers</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= containers_view.where(status: "container_ready").count %></h3>
+        <span>Ready Containers</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<div class="container px-4">
+  <div class="row mb-3">
+    <div class="col-12">
+      <span class="header1">Orders</span>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 40%">Order Number</th>
+              <th style="width: 30%">Order Date</th>
+              <th style="width: 30%">Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @purchases.each do |purchase| %>
+              <% if !((purchase.purchase_items.pluck(:status) & ["in_production", "not_started", "completed"]).any?) %>
+                <tr>
+                  <% if purchase&.store == "us" %>
+                    <td><%=link_to "TUS" + "#{purchase.id}", admin_purchase_path(id: purchase.id, source: "complete"), data: { turbolinks: false } %></td>
+                  <% else %>
+                    <td><%=link_to "TCA" + "#{purchase.id}", admin_purchase_path(id: purchase.id, source: "complete"), data: { turbolinks: false } %></td>
+                  <% end %>
+                  <td><%= purchase.created_at.to_date.strftime("%B %d, %Y") %></th>
+                  <td><%= purchase&.purchase_items.pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

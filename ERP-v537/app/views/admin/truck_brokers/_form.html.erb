@@ -1,0 +1,33 @@
+<% if @truck_broker.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @truck_broker.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-6 mb-3">
+    <%= f.label :name, "Name" %>
+    <%= f.text_field :name, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <label>Country</label><br>    
+    <label class="mb-0 mr-2" style="vertical-align: middle">US</label>
+    <label class="checkbox checkbox-blue radio mr-4" style="vertical-align: middle">
+      <%= f.radio_button :country,  "us", required: true %>
+      <span class="checkmark"></span>
+    </label>    
+    <label class="mb-0 mr-2" style="vertical-align: middle">CA</label>
+    <label class="checkbox checkbox-blue radio mr-4" style="vertical-align: middle">
+      <%= f.radio_button :country,  "canada", required: true %>
+      <span class="checkmark"></span>
+    </label>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_truck_brokers_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

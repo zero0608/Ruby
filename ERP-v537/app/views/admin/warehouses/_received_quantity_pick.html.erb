@@ -1,0 +1,32 @@
+<div class="modal" id="quantityPickModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-thin">
+    <%= form_tag received_quantity_pick_admin_warehouses_path(received_quantity: params[:received_quantity]), html: { class: "form-horizontal form-bordered", id: "mearge" } do |f| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Qty Pick</span>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-12 mb-2">
+              <label>SKU: <%= @variant&.sku %></label>
+            </div>
+            <div class="col-12 mb-2">
+              <label>Quantity</label>
+              <%= text_field_tag "loc_id[#{@variant.id}]", "", class: "form-control" %>
+            </div>
+          </div>
+        </div>      
+        <div class="modal-footer">
+          <%= link_to "Cancel", request.referrer, class: "btn btn-secondary mr-4" %>
+          <button class="btn btn-primary" name="button" type="submit">Submit</button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# <script type='text/javascript'>
+  $('input[type="text"]').on('change', function() {
+    var check = $(this).val();
+  });
+</script> %>

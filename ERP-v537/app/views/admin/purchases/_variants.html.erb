@@ -1,0 +1,20 @@
+<div class="modal" id="variantPurchaseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_for [:admin,@purchase], html: {class: "form-horizontal form-bordered"} do |f| %>
+      <div class="modal-content modal-full-size">
+        <div class="modal-header">
+          <span class="header2 modal-title">Low Inventory</span>
+        </div>
+        <div class="modal-body">
+          <section id="purchase-variant-result">
+            <%= render partial: "search_variant", locals: { current_user: current_user } %>
+          </section>
+        </div>      
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

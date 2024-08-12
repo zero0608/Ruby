@@ -1,0 +1,287 @@
+<div class="container h-100 px-4 flex-auto d-flex flex-column">
+  <div class="row">
+    <div class="col-12 mb-3">
+      <span class="header2 mr-2" style="vertical-align: bottom"><%= current_user.employee.full_name %></span>
+      <a data-toggle="modal" data-target="#exportModal" data-employee-id="<%= current_user.employee_id %>" data-employee-name="<%= current_user.employee.full_name %>">
+        <%= show_svg("ri-download-line.svg") %>
+      </a>
+    </div>
+
+    <div class="col-12 col-md col-lg-2 mb-3">
+      <div class="w-100 h-100 p-3 bg-off-white text-center">
+        <span>Appointments</span>
+        <h1 class="text-black">
+          <%= current_user.employee.appointments.where("appointments.appointment_date >= ?", Date.today).count %>
+        </h1>
+      </div>
+    </div>
+
+    <div class="col-12 col-md mb-3 d-flex cursor-pointer" data-reflex="click->SaleReflex#update_dashboard_selection" data-selection="sales" data-employee="<%= current_user.employee_id %>" data-date="<%= @dashboard_date %>" onclick="triggerLoader()">
+      <div class="w-50 h-100 p-3 bg-off-white text-center">
+        <span>Sales</span>
+        <h1 class="text-black">
+          <%= current_user.employee.orders.where("orders.created_at >= ? AND orders.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).count %>
+        </h1>
+      </div>
+      <div class="w-50 h-100 p-3 bg-off-white text-center">
+        <span>Sales Amount</span>
+        <h1 class="text-black">
+          <%= number_to_currency(current_user.employee.orders.where("orders.created_at >= ? AND orders.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).sum { |order| order&.total_amount.to_f }) %>
+        </h1>
+      </div>
+    </div>
+
+    <div class="col-12 col-md mb-3 d-flex cursor-pointer" data-reflex="click->SaleReflex#update_dashboard_selection" data-selection="leads" data-employee="<%= current_user.employee_id %>" data-date="<%= @dashboard_date %>" onclick="triggerLoader()">
+      <div class="w-50 h-100 p-3 bg-off-white text-center">
+        <span>Pipeline</span>
+        <h1 class="text-black">
+          <%= current_user.employee.invoices.where("invoices.status = 0 AND invoices.created_at >= ? AND invoices.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).count %>
+        </h1>
+      </div>
+      <div class="w-50 h-100 p-3 bg-off-white text-center" data-reflex="click->saleReflex#update_dashboard_selection">
+        <span>Pipeline Amount</span>
+        <h1 class="text-black">
+          <%= number_to_currency(current_user.employee.invoices.where("invoices.status = 0 AND invoices.created_at >= ? AND invoices.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).sum { |invoice| invoice&.full_amount.to_f }) %>
+        </h1>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-12 col-lg mb-3">
+      <div class="row no-gutters h-100 p-3 bg-light-blue align-items-center cursor-pointer" onclick="getElementById('change_dashboard_date').showPicker()">
+        <div class="col text-center">
+          <h1 class="text-black font-weight-bold">
+            <%= @dashboard_date.beginning_of_week.strftime("%b %d") %>
+        </div>
+        <div class="col-1 text-center">
+          <span class="font-weight-bold" style="font-size: 30px">-</span>
+        </div>
+        <div class="col text-center">
+            <h1 class="text-black font-weight-bold">
+            <%= @dashboard_date.end_of_week.strftime("%b %d") %>
+          </h1>
+        </div>
+      </div>
+      <input type="date" id="change_dashboard_date" class="border-0" onchange="triggerLoader()" style="height: 0; width: 0" data-reflex="change->SaleReflex#update_dashboard_date" data-selection="<%= @dashboard_selection %>" data-employee="<%= @dashboard_employee %>">
+    </div>
+      
+    <% if current_user.employee.sales_permission == "manager" %>
+      <% Employee.where(exit_date: nil).where.not(id: current_user.employee_id).eager_load(:showroom_manage_permissions).where("employees.showroom_id = ? OR (showroom_manage_permissions.showroom_id = ? AND showroom_manage_permissions.permission IS TRUE)", current_showroom["id"], current_showroom["id"]).each do |employee| %>
+        <div class="col-12 mb-3">
+          <span class="header2 mr-2" style="vertical-align: bottom"><%= employee.full_name %></span>
+          <a data-toggle="modal" data-target="#exportModal" data-employee-id="<%= employee.id %>" data-employee-name="<%= employee.full_name %>">
+            <%= show_svg("ri-download-line.svg") %>
+          </a>
+        </div>
+        <div class="col-12 col-md col-lg-2 mb-3">
+          <div class="w-100 h-100 p-3 bg-off-white text-center">
+            <span>Appointments</span>
+            <h1 class="text-black">
+              <%= employee.appointments.where("appointments.appointment_date >= ?", Date.today).count %>
+            </h1>
+          </div>
+        </div>
+
+        <div class="col-12 col-md mb-3 d-flex cursor-pointer" data-reflex="click->SaleReflex#update_dashboard_selection" data-selection="sales" data-employee="<%= employee.id %>" data-date="<%= @dashboard_date %>" onclick="triggerLoader()">
+          <div class="w-50 h-100 p-3 bg-off-white text-center">
+            <span>Sales</span>
+            <h1 class="text-black">
+              <%= employee.orders.where("orders.created_at >= ? AND orders.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).count %>
+            </h1>
+          </div>
+          <div class="w-50 h-100 p-3 bg-off-white text-center">
+            <span>Sales Amount</span>
+            <h1 class="text-black">
+              <%= number_to_currency(employee.orders.where("orders.created_at >= ? AND orders.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).sum { |order| order&.total_amount.to_f }) %>
+            </h1>
+          </div>
+        </div>
+
+        <div class="col-12 col-md mb-3 d-flex cursor-pointer" data-reflex="click->SaleReflex#update_dashboard_selection" data-selection="leads" data-employee="<%= employee.id %>" data-date="<%= @dashboard_date %>" onclick="triggerLoader()">
+          <div class="w-50 h-100 p-3 bg-off-white text-center">
+            <span>Pipeline</span>
+            <h1 class="text-black">
+              <%= employee.invoices.where("invoices.status = 0 AND invoices.created_at >= ? AND invoices.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).count %>
+            </h1>
+          </div>
+          <div class="w-50 h-100 p-3 bg-off-white text-center">
+            <span>Pipeline Amount</span>
+            <h1 class="text-black">
+              <%= number_to_currency(employee.invoices.where("invoices.status = 0 AND invoices.created_at >= ? AND invoices.created_at < ?", @dashboard_date.beginning_of_week, @dashboard_date.end_of_week).sum { |invoice| invoice&.full_amount.to_f }) %>
+            </h1>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-12 col-lg mb-3 d-flex"></div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="row">
+    <div class="col-3 mb-3">
+      <span class="header2">
+        <% if @dashboard_selection.present? %>
+          <% if @dashboard_selection == "sales" %>
+            <%= Employee.find_by(id: @dashboard_employee).first_name %>'s Sales
+          <% else %>
+            <%= Employee.find_by(id: @dashboard_employee).first_name %>'s Leads
+          <% end %>
+        <% end %>
+      </span>
+    </div>    
+    <div class="col-9 mb-3 text-right">
+      <button class="btn btn-primary" data-toggle="modal" data-target="#newCustomerModal">New Lead</button>
+    </div>
+    <% if @dashboard_selection.present? %>
+      <% if @dashboard_selection == "sales" %>
+        <% @dashboard_sales.each do |order| %>
+          <div class="col-12 mb-3">
+            <div class="row h-100 mx-0 py-3 border align-items-center">
+              <div class="col-6 col-md-2 col-lg-14">
+                <%= link_to order&.customer&.full_name, admin_customer_path(order&.customer&.id), class: "header2 text-blue" %>
+              </div>
+              <div class="col-6 col-md-2 col-lg-09">
+                <span class="text-light-grey">Phone Number</span><br>
+                <span><%= order&.customer&.phone.present? ? order&.customer&.phone : "-" %></span>
+              </div>
+              <div class="col-6 col-md-2 col-lg-14">
+                <span class="text-light-grey">Email</span><br>
+                <span><%= order&.customer&.email.present? ? order&.customer&.email : "-" %></span>
+              </div>
+              <div class="col-6 col-md-3 col-lg-10">
+                <span class="text-light-grey">Proposal Invoice</span><br>
+                <%= link_to order&.invoice&.invoice_number, edit_admin_invoice_path(id: order&.invoice&.id) if order&.invoice.present? %>
+              </div>
+              <div class="col-6 col-md-3 col-lg-14">
+                <span class="text-light-grey">Products</span><br>
+                <span><%= order&.line_items.map { |li| li&.variant&.sku }&.join(", ").present? ? order&.line_items.map { |li| li&.variant&.sku }&.join(", ") : "-" %></span>
+              </div>
+              <div class="col-6 col-md-2 col-lg-09">
+                <span class="text-light-grey">Order Amount</span><br>
+                <span><%= number_to_currency(order&.total_amount.to_f) %></span>
+              </div>
+              <div class="col-6 col-md-2 col-lg-09">
+                <span class="text-light-grey">Source</span><br>
+                <span><%= order&.invoice&.source.present? ? order&.invoice&.source : "-" %></span>
+              </div>
+              <div class="col-6 col-md-8 col-lg">
+                <span class="text-light-grey">Notes</span><br>
+                <span><%= order&.invoice&.notes.present? ? order&.invoice&.notes : "-" %></span>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <% @dashboard_leads.each do |invoice| %>
+          <div class="col-12 mb-3">
+            <div class="row h-100 mx-0 py-3 border align-items-center">
+              <div class="col-6 col-md-2 col-lg-14">
+                <%= link_to invoice&.customer&.full_name, admin_customer_path(invoice&.customer&.id), class: "header2 text-blue" %>
+              </div>
+              <div class="col-6 col-md-2 col-lg-09">
+                <span class="text-light-grey">Phone Number</span><br>
+                <span><%= invoice&.customer&.phone.present? ? invoice&.customer&.phone : "-" %></span>
+              </div>
+              <div class="col-6 col-md-2 col-lg-14">
+                <span class="text-light-grey">Email</span><br>
+                <span><%= invoice&.customer&.email.present? ? invoice&.customer&.email : "-" %></span>
+              </div>
+              <div class="col-6 col-md-3 col-lg-10">
+                <span class="text-light-grey">Proposal Invoice</span><br>
+                <%= link_to invoice&.invoice_number, edit_admin_invoice_path(invoice&.id) %>
+              </div>
+              <div class="col-6 col-md-3 col-lg-14">
+                <span class="text-light-grey">Products</span><br>
+                <span><%= invoice&.invoice_line_items.map { |li| li&.product_variant&.sku }&.join(", ").present? ? invoice&.invoice_line_items.map { |li| li&.product_variant&.sku }&.join(", ") : "-" %></span>
+              </div>
+              <div class="col-6 col-md-2 col-lg-09">
+                <span class="text-light-grey">Lead Amount</span><br>
+                <span><%= number_to_currency(invoice&.full_amount.to_f) %></span>
+              </div>
+              <div class="col-6 col-md-2 col-lg-09">
+                <span class="text-light-grey">Source</span><br>
+                <span><%= invoice&.source.present? ? invoice&.source : "-" %></span>
+              </div>
+              <div class="col-6 col-md-8 col-lg">
+                <span class="text-light-grey">Notes</span><br>
+                <span><%= invoice&.notes.present? ? invoice&.notes : "-" %></span>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%= render partial: "admin/customers/new_customer_lead" %>
+
+<%= form_tag report_admin_customers_path(format: "csv"), target: "_blank" do |f| %>
+  <div class="modal" id="exportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">
+            Export <span id="employee_name"></span>
+          </span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body d-flex">
+          <%= hidden_field_tag :employee_id %>
+          <div class="col-6">
+            <label>Year</label>
+            <%= select_year(Date.today, { start_year: Date.today.year, end_year: Date.today.year - 3 }, { class: "form-control" }) %>
+          </div>
+          <div class="col-6">
+            <label>Month</label>
+            <%= select_month(Date.today, {}, { class: "form-control" }) %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary", onclick: "triggerLoader()" %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script type="text/javascript">
+  function triggerLoader() {
+    document.getElementById("loaderOverlay").style.display = "flex";
+    document.getElementById("loaderOverlay").style.left = 0;
+
+    setTimeout(function() {
+      document.getElementById("loaderOverlay").style.display = "none";
+    }, 10000);
+  }
+
+  $("a[data-target='#exportModal']").on("click", function() {
+    $("#exportModal #employee_id").val($(this).data("employee-id"));
+    $("#exportModal #employee_name").text($(this).data("employee-name"));
+  });
+
+  $("#exportModal input[type='submit']").on("click", function() {
+    location.reload();
+  });
+</script>
+
+<style>
+  @media (min-width: 992px) {
+    .col-lg-09 {
+      flex: 0 0 9%;
+      max-width: 9%;
+    }
+
+    .col-lg-10 {
+      flex: 0 0 10%;
+      max-width: 10%;
+    }
+
+    .col-lg-14 {
+      flex: 0 0 14%;
+      max-width: 14%;
+    }
+  }
+</style>

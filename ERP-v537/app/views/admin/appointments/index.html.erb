@@ -1,0 +1,87 @@
+<div class="container px-4 pt-3 flex-auto">
+  <div class="row mx-0">
+    <div class="col-12 col-md-3 mb-3 border">
+      <p class="header2 py-3 border-bottom"><%= @current_date.strftime("%A, %b %d") %></p>
+      <% if @calendar_appointments.where(appointment_date: @current_date).count > 0 %>
+        <% @calendar_appointments.where(appointment_date: @current_date).sort_by { |a| DateTime.new(a.appointment_date.year, a.appointment_date.month, a.appointment_date.day, a.appointment_time.hour, a.appointment_time.min) }.each do |appointment| %>
+          <div class="mb-3">
+            <span class="header2 text-blue">
+              <%= appointment.appointment_time.strftime("%l:%M %p") %> -
+              <%= (appointment.appointment_time + 30.minutes).strftime("%l:%M %p") %>
+            </span><br>
+            <%= link_to appointment.customer.full_name, admin_customer_path(appointment.customer_id), class: "header2 text-blue" %><br>
+            <span class="font-weight-bold text-black">T: <%= appointment.customer&.phone %></span><br>
+            <span class="font-weight-bold text-black">E: <%= appointment.customer&.email %></span><br>
+            <% case appointment.appointment_type %>
+              <% when "in_store" %>
+                <span class="font-weight-bold text-green"><%= appointment.appointment_type.titleize %></span><br>
+              <% when "virtual" %>
+                <span class="font-weight-bold text-red-clay"><%= appointment.appointment_type.titleize %></span><br>
+              <% when "phone" %>
+                <span class="font-weight-bold text-blue"><%= appointment.appointment_type.titleize %></span><br>
+            <% end %>
+            <% if appointment.notes.present? %>
+              <span><%= appointment.notes %></span><br>
+            <% end %>
+            <span>Booked With: <%= appointment.employee.full_name %></span>
+          </div>
+        <% end %>
+      <% else %>
+        <span>No appointments booked.</span>
+      <% end %>
+    </div>
+    <div class="col-12 col-md-9 mb-3">
+      <%= month_calendar(events: @calendar_appointments) do |date, appointments| %>
+        <%= date.day %>
+        <% appointments.sort_by { |a| DateTime.new(a.appointment_date.year, a.appointment_date.month, a.appointment_date.day, a.appointment_time.hour, a.appointment_time.min) }.each do |appointment| %>
+          <% case appointment.appointment_type %>
+            <% when "in_store" %>
+              <div class="calendar-event text-green border-green bg-light-green px-3 mb-1 position-relative">
+                <div class="position-absolute bg-green h-100" title="In Store" style="width: 5px; top: 0; left: 0"></div>
+                <%= appointment.customer.full_name %>
+              </div>
+            <% when "virtual" %>
+              <div class="calendar-event text-red-clay border-red-clay bg-red-clay-light px-3 mb-1 position-relative">
+                <div class="position-absolute bg-red-clay h-100" title="Virtual" style="width: 5px; top: 0; left: 0"></div>
+                <%= appointment.customer.full_name %>
+              </div>
+            <% when "phone" %>
+              <div class="calendar-event text-blue border-blue bg-light-blue px-3 mb-1 position-relative">
+                <div class="position-absolute bg-blue h-100" title="Phone" style="width: 5px; top: 0; left: 0"></div>
+                <%= appointment.customer.full_name %>
+              </div>
+          <% end %>
+        <% end %>
+        <div class="position-absolute h-100 w-100" style="top: 0; left: 0; <%= "border: solid 2px var(--grey)" if date == @current_date %>" data-date="<%= date %>" data-reflex="click->AppointmentReflex#update_calendar_date"></div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%= render partial: "new_appointment" %>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    $(".calendar-heading").prepend('<span class="header2 mr-4">Calendar</span>');
+    $(".calendar-heading").attr("data-reflex-permanent", true);
+
+    $(".calendar-heading a").first().html('<span class="icon-left"><%= show_svg("arrow.svg") %></span>');
+    $(".calendar-heading a").last().html('<span class="icon-right"><%= show_svg("arrow.svg") %></span>');
+
+    $(".calendar-heading").append('<button class="btn btn-primary mb-2 float-md-right" type="button" data-toggle="modal" data-target="#newAppointmentModal"><%= show_svg("plus.svg") %> Create Appointment</button>');
+    updateCalendarHeight();
+  });
+
+  $(document).on("stimulus-reflex:after", function() {
+    updateCalendarHeight();
+  });
+
+  function updateCalendarHeight() {
+    $(".calendar-event").each(function() {
+      if ($(this).parent().height() < 35 + 25 * $(this).parent().children(".calendar-event").length) {
+        $(this).parent().height(35 + 25 * $(this).parent().children(".calendar-event").length);
+        $(this).parent().siblings("td").height(35 + 25 * $(this).parent().children(".calendar-event").length);
+      }
+    });
+  }
+</script>

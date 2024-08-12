@@ -1,0 +1,38 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-12 mb-3">
+        <span class="header1"> Edit Location</span>
+      </div>
+      <div class="col-12 mb-3 border-bottom"></div>
+
+      <div class="col-12 mb-3">
+        <span class="header1">Select Rack</span>
+      </div>
+
+      <% @rack_list.each do |rack| %>
+        <div class="col-4 px-2 mb-3">
+          <a href="<%= edit_selected_location_admin_warehouses_path(rack: rack) %>" class="d-block w-100 bg-white border-light-grey rounded-5 p-4">
+            <span class="header1"><%= rack %></span><br>
+            <span class="text-light-grey">Rack</span>
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= unassigned_locations_admin_warehouses_path %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>

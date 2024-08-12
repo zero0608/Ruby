@@ -1,0 +1,350 @@
+<% if @employee.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @employee.errors.full_messages.each do |message| %>
+        <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-12 mb-3">
+    <div class="btn btn-light-blue d-flex">
+      <div class="w-100 text-left">
+        <span class="header2">Personal Information</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :first_name, "First Name" %>
+    <span class="text-red">*</span>
+    <%= f.text_field :first_name, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :last_name, "Last Name" %>
+    <span class="text-red">*</span>
+    <%= f.text_field :last_name, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :email, "Personal Email" %>
+    <span class="text-red">*</span>
+    <%= f.text_field :email, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :phone, "Phone" %>
+    <span class="text-red">*</span>
+    <%= f.text_field :phone, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :dob, "Date of Birth" %>
+    <span class="text-red">*</span>
+    <%= f.date_field :dob, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :department_id, "Department" %>
+    <span class="text-red">*</span>
+    <%= f.select :department_id, options_for_select(Department.all.map { |s| [s.name, s.id] }, f.object.department_id), { required: true }, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :manager_id, "Reporting Manager" %>
+    <%= f.select :manager_id, options_for_select(Employee.where(exit_date: nil).joins(:position).where("is_director = ? or positions.is_manager = ?", true, true).map { |s| [s.full_name, s.id, { "data-department": (s.is_director ? 0 : s.department_id) }] }, f.object.manager_id), { include_blank: true }, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :position_id, "Position" %>
+    <span class="text-red">*</span>
+    <%= f.select :position_id, options_for_select(Position.all.map { |s| [s.name, s.id, { "data-department": s.department_id }] }, f.object.position_id), { include_blank: true }, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :employment_type, "Employment Type" %>
+    <%= f.select :employment_type, options_for_select(["Full Time", "Part Time", "Contract"], @employee.employment_type), {}, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :health_number, "Extended Health Number" %>
+    <%= f.text_field :health_number, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :emergency_contact, "Emergency Contact Full Name" %>
+    <%= f.text_field :emergency_contact, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :emergency_number, "Emergency Contact Number" %>
+    <%= f.text_field :emergency_number, class: "form-control" %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <div class="btn btn-light-blue d-flex">
+      <div class="w-100 text-left">
+        <span class="header2">Dates & Salary</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 mb-3">
+    <label class="mb-3">Work Days</label>
+    <div class="d-flex">
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_sun %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">S</p>
+      </div>
+
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_mon %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">M</p>
+      </div>
+
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_tue %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">T</p>
+      </div>
+        
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_wed %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">W</p>
+      </div>
+      
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_thu %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">T</p>
+      </div>
+      
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_fri %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">F</p>
+      </div>
+
+      <div class="col text-center">
+        <label class="checkbox checkbox-blue radio">
+          <%= f.check_box :work_sat %>
+          <span class="checkmark"></span>
+        </label>
+        <p class="font-weight-bold">S</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :start_date, "Start Date" %>
+    <%= f.date_field :start_date, class: "form-control" %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :exit_date, "Date of Exit" %>
+    <%= f.date_field :exit_date, class: "form-control" %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :voluntary_exit, "Voluntary Exit" %>
+    <%= f.select :voluntary_exit, options_for_select({ "Yes" => true, "No" => false }, @employee.voluntary_exit), { include_blank: true }, class: "form-control" %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :salary, "Pay" %>
+    <%= f.number_field :salary, class: "form-control", step: :any %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :pay_type, "Type" %>
+    <%= f.select :pay_type, options_for_select(["Annual", "Hourly", "Payment"], @employee.pay_type), { include_blank: true }, class: "form-control" %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :bonus, "Bonus" %>
+    <%= f.number_field :bonus, class: "form-control", step: :any %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :pto_days, "Paid Time Off Days" %>
+    <span class="text-red">*</span>
+    <%= f.number_field :pto_days, class: "form-control", step: 0.5, required: true %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :personal_days, "Personal Days" %>
+    <span class="text-red">*</span>
+    <% if params[:action] == "new" %>
+      <%= f.number_field :personal_days, value: 2, step: 0.5, class: "form-control", required: true %>
+    <% else %>
+      <%= f.number_field :personal_days, class: "form-control", step: 0.5, required: true %>
+    <% end %>
+  </div>
+
+  <div class="col-2 mb-3">
+    <%= f.label :sick_days, "Sick Days" %>
+    <span class="text-red">*</span>
+    <% if params[:action] == "new" %>
+      <%= f.number_field :sick_days, value: 5, step: 0.5, class: "form-control", required: true %>
+    <% else %>
+      <%= f.number_field :sick_days, class: "form-control", step: 0.5, required: true %>
+    <% end %>
+  </div>
+
+  <% if params[:action] == "edit" %>
+    <div class="col-2 offset-6 mb-3">
+      <%= f.label :pto_remain, "Paid Time Off Remain" %>
+      <%= f.number_field :pto_remain, class: "form-control", step: 0.5 %>
+    </div>
+
+    <div class="col-2 mb-3">
+      <%= f.label :personal_remain, "Personal Days Remain" %>
+      <%= f.number_field :personal_remain, class: "form-control", step: 0.5 %>
+    </div>
+
+    <div class="col-2 mb-3">
+      <%= f.label :sick_remain, "Sick Days Remain" %>
+      <%= f.number_field :sick_remain, class: "form-control", step: 0.5 %>
+    </div>
+  <% end %>
+
+  <div class="col-12 mb-3">
+    <div class="btn btn-light-blue d-flex">
+      <div class="w-100 text-left">
+        <span class="header2">Attachments & Notes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 mb-3">
+    <div class="file-input-container" id="dropzone">
+      <%= f.file_field :documents, multiple: true, class: "file-temp", id: "files_upload", accept: ".pdf" %>
+      <span class="font-weight-bold">Drop files here or click to upload</span>
+      <p>(File format: pdf only. File size no larger than 10MB per file.)</p>
+      <div class="d-flex justify-content-center">
+        <div class="col-4">
+          <div class="btn btn-secondary file-input">Browse Files</div>
+        </div>
+      </div>
+    </div>
+    <div class="file-name"></div>
+  </div>
+    
+  <div class="col-6 mb-3">
+    <%= f.label :hr_notes, "HR Notes" %>
+    <%= f.text_area :hr_notes, class: "form-control", style: "height: calc(100% - 1.5em - 0.75rem - 2px)" %>
+  </div>
+      
+  <% if f.object.documents.present? %>
+    <div class="col-6 mb-4">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% f.object.documents.each do |doc| %>
+              <tr>
+                <% if doc.created_at? %>
+                  <td><%= link_to doc.filename, doc, target: :_blank  %></td>
+                  <td><%= (doc.byte_size / (1024.0 * 1024.0)).round(2) %>MB</td>
+                  <td><%= doc.created_at.to_date.strftime('%B %d, %Y') %></td>
+                  <td class="text-center">
+                    <%= link_to delete_upload_admin_employee_path(employee_id: @employee.id, doc_id: doc), method: :delete, data: { confirm: "You sure?" } do %>
+                      <%= show_svg("close.svg") %>
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="col-12 mb-3 text-right">
+    <%= link_to "Cancel", admin_department_path(f.object.department_id), class: "btn btn-secondary" %>
+    <%= f.submit "Submit", class: "btn btn-primary ml-4" %>
+    <% if f.object.checklists.present? %>
+      <a href="<%= list_admin_employee_path(@employee.id) %>">
+        <button class="btn btn-primary ml-4 checkshow-toggle" type="button">
+          <span class="icon-right">
+            <%= show_svg("arrow.svg") %>
+          </span>
+          Checklist
+        </button>
+      </a>
+    <% end %>
+  </div>
+</div>
+
+<% unless @employee&.department&.name&.downcase&.include? "sales" %>
+  <style>
+    .commission-rate { display: none; }
+  </style>
+<% end %>
+
+<script type="text/javascript">
+  $(document).on("turbolinks:load", function() {
+    $("#employee_manager_id option").each(function() {
+      if ($(this).data("department") != "0" && $(this).data("department") != "<%= f.object.department_id %>") {
+        $(this).hide();
+      }
+    });
+    
+    $("#employee_position_id option").each(function() {
+      if ($(this).data("department") != "<%= f.object.department_id %>") {
+        $(this).hide();
+      }
+    });
+  });
+
+  $("#employee_department_id").on("change", function() {
+    if ($("#employee_department_id option:selected")[0].innerHTML.toLowerCase().indexOf("sales") >= 0) {
+      $(".commission-rate").show();
+    } else {
+      $(".commission-rate").hide();
+    }
+
+    var department = $(this).val();
+    $("#employee_manager_id").val("");
+    $("#employee_manager_id option").each(function() {
+      if ($(this).data("department") != "0" && $(this).data("department") != department) {
+        $(this).hide();
+      } else {
+        $(this).show();
+      }
+    });
+    
+    $("#employee_position_id").val("");
+    $("#employee_position_id option").each(function() {
+      if ($(this).data("department") != department) {
+        $(this).hide();
+      } else {
+        $(this).show();
+      }
+    });
+
+  });
+</script>

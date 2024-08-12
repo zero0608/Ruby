@@ -1,0 +1,67 @@
+<% if @store_address.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @store_address.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-6 mb-3">
+    <%= f.label :store, "Store" %>
+    <%= f.select :store, ["us", "canada"], {}, class: "form-control" , required: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :exchange_rate, "Exchange Rate (USD to ...)" %>
+    <%= f.number_field :exchange_rate, class: "form-control", step: :any %>
+  </div>
+  
+  <div class="col-6 mb-3">
+    <%= f.label :address, "Address" %>
+    <%= f.text_field :address, class: 'form-control', required: true %>
+  </div>
+  
+  <div class="col-6 mb-3">
+    <%= f.label :city, "City" %>
+    <%= f.text_field :city, class: 'form-control', required: true %>
+  </div>
+  
+  <div class="col-6 mb-3">
+    <%= f.label :state, "State" %>
+    <%= f.text_field :state, class: 'form-control', required: true %>
+  </div>
+  
+  <div class="col-6 mb-3">
+    <%= f.label :zip, "ZIP" %>
+    <%= f.text_field :zip, class: 'form-control', required: true %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_store_addresses_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 40%">warehouse Name</th>
+          <th style="width: 20%">Store</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% f.object.warehouses.each do |house| %>
+          <tr>
+            <td><%= house.name %></td>
+            <td><%= house.store %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>

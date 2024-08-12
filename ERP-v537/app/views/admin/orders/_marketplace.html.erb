@@ -1,0 +1,43 @@
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 25%">Description</th>
+        <th style="width: 15%">SKU</th>
+        <th style="width: 10%">On Hand</th>
+        <th style="width: 10%">Quote Value</th>
+        <th style="width: 10%">Sold Value</th>
+        <th style="width: 15%">Sold Date</th>
+        <th style="width: 5%">Status</th>
+        <th style="width: 10%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @market_products.each do |mp| %>
+        <tr>
+          <td><%= mp.line_item&.title %></td>
+          <td><%= "MP-" + mp.line_item.sku.upcase if mp.line_item.sku.present? %></td>
+          <td><%= mp.quantity %></td>
+          <td><%= mp.quote_amount %></td>
+          <td><%= mp.sold_value %></td>
+          <td><%= mp.sold_date&.strftime("%B %d, %Y") %></td>
+          <td>
+            <% if mp.status == "pending" %>
+              <span class="badge badge-outline-blue"><%= mp.status.titleize %></span>
+            <% else %>
+              <span class="badge badge-outline-green"><%= mp.status.titleize %></span>
+            <% end %>
+          </td>
+          <td>
+            <% if mp.status == "pending" %>
+              <%= link_to "Sold", stock_admin_orders_path(return_status: "marketplace", market_product_id: mp.id), class: "btn btn-primary", remote: true %>
+              <div id="sellMarketItem"></div>
+            <% else %>
+              <button type="button" class="btn btn-primary" disabled>Sold</button>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

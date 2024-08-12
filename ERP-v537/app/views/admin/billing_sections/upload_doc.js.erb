@@ -1,0 +1,2 @@
+$("#upload").append("<%= escape_javascript(render partial: 'upload_doc', locals: { order: @order, invoice: @invoice, section: params[:section], invoice_id: @invoice.id, invoice_type: params[:invoice_type] }) %>");
+$("#uploadModal").modal('show');

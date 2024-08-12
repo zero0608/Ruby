@@ -1,0 +1,77 @@
+<% if @white_glove_address.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @white_glove_address.errors.full_messages.each do |message| %>
+        <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<%= f.hidden_field :white_glove_directory_id, value: @white_glove_directory.id %>
+
+<div class="row">
+  <div class="col-6 mb-3">
+    <%= f.label :company, "Company" %>
+    <%= f.text_field :company, class: "form-control", value: @white_glove_directory.company_name, readonly: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :contact, "Contact" %>
+    <%= f.text_field :contact, class: "form-control" %>
+  </div>
+  
+  <div class="col-6 mb-3">
+    <%= f.label :address1, "Address Line" %>
+    <%= f.text_field :address1, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :city, "City" %>
+    <%= f.text_field :city, class: "form-control", required: true %>
+  </div>
+  
+  <div class="col-4 mb-3">
+    <%= f.label :address2, "State" %>
+    <%= f.text_field :address2, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-4 mb-3">
+    <%= f.label :country, "Country" %>
+    <%= f.text_field :country, class: "form-control", value: @white_glove_directory.store, readonly: true %>
+  </div>
+  
+  <div class="col-4 mb-3">
+    <%= f.label :zip, "Zip Code" %>
+    <%= f.text_field :zip, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :phone, "Phone" %>
+    <%= f.text_field :phone, class: "form-control" %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :email, "Email" %>
+    <%= f.text_field :email, class: "form-control" %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :receiving_hours, "Receiving Hours" %>
+    <%= f.text_field :receiving_hours, class: "form-control" %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <label>Delivery Notification Required</label><br>
+    <%= f.check_box :delivery_notification,  data: { switch: "blue" } %>
+    <%= f.label :delivery_notification, "&nbsp;".html_safe %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= f.label :notes, "Notes" %>
+    <%= f.text_area :notes, class: "form-control" %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", edit_admin_white_glove_directory_path(id: @white_glove_address.white_glove_directory_id), class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

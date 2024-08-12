@@ -1,0 +1,2 @@
+$("#receiveLineItem").append("<%= escape_javascript(render partial: "receive_line_item", locals: { return_line_item: @return_line_item }) %>");
+$("#receiveModal-<%= @return_line_item.id %>").modal("show");

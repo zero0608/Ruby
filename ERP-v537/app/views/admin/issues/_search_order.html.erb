@@ -1,0 +1,13 @@
+<div class="table-responsive">
+  <table class="table table-borderless table-hover">
+    <tbody>
+        <% @orders&.each do |order| %>
+          <tr>
+            <td class="order-search" data-id="<%= order.id %>" data-issue-id="<%= @issue_id %>" data-reflex="click->IssueReflex#add_tag_order">
+              <%= order.name %>
+            </td>
+          </tr>
+        <% end %>
+    </tbody>
+  </table>
+</div>

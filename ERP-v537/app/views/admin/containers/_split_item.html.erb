@@ -1,0 +1,85 @@
+<div class="modal" id="splitModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag split_item_admin_containers_path, html: { class: "form-horizontal form-bordered", id: "split" } do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">        
+          <span class="header2 modal-title">Split Order</span>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="table-responsive">
+              <table class="table table-borderless table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 40%">Description</th>
+                    <th style="width: 40%">SKU</th>
+                    <th style="width: 20%">Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><%= @purchase_item1.product_variant.title %></td>
+                    <td><%= @purchase_item1.product_variant.sku.upcase %></td>
+                    <td><%= @purchase_item1.quantity %></td>
+                  </tr>
+                  <tr>
+                    <td><%= @purchase_item1.product_variant.title %></td>
+                    <td><%= @purchase_item1.product_variant.sku.upcase %></td>
+                    <td><%= text_field_tag "purchase_item1[#{@purchase_item1.id}]", "", class: "form-control w-75 d-inline-block" %></td>
+                  </tr>
+                  <tr>
+                    <td><%= @purchase_item.product_variant.title %></td>
+                    <td><%= @purchase_item.product_variant.sku.upcase %></td>
+                    <td>
+                      <%= text_field_tag "purchase_item[]", "", class: "form-control w-75 d-inline-block" %>
+                      <% if LineItem.eager_load(:order).joins(:order).where(purchase_item_id: @purchase_item1.id, purchase_id: @purchase_item1.purchase_id).where.not(status: :cancelled, orders: { status: 'cancel_confirmed'}).present? %>
+                        <span class="icon-left ml-2">
+                          <%= show_svg("arrow.svg") %>
+                        </span>
+                      <% end %>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <% if LineItem.eager_load(:order).joins(:order).where(purchase_item_id: @purchase_item1.id, purchase_id: @purchase_item1.purchase_id).where.not(status: :cancelled, orders: { status: 'cancel_confirmed'}).present? %>
+            <div class="row mx-0">
+              <div class="table-responsive">
+                <table class="table table-borderless table-hover">
+                  <thead>
+                    <tr>
+                      <th style="width: 40%">Order Number</th>
+                      <th style="width: 40%">Qty</th>
+                      <th style="width: 20%">Split</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% LineItem.eager_load(:order).joins(:order).where(purchase_item_id: @purchase_item1.id, purchase_id: @purchase_item1.purchase_id).where.not(status: :cancelled, orders: { status: 'cancel_confirmed'}).each do |line_item| %>
+                      <tr>
+                        <td><%= line_item&.order&.name %></td>
+                        <td><%= line_item&.quantity %></td>
+                        <td><%= check_box_tag "line_item_ids[]", line_item.id %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <%= link_to "Cancel", new_admin_container_path, class: "btn btn-secondary mr-4" %>
+          <button class="btn btn-primary" name="button" type="submit">Submit</button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $('#split').on('submit', function() {
+    $('#splitModal').modal('hide');
+  });
+</script>

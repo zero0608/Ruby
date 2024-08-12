@@ -1,0 +1,148 @@
+<%- if params[:report_type] == "inventory" -%>
+  <%- headers = ["SKU", "Description", "Quantity", "Not Ready", "In Production", "Container Ready", "Enroute", "Status"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @product_variants.each do |variant| -%>
+    <%- enroute = 0 -%>
+    <%- variant&.purchase_items.where(line_item_id: nil).each do |item| -%>
+      <%- if item.containers.present? -%>
+        <%- item.containers.each do |cant| -%>
+          <%- enroute = enroute + item.try(:quantity).to_i if !(cant.status == "arrived") -%>
+        <%- end -%>
+      <%- end -%>
+    <%- end -%>
+<%= CSV.generate_line([variant.sku.upcase, variant&.title.html_safe, variant&.inventory_quantity.to_i, variant.purchase_items.where(status: :not_started).pluck(:quantity).reject(&:blank?).map(&:to_i).sum, variant.purchase_items.where(status: :in_production).pluck(:quantity).reject(&:blank?).map(&:to_i).sum, variant.purchase_items.where(status: :container_ready).pluck(:quantity).reject(&:blank?).map(&:to_i).sum, enroute, variant&.stock]).html_safe -%>
+  <%- end -%>
+
+<%- elsif params[:report_type] == "overstock" -%>
+  <%- headers = ["SKU", "Description", "Qty"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @product_variants.each do |variant| -%>
+<%= CSV.generate_line([variant.sku.upcase, varaint&.title.html_safe, variant&.inventory_quantity.to_i]).html_safe %>
+  <%- end -%>
+
+<%- elsif params[:report_type] == "order" -%>
+  <%- headers = ["Order Number", "Description", "SKU", "Qty", "Product Status", "Shipping Status", "Subtotal", "Shipping Cost", "Tax", "Total", "Order Date", "Order Status"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @orders.each do |order| -%>
+    <%- subtotal = 0 -%>
+    <%- order.line_items.each do |item| -%>
+      <%- subtotal = subtotal + mul(item&.price, item&.quantity) -%>
+    <%- end -%>
+    <%- ship_cost = 0 -%>
+    <%- if order.shipping_line.present? -%>
+      <%- ship_cost = order&.shipping_line&.price -%>
+    <%- end -%>
+    <%- tax_cost = 0 -%>
+    <%- if order.tax_lines.present? -%>
+      <%- tax_cost = order&.tax_lines['price'] -%>
+    <%- end -%>
+    <%- discount = 0 -%>
+    <%- if order.discount_codes.present? -%>
+      <%- discount = order&.discount_codes["discount_amount"].to_f.abs -%>
+    <%- end -%>
+    <%- refund = 0 -%>
+    <%- if order.order_adjustments.present? -%>
+      <%- order.order_adjustments.each do |adj| -%>
+        <%- refund = refund + (adj.amount).to_f -%>
+      <%- end -%>
+    <%- end -%>
+    <%- total = subtotal.to_f - discount.to_f + ship_cost.to_f + tax_cost.to_f + refund.to_f -%>
+    <%- order_status = "" %>
+    <%- unless order.status == "in_progress" -%>
+      <%- order_status = order.status.titleize -%>
+    <%- else -%>
+      <%- if order.shipping_details.all? {|ship| ship.status == 'shipped'} -%>
+        <%- order_status = "Order Fulfilled" -%>
+      <%- elsif order.shipping_details.any? {|ship| ship.status == 'shipped'} -%>
+        <%- order_status = "Partial Shipped" -%>
+      <%- else -%>
+        <%- order_status = order.shipping_details.first.status.titleize -%>
+      <%- end -%>
+    <%- end -%>
+    <%- order.shipping_details.each do |ship| -%>
+      <%- ship.line_items.each do |item| -%>
+        <%= CSV.generate_line([order.name, item.title, item.sku, item.quantity, item.status&.titleize, ship.status&.titleize, subtotal, ship_cost, tax_cost, total, order.created_at, order_status]).html_safe -%>
+      <%- end -%>
+    <%- end -%>
+  <%- end -%>
+
+<%- elsif params[:report_type] == "shipment" -%>
+  <%- headers = ["Order Number", "Customer Name", "Shipping Address", "Shipment Type", "WGD Upgrade", "Local", "Estimated Shipping Cost", "Actual Invoiced", "WGD Cost", "Additional Charges", "Total Shipping Cost", "Customer Invoiced", "Additional Fees", "Shipped Date"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @shipping_details.each do |ship| -%>
+    <%- local = "" -%>
+    <%- if ship.local_pickup == "1" -%>
+      <%- local = "Yes" -%>
+    <%- else -%>
+      <%- local = "No" -%>
+    <%- end -%>
+    <%- additional_charge = 0 -%>
+    <%- ship.shipping_costs.each do |cost| -%>
+      <%- if cost.cost_type == "charges" -%>
+        <%- additional_charge = additional_charge + cost.amount.to_f -%>
+      <%- end -%>
+    <%- end -%>
+    <%- additional_fee = 0 -%>
+    <%- ship.shipping_costs.order(:created_at) do |cost| -%>
+      <%- if cost.cost_type == "fees" -%>
+        <%- additional_fee = additional_fee + cost.amount.to_f -%>
+      <%- end -%>
+    <%- end -%>
+    <%- total = 0 -%>
+    <%- if ship.actual_invoiced.present? -%>
+      <%- total = ship&.actual_invoiced.to_f + ship&.white_glove_fee.to_f + additional_charge -%>
+    <%- else -%>
+      <%- total = ship&.estimated_shipping_cost.to_f + ship&.white_glove_fee.to_f + additional_charge -%>
+    <%- end -%>
+<%= CSV.generate_line([ship.order.name, ship.order&.customer&.full_name&.titleize, ship.order&.shipping_address&.complete_address, ship.order&.shipping_line&.title, ship.upgrade&.titleize, local, ship&.estimated_shipping_cost.to_f, ship&.actual_invoiced.to_f, ship&.white_glove_fee.to_f, additional_charge, total, ship.order&.shipping_line&.price.to_f, additional_fee, ship.shipped_date]).html_safe -%>
+  <%- end -%>
+<%- elsif params[:report_type] == "issue" -%>
+  <%- headers = ["Claim", "Customer Name", "Order Number", "Claim Title", "Product SKU", "Product Description", "Product Qty", "Manufacturer", "Carrier", "Claim Description", "Shipping Charges", "Shipping Amount", "Claim Resolution", "Resolution Amount"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @issues.each do |issue| -%>
+    <%- name = "" -%>
+    <%- if issue&.order&.store == "us" -%>
+      <%- name = "ISSUS-" + issue&.id.to_s -%>
+    <%- elsif issue&.order&.store == 'canada' -%>
+      <%- name = "ISSCA-" + issue&.id.to_s -%>
+    <%- end -%>
+    <%- shipping_charges = "" -%>
+    <%- shipping_amount = "" -%>
+    <%- resolutions = "" -%>
+    <%- resolution_amount = "" -%>
+    <%- issue.issue_details.each do |issue_detail| -%>
+			<%- if issue_detail.main_type == "Shipping Charges" -%>
+        <%- shipping_charges = shipping_charges + issue_detail.sub_type&.titleize + ";" if issue_detail.sub_type.present? -%>
+        <%- shipping_amount = shipping_amount + issue_detail&.amount&.to_s + ";" if issue_detail.amount.present? -%>
+      <%- elsif issue_detail.main_type == "Resolution Type" -%>
+        <%- resolutions = resolutions + issue_detail.sub_type&.titleize + ";" if issue_detail.sub_type.present? -%>
+        <%- resolution_amount = resolution_amount + issue_detail&.amount&.to_s + ";" if issue_detail.amount.present? -%>
+			<%- end -%>
+		<%- end -%>
+<%= CSV.generate_line([name, issue&.order&.customer&.full_name&.titleize, issue&.order&.name, issue&.title&.titleize, issue&.line_item&.sku&.upcase, issue&.line_item&.name, issue&.line_item&.quantity, issue&.supplier&.name, issue&.carrier&.name, issue&.description, shipping_charges.chop, shipping_amount.chop, resolutions.chop, resolution_amount.chop]).html_safe -%>
+  <%- end -%>
+<%- elsif params[:report_type] == "container" -%>
+  <%- headers = ["Container", "Created Date", "Port ETA Date", "Arrive to DC Date", "Reference", "Received Date", "Status", "Notes", "Ocean Carrier", "Drayage", "Total Cost"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @containers.each do |container| -%>
+    <%- name = "" -%>
+    <%- if container.store == "us" -%>
+      <%- name = "CTUS" + container.container_number.to_s -%>
+    <%- elsif container.store == "canada" -%>
+      <%- name = "CTCA" + container.container_number.to_s -%>
+    <%- end -%>
+<%= CSV.generate_line([name, container.created_at, container.port_eta, container.arriving_to_dc, container.carrier_serial_number, container.received_date, container.status.titleize, container.container_comment, container.ocean_carrier, container.freight_carrier, container&.container_costs&.sum(:amount)]).html_safe -%>
+  <%- end -%>
+<%- elsif params[:report_type] == "price_carton" -%>
+  <%- headers = ["SKU", "Quantity", "Price per Unit", "Carton Length", "Carton Width", "Carton Height", "Carton Weight", "CBM"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @product_variants.each do |variant| -%>
+    <%- variant.cartons.each do |carton| -%>
+      <%- if carton == variant.cartons.first -%>
+<%= CSV.generate_line([variant&.sku, variant&.inventory_quantity, variant&.unit_cost, carton&.carton_detail&.length, carton&.carton_detail&.width, carton&.carton_detail&.height, carton&.carton_detail&.weight, carton&.carton_detail&.cubic_meter]).html_safe -%>
+      <%- else -%>
+<%= CSV.generate_line(["", "", "", carton&.carton_detail&.length, carton&.carton_detail&.width, carton&.carton_detail&.height, carton&.carton_detail&.weight, carton&.carton_detail&.cubic_meter]).html_safe -%>
+      <%- end -%>
+    <%- end -%>
+  <%- end -%>
+<%- end -%>

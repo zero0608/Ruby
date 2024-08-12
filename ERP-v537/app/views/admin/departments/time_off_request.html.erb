@@ -1,0 +1,73 @@
+<div class="container px-4">
+  <%= render partial: "/admin/tasks/navigation", local: { current_user: current_user } %>
+
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-6">
+      <%= render partial: "/admin/departments/hr_navigation" %>
+    </div>
+    <div class="col-6 text-right">
+      <a href="<%= time_off_history_admin_departments_path %>">View History</a>
+    </div>
+  </div>
+
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <% if @leaves.count > 0 %>
+      <% @leaves.each do |leave| %>
+        <div class="col-3 mb-3">
+          <div class="p-3 border-light-blue rounded">
+            <div class="row mb-3 no-gutters">
+              <div class="col-2">
+                <div class="rounded-circle rounded-circle-3 bg-light-blue">
+                  <span class="header2 text-blue"><%= leave.employee.full_name[0] %></span>
+                </div>
+              </div>
+              <div class="col-10">
+                <div class="d-flex no-gutters">
+                  <div class="col-7 text-black">
+                    <span class="header2"><%= leave.employee.full_name %></span><br>
+                    <span><%= leave.employee.department.name %></span>
+                  </div>
+                  <div class="col-5 text-right">
+                    <span class="font-italic">
+                      Date of Request:<br>
+                      <%= leave.created_at.strftime("%B %d, %Y") %>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="w-100 mb-3" style="border-bottom: solid 2px var(--blue)"></div>
+            <div class="row mb-3 no-gutters">
+              <div class="col-6">
+                <span>Leave Type</span>
+                <p class="text-black"><%= leave.leave_type %> Leave</p>
+              </div>
+              <div class="col-6">
+                <span>Duration</span>
+                <p class="text-black">
+                  <%= leave.duration == leave.duration.to_i ? leave.duration.to_i : leave.duration %>
+                  <%= "Day".pluralize(leave.duration) %>
+                </p>
+              </div>
+              <div class="col-6">
+                <span>From</span>
+                <p class="text-black"><%= leave.start_date.strftime("%B %d, %Y") %></p>
+              </div>
+              <div class="col-6">
+                <span>To</span>
+                <p class="text-black"><%= leave.end_date.strftime("%B %d, %Y") %></p>
+              </div>
+            </div>
+            <div class="w-100 mb-3" style="border-bottom: solid 2px var(--blue)"></div>
+            <div class="w-100 text-center">
+              <button class="btn btn-secondary mr-4" data-reflex="click->DepartmentReflex#decline_leave" data-user-id="<%= current_user.id %>" data-leave-id="<%= leave.id %>">Decline</button>
+              <button class="btn btn-primary" data-reflex="click->DepartmentReflex#approve_leave" data-user-id="<%= current_user.id %>" data-leave-id="<%= leave.id %>">Approve</button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <p>There are no pending time-off requests.</p>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+<div class="row border-bottom">
+  <div class="col-4">
+    <%= ff.text_field :title, data: { reflex: "change->AccountingExpenseReflex#update_category", type_id: f.object.id }, class: "form-control my-3 w-50 d-inline-block" %>
+    <button class="btn btn-primary d-inline-block ml-4" type="button" data-reflex="click->AccountingExpenseReflex#build_sub_categories" data-category-id="<%= ff.object.id %>" data-user-id="<%= current_user.id %>">
+      <%= show_svg("plus.svg") %>
+      Add Sub-Category
+    </button>
+  </div>
+
+  <div class="col-8">
+    <%= ff.fields_for :expense_subcategories, ff.object.expense_subcategories.order(:created_at) do |subcategory_attributes| %>
+      <%= render "expense_subcategories", fff: subcategory_attributes, ff: ff, f: f %>
+    <% end %>
+  </div>
+</div>

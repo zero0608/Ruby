@@ -1,0 +1,51 @@
+<div class="container h-100 px-4">
+  <%= render partial: "/admin/tasks/navigation", local: { current_user: current_user } %>
+
+  <div class="row position-relative" style="height: calc(100% - 56px - 1rem); top: calc(57px + 1rem)">
+    <div class="col-2 h-100 d-flex flex-column">
+      <div class="row">
+        <div class="col-6">
+          <p class="header2">EM Content</p>
+        </div>
+        <div class="col-6 text-right">
+          <% if current_user.user_group.board_cru %>
+            <%= link_to "Edit", edit_board_admin_board_sections_path %>
+          <% end %>
+        </div>
+        <div class="col-12 mb-3">
+          <div class="w-100 border-bottom"></div>
+        </div>
+        <div class="col-12 mb-3">
+          <div class="search-bar d-inline-block w-100">
+            <input type="text" placeholder="Search Tag..." class="form-control" data-reflex="debounced:input->BoardSectionReflex#search">
+          </div>
+        </div>
+      </div>
+      <section class="flex-auto jstree-default" id="jstree-default">
+        <%= render partial: "search_results", locals: { board_pages: @board_pages } %>
+      </section>
+    </div>
+    <div class="col-10 h-100 d-flex flex-column" id="page-view">
+      <% if @board_page.present? %>
+        <%= render partial: "page_view", locals: { board_page: @board_page } %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<style>
+  .li-text:hover {
+    background: var(--light-blue) !important;
+  }
+
+  .ql-editor {
+    white-space: initial !important;
+  }
+
+  .jstree-default .font-weight-bold,
+  .ql-editor strong {
+    font-size: 1.1rem;
+  }
+</style>
+
+<link href="//cdn.quilljs.com/1.0.0/quill.snow.css" rel="stylesheet" />

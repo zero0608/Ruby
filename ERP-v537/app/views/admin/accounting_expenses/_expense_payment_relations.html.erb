@@ -1,0 +1,5 @@
+<div class="row <%= "border-bottom" unless fff.object.expense_payment_relations.count == ffff.index + 1 %>">
+  <div class="col-6">
+    <%= ffff.select :expense_payment_method_id, options_for_select(ExpensePaymentMethod.where(deactivate: false).order(:title).map{|s|[s.title, s.id]}, ffff.object.expense_payment_method_id), { include_blank: true }, data: { reflex: "change->AccountingExpenseReflex#update_category", type_id: f.object.id }, class: "form-control my-3" %>
+  </div>
+</div>

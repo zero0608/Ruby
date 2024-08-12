@@ -1,0 +1,4 @@
+{
+  "success": <%= true %>,
+  "html": <%= raw render(partial: "tracking", locals: {order: JSON.parse(@order_info)}) %>
+}

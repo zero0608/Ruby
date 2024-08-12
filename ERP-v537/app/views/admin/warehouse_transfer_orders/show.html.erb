@@ -1,0 +1,42 @@
+<div class="container px-4">
+  <div class="row">
+    <div class="col-8 mb-3">
+      <span class="header1">
+        Transfer Order Number: <%= @transfer_order.name %>
+      </span>
+    </div>
+
+    <div class="col-4 mb-3 text-right">
+      From Warehouse: <%= @transfer_order.from_warehouse.name %><br>
+      Destination Warehouse: <%= @transfer_order.to_warehouse.name %>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 50%">Description</th>
+              <th style="width: 10%">SKU</th>
+              <th style="width: 10%">On Hand</th>
+              <th style="width: 20%">Supplier</th>
+              <th style="width: 10%">Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @transfer_order.warehouse_transfer_items&.each do |war_var| %>
+              <% var = war_var.product_variant %>
+              <tr>
+                <td><%= var&.title %></td>
+                <td><%= var&.sku.upcase %></td>
+                <td><%= var&.inventory_quantity unless var&.inventory_quantity.to_i.negative? %></td>
+                <td><%= var.product&.supplier&.name %></td>
+                <td><%= war_var.quantity %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<% current_user = @current_user if @current_user.present? && current_user.nil? %>
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 35%">Description</th>
+        <th style="width: 10%">SKU</th>
+        <th style="width: 8%">On Hand</th>
+        <th style="width: 8%">Not Started</th>
+        <th style="width: 8%">In Production</th>
+        <th style="width: 8%">Container Ready</th>
+        <th style="width: 8%">In Container</th>
+        <th style="width: <%= current_user.user_group.inventory_admin_cru ? "10%" : "15%" %>">
+          Status
+        </th>
+        <% if current_user.user_group.inventory_admin_cru %>
+          <th style="width: 5%">Action</th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% if @pagy.count > 0 %>
+        <% @warehouse_variants.each do |ware_var| %>
+          <% variant = ware_var.product_variant %>
+          <tr>
+            <td><%= link_to variant&.title&.html_safe, admin_product_variant_path(id: variant.id) %></td>
+            <td><%= variant.sku.upcase %></td>
+            <td><%= ware_var&.warehouse_quantity.to_i %></td>
+            <td>
+              <%= variant.purchase_items.where(status: :not_started).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %>
+            </td>
+            <td>
+              <%= variant.purchase_items.where(status: :in_production).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %>
+            </td>
+            <td>
+              <%= variant.purchase_items.where(status: :container_ready).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %>
+            </td>
+            <td>
+              <% @a = 0 %>
+              <% variant&.purchase_items.where(line_item_id: nil).each do |item| %>
+                <% if item.containers.present? %>
+                  <% item.containers.each do |cant| %>
+                    <% @a = @a + item&.quantity.to_i if !(cant.status == "arrived") %>
+                  <% end %>
+                <% end %>
+              <% end %>
+              <%= @a %>
+            </td>
+            <td>
+              <% case variant.stock %>
+                <% when "Inventory" %>
+                  <span class="badge badge-outline-green">Inventory</span>
+                <% when "Non-Inventory" %>
+                  <span class="badge badge-outline-blue">Non-Inventory</span>
+                <% when "Discontinued" %>
+                  <span class="badge badge-outline-yellow">Discontinued</span>
+                <% when "Deactivated" %>
+                  <span class="badge badge-outline-red">Deactivated</span>
+              <% end %>
+            </td>
+            <% if current_user.user_group.inventory_admin_cru %>
+              <td>
+                <a href="<%= edit_admin_product_variant_path(id: variant.id) %>">
+                  <%= show_svg("recent_activity.svg") %>
+                </a>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @pagy.count > 1 %>
+  <div id="page-nav">
+    <%= render partial: 'warehouse_paginator', locals: { current_user: current_user } %>
+  </div>
+<% end %>

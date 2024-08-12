@@ -1,0 +1,147 @@
+<div class="container px-4">
+  <%= render partial: "/admin/tasks/navigation", local: { current_user: current_user } %>
+  
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-6">
+      <%= render partial: "/admin/departments/hr_navigation" %>
+    </div>
+    <div class="col-6 text-right">
+      <div class="dropdown">
+        <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+          Update <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="dropdown-menu dropdown-menu-right">
+          <a href="<%= new_admin_department_employee_path(@department) %>">
+            <div class="dropdown-item">Add Employee</div>
+          </a>
+          <a href="<%= edit_admin_department_path(@department) %>">
+            <div class="dropdown-item">Edit Department</div>
+          </a>
+          <a href="<%= new_admin_department_path %>">
+            <div class="dropdown-item">Create New Department</div>
+          </a>
+          <a href="<%= admin_department_path(id: @department.id, format: "csv") %>">
+            <div class="dropdown-item">Export to CSV</div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-3 position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-2">
+      <%= render partial: "navigation", locals: { id: @department.id } %>
+    </div>
+    <div class="col-10">
+      <div class="table-responsive mb-5">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 15%">Name</th>
+              <th style="width: 15%">Employment Type</th>
+              <th style="width: 15%">Position</th>
+              <th style="width: 20%">Mail</th>
+              <th style="width: 20%">Mobile</th>
+              <th style="width: 15%">Account</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @department.employees.joins(:position).where(positions: { is_manager: true }).where(exit_date: nil).order(:first_name).each do |employee| %>
+              <tr class="open-side-panel" data-reflex="click->DepartmentReflex#show_employee" data-employee-id="<%= employee.id %>">
+                <td><%= employee.full_name.titleize %></td>
+                <td><%= employee.employment_type.titleize %></td>
+                <td><%= employee.position.name %></td>
+                <td><%= employee.email %></td>
+                <td><%= employee.phone %></td>
+                <td>
+                  <% employee&.users&.each do |user| %>
+                    <%= user.email %><br>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+
+            <% @department.employees.joins(:position).where.not(positions: { is_manager: true }).where(exit_date: nil).order(:first_name).each do |employee| %>
+              <tr class="open-side-panel" data-reflex="click->DepartmentReflex#show_employee" data-employee-id="<%= employee.id %>">
+                <td><%= employee&.full_name %></td>
+                <td><%= employee&.employment_type %></td>
+                <td><%= employee&.position.name %></td>
+                <td><%= employee&.email %></td>
+                <td><%= employee&.phone %></td>
+                <td>
+                  <% employee&.users&.each do |user| %>
+                    <%= user.email %><br>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @department.employees.where.not(exit_date: nil).count > 0 %>
+        <div class="header2 pab">
+          <span class="mr-2">Past Employees</span>
+          <%= show_svg("arrow.svg") %>
+        </div>
+        <div class="table-responsive pa hide">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 15%">Name</th>
+                <th style="width: 15%">Employment Type</th>
+                <th style="width: 15%">Position</th>
+                <th style="width: 20%">Mail</th>
+                <th style="width: 20%">Mobile</th>
+                <th style="width: 15%">Account</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @department.employees.where.not(exit_date: nil).order(:first_name).each do |employee| %>
+                <tr class="open-side-panel" data-reflex="click->DepartmentReflex#show_employee" data-employee-id="<%= employee.id %>">
+                  <td><%= employee.full_name.titleize %></td>
+                  <td><%= employee.employment_type.titleize %></td>
+                  <td><%= employee.position.name %></td>
+                  <td><%= employee.email %></td>
+                  <td><%= employee.phone %></td>
+                  <td>
+                    <% employee&.users&.each do |user| %>
+                      <%= user.email %><br>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<style>
+  .pa.hide {
+    max-height: 0;
+    transition: all 0.35s;
+  }
+  .pa.show {
+    max-height: 10000px;
+    transition: all 0.35s;
+  }
+  .pab svg {
+    transform: rotate(180deg);
+    transition: all 0.35s;
+  }
+  .pab.show svg {
+    transform: rotate(0);
+    transition: all 0.35s;
+  }
+</style>
+
+<script type="text/javascript">
+  $(".pab").on("click", function() {
+    $(".pa").toggleClass("hide").toggleClass("show");
+    $(this).toggleClass("show");
+  });
+</script>
+
+<%= render partial: "employee_panel", locals: { employee: @employee, current_user: @current_user } %>

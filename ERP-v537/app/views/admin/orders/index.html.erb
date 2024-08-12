@@ -1,0 +1,436 @@
+<div class="container px-4">
+  <div class="row">
+    <div class="col-12 mb-3">
+      <div class="w-100 p-3 mb-3 rounded" style="background: #f2f2f2">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <span class="header2">
+              EM<%= @store1 == "us" ? "US" : "CA" %> | <%= @date1.strftime("%B %d, %Y") %>
+            </span>
+          </div>
+
+          <div class="col-6 mb-3 text-right">
+            <div class="dropdown">
+              <div class="dropdown-toggle arrow-none" data-toggle="dropdown">
+                <i class="dripicons-dots-3"></i>
+              </div>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a href="<%= admin_orders_path(store1: @store1 == "us" ? "canada" : "us", date: params[:date], store2: params[:store2], ytd: params[:ytd], store2_2: params[:store2_2], ytd_2: params[:ytd_2], store3: params[:store3], store4: params[:store4]) %>" class="reflex-click">
+                  <div class="dropdown-item">
+                     View Store: <%= @store1 == "us" ? "EMCA" : "EMUS" %>
+                  </div>
+                </a>
+                <div class="dropdown-item">
+                  <span class="pt-2">Select Date</span>
+                  <%= form_tag admin_orders_path(store1: params[:store1], store2: params[:store2], ytd: params[:ytd], store2_2: params[:store2_2], ytd_2: params[:ytd_2], store3: params[:store3], store4: params[:store4]) do |f| %>
+                    <%= date_field_tag :date, @date1, class: "form-control reflex-change", onchange: "this.form.submit()" %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Orders</p>
+              <p>
+                <span class="header2">
+                  <%= number_to_currency(@order_sum) %>
+                </span>
+                <% if @compare_order_sum == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+
+                <% elsif @order_sum / @compare_order_sum > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage(@order_sum / @compare_order_sum * 100, precision: 2) %>
+                  </span>
+
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage(@order_sum / @compare_order_sum * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <%= @orders.count %> <%= "Order".pluralize(@orders.count) %>
+              </span>
+            </div>
+          </div>
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Net Sales</p>
+              <p>
+                <span class="header2">
+                  <%= number_to_currency(@order_sum - @return_sum - @chargeback_sum - @pending_sum) %>
+                </span>
+                <% if @compare_order_sum - @compare_return_sum - @compare_chargeback_sum - @compare_pending_sum == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+
+                <% elsif (@order_sum - @return_sum - @chargeback_sum - @pending_sum) / (@compare_order_sum - @compare_return_sum - @compare_chargeback_sum - @compare_pending_sum) > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage((@order_sum - @return_sum - @chargeback_sum - @pending_sum) / (@compare_order_sum - @compare_return_sum - @compare_chargeback_sum - @compare_pending_sum) * 100, precision: 2) %>
+                  </span>
+
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage((@order_sum - @return_sum - @chargeback_sum - @pending_sum) / (@compare_order_sum - @compare_return_sum - @compare_chargeback_sum - @compare_pending_sum) * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <%= @orders.sum { |order| order.line_items.sum { |item| item&.quantity.to_i } } %> <%= "Product".pluralize(@orders.sum { |order| order.line_items.sum { |item| item&.quantity.to_i } }) %>
+              </span>
+            </div>
+          </div>
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Average Order</p>
+              <p>
+                <span class="header2">
+                  <%= @orders.count != 0 ? number_to_currency((@order_sum - @return_sum - @chargeback_sum) / @orders.count) : number_to_currency(0) %>
+                </span>
+                <% if @orders.count == 0 || @compare_order.count == 0 || (@compare_order_sum - @compare_return_sum - @chargeback_sum) / @compare_order.count == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+                
+                <% elsif ((@order_sum - @return_sum - @chargeback_sum) / @orders.count) / ((@compare_order_sum - @compare_return_sum - @chargeback_sum) / @compare_order.count) > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage(((@order_sum - @return_sum - @chargeback_sum) / @orders.count) / ((@compare_order_sum - @compare_return_sum - @chargeback_sum) / @compare_order.count) * 100, precision: 2) %>
+                  </span>
+                
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage(((@order_sum - @return_sum - @chargeback_sum) / @orders.count) / ((@compare_order_sum - @compare_return_sum - @chargeback_sum) / @compare_order.count) * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <br>
+              </span>
+            </div>
+          </div>
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Return</p>
+              <p>
+                <span class="header2">
+                  <%= number_to_currency(@return_sum) %>
+                </span>
+                <% if @compare_return_sum == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+                
+                <% elsif @return_sum / @compare_return_sum > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage(@return_sum / @compare_return_sum * 100, precision: 2) %>
+                  </span>
+                
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage(@return_sum / @compare_return_sum * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <%= @re.count %> <%= "Return".pluralize(@re.count) %>
+              </span>
+            </div>
+          </div>
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Chargeback</p>
+              <p>
+                <span class="header2">
+                  <%= number_to_currency(@chargeback_sum) %>
+                </span>
+                <% if @compare_chargeback_sum == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+
+                <% elsif @chargeback_sum / @compare_chargeback_sum > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage(@chargeback_sum / @compare_chargeback_sum * 100, precision: 2) %>
+                  </span>
+
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage(@chargeback_sum / @compare_chargeback_sum * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <%= @chargeback.count %> <%= "Chargeback".pluralize(@chargeback.count) %>
+              </span>
+            </div>
+          </div>
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Pending Payment</p>
+              <p>
+                <span class="header2">
+                  <%= number_to_currency(@pending_sum) %>
+                </span>
+                <% if @compare_pending_sum == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+
+                <% elsif @pending_sum / @compare_pending_sum > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage(@pending_sum / @compare_pending_sum * 100, precision: 2) %>
+                  </span>
+
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage(@pending_sum / @compare_pending_sum * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <%= @pending.count %> <%= "Pending".pluralize(@pending.count) %>
+            </div>
+          </div>
+          <div class="col mb-3">
+            <div class="w-100 p-3 bg-white rounded">
+              <p class="header2">Cancelled Orders</p>
+              <p>
+                <span class="header2">
+                  <%= number_to_currency(@cancel_sum) %>
+                </span>
+                <% if @compare_cancel_sum == 0 %>
+                  <span class="text-grey ml-3">--%</span>
+
+                <% elsif @cancel_sum / @compare_cancel_sum > 0 %>
+                  <span class="text-green ml-3">
+                    <%= number_to_percentage(@cancel_sum / @compare_cancel_sum * 100, precision: 2) %>
+                  </span>
+
+                <% else %>
+                  <span class="text-red ml-3">
+                    <%= number_to_percentage(@cancel_sum / @compare_cancel_sum * 100, precision: 2) %>
+                  </span>
+                <% end %>
+              </p>
+              <span class="fc-light-grey">
+                <%= @cancel.count %> <%= "Cancel".pluralize(@cancel.count) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 mb-3">
+      <div class="w-100 p-3 mb-3 rounded" style="background: #f2f2f2">
+        <div class="row">
+          <div class="col-11">
+            <p class="header2">
+              EM<%= @store2 == "us" ? "US" : "CA" %> Sales Overview | <%= params[:ytd] == "true" ? "YTD" : "Past 10 Days" %>
+            </p>
+          </div>
+          <div class="col-1 text-right">
+            <div class="dropdown">
+              <div class="dropdown-toggle arrow-none" data-toggle="dropdown">
+                <i class="dripicons-dots-3"></i>
+              </div>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a href="<%= admin_orders_path(store1: params[:store1], date: params[:date], store2: @store2 == "us" ? "canada" : "us", ytd: params[:ytd], store2_2: params[:store2_2], ytd_2: params[:ytd_2], store3: params[:store3], store4: params[:store4]) %>" class="reflex-click">
+                  <div class="dropdown-item">
+                    View Store: <%= @store2 == "us" ? "EMCA" : "EMUS" %>
+                  </div>
+                </a>
+                <a href="<%= admin_orders_path(store1: params[:store1], date: params[:date], store2: params[:store2], ytd: params[:ytd] == "true" ? false : true, store2_2: params[:store2_2], ytd_2: params[:ytd_2], store3: params[:store3], store4: params[:store4]) %>" class="reflex-click">
+                  <div class="dropdown-item">
+                    <%= params[:ytd] == "true" ? "View Past 10 Days" : "View YTD" %>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-5">
+            <p>
+              <span class="rounded-circle rounded-circle-1 d-inline-block mr-2" style="vertical-align: middle; background: #276762">&nbsp;</span>
+              <span class="header2 text-grey" style="vertical-align: middle">Gross Sale</span>
+            </p>
+            <p class="header2"><%= number_to_currency(@chart_sum1.sum { |k, v| v }.to_f) %></p>
+          </div>
+          <div class="col-7">
+            <p>
+              <span class="rounded-circle rounded-circle-1 d-inline-block mr-2" style="vertical-align: middle; background: #DB9B35">&nbsp;</span>
+              <span class="header2 text-grey" style="vertical-align: middle">Net Sale</span>
+              <span class="text-grey" style="vertical-align: middle">(Gross - Returns - Chargeback - Pending - Cancels)</span>
+            </p>
+            <p class="header2"><%= number_to_currency(@chart_sum2.sum { |k, v| v }.to_f) %></p>
+          </div>
+          <div class="col-12">
+            <%= column_chart [{ name: "Gross Sale", data: @chart_sum1 }, { name: "Net Sale", data: @chart_sum2 }], colors: ["#276762", "#DB9B35"], height: "500px", legend: false, prefix: "$", thousands: "," %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 mb-3">
+      <div class="w-100 p-3 mb-3 rounded" style="background: #f2f2f2">
+        <div class="row">
+          <div class="col-11">
+            <p class="header2">
+              EM<%= @store2_2 == "us" ? "US" : "CA" %> Orders Overview | <%= params[:ytd_2] == "true" ? "YTD" : "Past 10 Days" %>
+            </p>
+          </div>
+          <div class="col-1 text-right">
+            <div class="dropdown">
+              <div class="dropdown-toggle arrow-none" data-toggle="dropdown">
+                <i class="dripicons-dots-3"></i>
+              </div>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a href="<%= admin_orders_path(store1: params[:store1], date: params[:date], store2: params[:store2], ytd: params[:ytd], store2_2: @store2_2 == "us" ? "canada" : "us", ytd_2: params[:ytd_2], store3: params[:store3], store4: params[:store4]) %>" class="reflex-click">
+                  <div class="dropdown-item">
+                    View Store: <%= @store2_2 == "us" ? "EMCA" : "EMUS" %>
+                  </div>
+                </a>
+                <a href="<%= admin_orders_path(store1: params[:store1], date: params[:date], store2: params[:store2], ytd: params[:ytd] == "true" ? false : true, store2_2: params[:store2_2], ytd_2: params[:ytd_2] == "true" ? false : true, store3: params[:store3], store4: params[:store4]) %>" class="reflex-click">
+                  <div class="dropdown-item">
+                    <%= params[:ytd_2] == "true" ? "View Past 10 Days" : "View YTD" %>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-5">
+            <p>
+              <span class="rounded-circle rounded-circle-1 d-inline-block mr-2" style="vertical-align: middle; background: #86abbc">&nbsp;</span>
+              <span class="header2 text-grey" style="vertical-align: middle">Gross Order</span>
+            </p>
+            <p class="header2"><%= @chart_count1.sum { |k, v| v } %> <%= "Order".pluralize(@chart_count1.sum { |k, v| v }) %></p>
+          </div>
+          <div class="col-7">
+            <p>
+              <span class="rounded-circle rounded-circle-1 d-inline-block mr-2" style="vertical-align: middle; background: #bd857c">&nbsp;</span>
+              <span class="header2 text-grey" style="vertical-align: middle">Net Order</span>
+              <span class="text-grey" style="vertical-align: middle">(Gross - Returns - Chargeback - Pending - Cancels)</span>
+            </p>
+            <p class="header2"><%= @chart_count2.sum { |k, v| v } %> <%= "Order".pluralize(@chart_count2.sum { |k, v| v }) %></p>
+          </div>
+          <div class="col-12">
+            <%= column_chart [{ name: "Gross Order", data: @chart_count1 }, { name: "Net Order", data: @chart_count2 }], colors: ["#86abbc", "#bd857c"], height: "500px", legend: false, thousands: "," %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 mb-3">
+      <div class="w-100 p-3 mb-3 rounded" style="background: #f2f2f2">
+        <div class="row">
+          <div class="col-9">
+            <p>
+              <span class="header2">Top 5 Products</span>
+              <span class="text-grey">(this week)</span>
+            </p>
+          </div>
+          <div class="col-3">
+            <%= form_tag admin_orders_path(store1: params[:store1], date: params[:date], store2: params[:store2], ytd: params[:ytd], store2_2: params[:store2_2], ytd_2: params[:ytd_2], store4: params[:store4]) do |f| %>
+              <%= select_tag :store3, options_for_select( {"EMUS" => "us", "EMCA" => "canada"}, @store3), { class: "form-control reflex-change", onchange: "this.form.submit()" } %>
+            <% end %>
+          </div>
+          <div class="col-12">
+            <div class="table-responsive">
+              <table class="table table-borderless table-hover">
+                <thead style="background: none">
+                  <tr>
+                    <th style="width: 55%">Product</th>
+                    <th style="width: 15%">SKU</th>
+                    <th style="width: 15%">Inventory</th>
+                    <th style="width: 15%">Sold</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @products.sort_by {|k, v| v }.reverse.first(5).each do |k, v| %>
+                    <% pr = ProductVariant.find_by(id: k) %>
+                    <% if pr.present? %>
+                      <tr>
+                        <td><%= pr.title %> <%= "| " + pr.option1.to_s if pr.option1.present? %></td>
+                        <td><%= pr.sku %></td>
+                        <td><%= pr.inventory_quantity %></td>
+                        <td><%= v %></td>
+                      </tr>
+                    <% end %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 mb-3">
+      <div class="w-100 p-3 mb-3 rounded" style="background: #f2f2f2">
+        <div class="row">
+          <div class="col-9">
+            <p>
+              <span class="header2">Top 5 States</span>
+              <span class="text-grey">(this week)</span>
+            </p>
+          </div>
+          <div class="col-3">
+            <%= form_tag admin_orders_path(store1: params[:store1], date: params[:date], store2: params[:store2], ytd: params[:ytd], store2_2: params[:store2_2], ytd_2: params[:ytd_2], store3: params[:store3]) do |f| %>
+              <%= select_tag :store4, options_for_select( {"EMUS" => "us", "EMCA" => "canada"}, @store4), { class: "form-control reflex-change", onchange: "this.form.submit()" } %>
+            <% end %>
+          </div>
+          <div class="col-12">
+            <div class="table-responsive">
+              <table class="table table-borderless table-hover">
+                <thead style="background: none">
+                  <tr>
+                    <th style="width: 25%">States</th>
+                    <th style="width: 25%">Curbside (#/$/Avg)</th>
+                    <th style="width: 25%">WGD (#/$/Avg)</th>
+                    <th style="width: 25%">Total (#/$)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @states.sort_by {|k, v| v[1] }.reverse.first(5).each do |k, v| %>
+                    <% curb_count = 0 %>
+                    <% curb_sum = 0 %>
+                    <% wgd_count = 0 %>
+                    <% wgd_sum = 0 %>
+
+                    <% @shipping_details.each do |ship| %>
+                      <% if ship.order&.shipping_address&.address2.present? %>
+                        <% if ship.order.shipping_address.address2.strip.titleize == k %>
+                           <% if ship.order&.shipping_line&.title&.downcase&.include? "white glove" or ship.order.shipping_details.any? { |w| w.white_glove_delivery } %>
+                            <% wgd_count += 1 %>
+                            <% wgd_sum += ship&.actual_invoiced.to_f + ship&.white_glove_fee.to_f + ship&.shipping_costs&.where(cost_type: "charges").sum(:amount) %>
+                          <% else %>
+                            <% curb_count += 1 %>
+                            <% curb_sum += ship&.actual_invoiced.to_f + ship&.shipping_costs&.where(cost_type: "charges").sum(:amount) %>
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                    <% end %>
+                    
+                    <tr>
+                      <td><%= k %></td>
+                      <td>
+                        <%= curb_count %> / <%= number_to_currency(curb_sum) %> / <%= curb_count != 0 ? number_to_currency(curb_sum / curb_count) : "$0" %>
+                      </td>
+                      <td>
+                        <%= wgd_count %> / <%= number_to_currency(wgd_sum) %> / <%= wgd_count != 0 ? number_to_currency(wgd_sum / wgd_count) : "$0" %>
+                      </td>
+                      <td>
+                        <%= curb_count + wgd_count %> / <%= number_to_currency(curb_sum + wgd_sum) %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(".reflex-click").on("click", function() {
+    document.getElementById("loaderOverlay").style.display = "flex";
+  });
+  $(".reflex-change").on("change", function() {
+    document.getElementById("loaderOverlay").style.display = "flex";
+  });
+</script>

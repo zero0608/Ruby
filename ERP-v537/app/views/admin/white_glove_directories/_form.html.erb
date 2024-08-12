@@ -1,0 +1,24 @@
+<% if @white_glove_directory.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @white_glove_directory.errors.full_messages.each do |message| %>
+        <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-6 mb-3">
+    <%= f.label :company_name, "Company Name" %>
+    <%= f.text_field :company_name, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <%= f.label :store, "Country" %>
+    <%= f.select :store, options_for_select({ "US" => "us", "Canada" => "canada" }, f.object.store), { include_blank: true }, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_white_glove_directories_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

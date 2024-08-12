@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Connect</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= javascript_include_tag "https://www.gstatic.com/charts/loader.js" %>
+    <%= stylesheet_pack_tag 'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
+
+    <link rel="icon" type="image/png" href="<%= image_url "favicon.png" %>">
+  </head>
+
+  <body>
+    <%= render "includes/header" %>
+    <div id="layoutSidenav">
+      <div class="h-100" id="layoutSidenav_content">
+        <%= render "includes/flash_messages" %>
+        <section class="loader-overlay" id="loaderOverlay">
+          <div class="loader"></div>
+        </section>
+        <%= yield %>
+      </div>
+    </div>
+    <%= render 'includes/notification_settings', locals: { current_user: current_user } %>
+  </body>
+</html>

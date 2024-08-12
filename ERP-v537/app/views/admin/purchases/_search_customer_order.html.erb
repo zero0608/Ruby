@@ -1,0 +1,97 @@
+<div class="row">
+<div class="col-12">
+<% if current_user.supplier? %>
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <tbody>
+        <% unless @query == "" %>
+          <% if @line_items.present? %>
+            <% @line_items.try(:each) do |item| %>
+              <% item.purchase_items.joins(:purchase).where(purchases: { supplier_id: current_user.id }).each do |purchase_item| %>
+                <tr class="text-center">
+                  <% if purchase_item.purchase.try(:store) == 'us'%>
+                    <td><%=link_to 'TUS' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <% else %>
+                    <td><%=link_to 'TCA' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <%end%>
+                </tr>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if @product_variants.present? %>
+            <% @product_variants.try(:each) do |item| %>
+              <% item.purchase_items.joins(:purchase).where(purchases: { supplier_id: current_user.id }).each do |purchase_item| %>
+                <tr class="text-center">
+                  <% if purchase_item.purchase.try(:store) == 'us'%>
+                    <td><%=link_to 'TUS' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <% else %>
+                    <td><%=link_to 'TCA' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <%end%>
+                </tr>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if @search_purchases.present? %>
+            <% @search_purchases.where(supplier_id: current_user.id).try(:each) do |purchase| %>
+              <tr class="text-center">
+                <% if purchase.try(:store) == 'us'%>
+                  <td><%=link_to 'TUS' + "#{purchase.id}", admin_purchase_path(id: purchase.id), data: { turbolinks: false } %></td>
+                <% else %>
+                  <td><%=link_to 'TCA' + "#{purchase.id}", admin_purchase_path(id: purchase.id), data: { turbolinks: false } %></td>
+                <%end%>
+              </tr>
+            <% end %>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <tbody>
+        <% unless @query == "" %>
+          <% if @line_items.present? %>
+            <% @line_items.try(:each) do |item| %>
+              <% item.purchase_items.each do |purchase_item| %>
+                <tr class="text-center">
+                  <% if purchase_item.purchase.try(:store) == 'us'%>
+                    <td><%=link_to 'TUS' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <% else %>
+                    <td><%=link_to 'TCA' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <%end%>
+                </tr>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if @product_variants.present? %>
+            <% @product_variants.try(:each) do |item| %>
+              <% item.purchase_items.joins(:purchase).each do |purchase_item| %>
+                <tr class="text-center">
+                  <% if purchase_item.purchase.try(:store) == 'us'%>
+                    <td><%=link_to 'TUS' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <% else %>
+                    <td><%=link_to 'TCA' + "#{purchase_item.purchase.id}", admin_purchase_path(id: purchase_item.purchase.id), data: { turbolinks: false } %></td>
+                  <%end%>
+                </tr>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if @search_purchases.present? %>
+            <% @search_purchases.try(:each) do |purchase| %>
+              <tr class="text-center">
+                <% if purchase.try(:store) == 'us'%>
+                  <td><%=link_to 'TUS' + "#{purchase.id}", admin_purchase_path(id: purchase.id), data: { turbolinks: false } %></td>
+                <% else %>
+                  <td><%=link_to 'TCA' + "#{purchase.id}", admin_purchase_path(id: purchase.id), data: { turbolinks: false } %></td>
+                <%end%>
+              </tr>
+            <% end %>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+</div>
+</div>

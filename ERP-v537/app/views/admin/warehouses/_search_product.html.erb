@@ -1,0 +1,41 @@
+<% unless @query == "" %>
+  <div class="row mx-0">
+    <div class="col-12">
+      <div class="table-responsive" style="height: calc(60vh - 0.5rem)">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 75%">SKU</th>
+              <th style="width: 25%">Qty</th>
+            </tr>
+          </thead>
+          <tbody>   
+            <% @variants.try(:each) do |var| %>
+              <% if var.cartons.where.not(carton_detail_id: nil).present? %>
+                <% var.cartons.where.not(carton_detail_id: nil).each do |carton| %>
+                  <tr>
+                    <td>
+                      <%= var&.sku&.upcase %> (<%= carton&.carton_detail&.index %> / <%= carton&.carton_detail&.product&.carton_details.maximum(:index) %>)
+                    </td>
+                    <td>
+                      <%= number_field_tag "quantity[carton-#{carton.id}]", "", class: "form-control" %>
+                      <%= hidden_field_tag "carton_id[carton-#{carton.id}]", carton.id %>
+                    </td>
+                  </tr>
+                <% end %>
+              <% else %>
+                <tr>
+                  <td><%= var&.sku&.upcase %></td>
+                  <td>
+                    <%= number_field_tag "quantity[variant-#{var.id}]", "", class: "form-control" %>
+                    <%= hidden_field_tag "product_id[variant-#{var.id}]", var.id %>
+                  </td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>

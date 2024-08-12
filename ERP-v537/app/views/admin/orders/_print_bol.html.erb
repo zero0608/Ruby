@@ -1,0 +1,146 @@
+<style type="text/css">
+  input[type="radio"]:not(:checked) + span {
+    display: none;
+  }
+</style>
+​
+<% @shipping_details.each do |sp| %>
+  <div class="printer-preview-content p-4" contenteditable="true" title="Click to edit text (changes will be printed but not saved)">
+    <div class="row">
+      <div class="col-4 offset-8">
+        <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <table class="table table-borderless">
+          <tr>
+            <td colspan=2>Pallet Selection</td>
+            <td colspan=2>Transport Document</td>
+          </tr>
+
+          <tr>
+            <td colspan=2 style="position: relative; padding-top: 15px">
+              <input type="radio" name="warehouse" style="opacity: 15%; position: absolute; top: 0; left: 0;">
+              <span>A - 30 x 30</span>
+                      
+              <input type="radio" name="warehouse" style="opacity: 15%; position: absolute; top: 0; left: 25px">
+              <span>B - 36 x 36</span>
+                      
+              <input type="radio" name="warehouse" style="opacity: 15%; position: absolute; top: 0; left: 50px">
+              <span>C - 40 x 40</span>
+                      
+              <input type="radio" name="warehouse" style="opacity: 15%; position: absolute; top: 0; left: 75px">
+              <span>D - 48 x 40</span>
+
+              <input type="radio" name="warehouse" style="opacity: 15%; position: absolute; top: 0; left: 100px">
+              <span>E - 80 x 40</span>
+                      
+              <input type="radio" name="warehouse" style="opacity: 15%; position: absolute; top: 0; left: 125px">
+              <span>Box</span>
+
+              <p>
+                Shipper Number: 949-609-0351<br>
+                Skylab Logistics<br>
+                Suit 103, 9750 Irvine Blvd. Irvine, CA 92618
+              </p>
+            </td>
+            <td colspan=2>
+              <h5><%= sp.order.name %></h5>
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan=2>Consignee Name and Address</td>
+            <td colspan=2>Billing Address (If Other than Shipper/Consignee)</td>
+          </tr>
+
+          <tr>
+            <td colspan=2>
+              <h5>
+                <% if sp.order&.shipping_address&.name.present? %>
+                  <%= sp.order&.shipping_address&.name&.titleize %><br>
+                <% else %>
+                  <%= sp.order&.customer&.full_name&.titleize %><br>
+                <% end %>
+                <%= sp.order&.shipping_address&.address1.tr('[]','').tr('" "', ' ')&.titleize %><br>
+                <%= sp.order&.shipping_address&.city&.titleize %> <%= sp.order&.shipping_address&.address2&.titleize %>, <%= sp.order&.shipping_address&.zip&.upcase %><br>
+                <%= sp.order&.shipping_address&.phone %>
+              </h5>
+            </td>
+            <td colspan=2>
+              BILL TO: Northbanq Design Collection<br>
+              3810 Jacombs Rd Unit 110<br>
+              Richmond, BC V6V 1Y6
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan=4>SPECIAL INSTRUCTIONS</td>
+          </tr>
+
+          <tr>
+            <td colspan=4 class="font-weight-bold">
+              ***FURNITURE***HANDLE WITH CARE***<br>
+              RESIDENTIAL DELIVERY - TAILGATE REQUIRED
+              <% if sp.pallet_shippings.any? { |ps| ps.pallet_type == "pallet" } %>
+                <br>DO NOT BREAK DOWN SKID(S)
+              <% end %>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="width: 15%">TYPE</td>
+            <td style="width: 15%">PIECES</td>
+            <td style="width: 55%">DESCRIPTION OF GOODS (DIMS - INCHES)</td>
+            <td style="width: 15%">WEIGHT</td>
+          </tr>
+
+          <% 8.times do %>
+            <tr>
+              <td style="padding-bottom: 25px"></td>
+              <td style="padding-bottom: 25px"></td>
+              <td style="padding-bottom: 25px"></td>
+              <td style="padding-bottom: 25px"></td>
+            </tr>
+          <% end %>
+          
+          <tr>
+            <td style="border: 2px solid black !important;">Total</td>
+            <td style="border: 2px solid black !important;"></td>
+            <td style="border: 2px solid black !important;">Total Weight</td>
+            <td style="border: 2px solid black !important;"></td>
+          </tr>
+
+          <tr>
+            <td colspan=4 class="fs-8">
+              I certify that this cargo does not contain any unauthorized explosives, incendiaries or 
+              hazardous materials. I consent to a search of this cargo. I am aware that this endorsement
+              and original signature, along with other shipping documents, will be retained on file for 30 days.
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan=4 style="padding-bottom: 25px; border-bottom-style: dashed"></td>
+          </tr>
+
+          <tr>
+            <td colspan=4 style="border-top: none">Driver Agent/Vehicle #</td>
+          </tr>
+
+          <tr>
+            <td colspan=4 style="padding-bottom: 25px; border-bottom-style: dashed"></td>
+          </tr>
+
+          <tr>
+            <td colspan=4 style="border-top: none">P/U Date/Time</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% unless sp == @shipping_details.last %>
+    <p style="page-break-before: always"></p>
+  <% end %>
+<% end %>

@@ -1,0 +1,46 @@
+<div class="modal" id="meargeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag mearge_item_admin_containers_path, html: { class: "form-horizontal form-bordered", id: "mearge" } do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">        
+          <span class="header2 modal-title">Merge Order</span>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="table-responsive">
+              <table class="table table-borderless table-hover">
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>SKU</th>
+                    <th>Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @purchase_items.each do |purchase_item| %>
+                    <tr>
+                      <td><%= purchase_item.product_variant.title %></td>
+                      <td><%= purchase_item.product_variant.sku.upcase %></td>
+                      <td><%= purchase_item.quantity %></td>
+                      <td><%= check_box_tag "purchase_item_ids[]", purchase_item.id %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <%= link_to "Cancel", new_admin_container_path, class: "btn btn-secondary mr-4" %>
+          <button class="btn btn-primary" name="button" type="submit">Submit</button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $('#split').on('submit', function() {
+    $('#splitModal').modal('hide');
+  });
+</script>

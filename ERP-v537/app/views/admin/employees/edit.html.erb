@@ -1,0 +1,97 @@
+<div class="container px-4">
+  <%= form_for @employee, url: { action: "update" }, html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+    <div class="row">
+      <div class="col-6 mb-3">
+        <span class="header1">Update <%= @employee.full_name %></span><br>
+        <span>(Last updated: <%= @employee.updated_at.strftime("%B %d, %Y") %>)</span>
+      </div>
+      <div class="col-6 mb-3 text-right">
+        <%= link_to "Manage Permission", "", class: "btn btn-secondary", data: { toggle: "modal", target: "#permissionModal" } %>
+        <%= link_to "Delete Record", admin_employee_path(@employee), :class => "btn btn-secondary ml-4", method: :delete, data: { confirm: "Are you sure you want to delete this record? This action cannot be reverted. This will also delete employee leave records and expense records." } %>
+      </div>
+    </div>
+    <%= render partial: "form", locals: {f: f, current_user: current_user } %>
+
+    <div class="modal" id="permissionModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-thin">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="header2 modal-title">Manage Permission</span>
+            <button type="button" class="close" data-dismiss="modal">
+              <span class="text-black"><%= show_svg("close.svg") %></span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="row mx-0">
+              <div class="col-12 mb-3">
+                <span class="header2">Manager</span>
+              </div>
+              <div class="col-12 mb-3 pb-3 border-bottom">
+                <span class="mr-2">Reporting Manager</span>
+                <%= f.check_box :is_director, data: { switch: "blue" } %>
+                <%= f.label :is_director, "&nbsp;".html_safe %>
+              </div>
+              <div class="col-12 mb-3">
+                <span class="header2">Finance</span>
+              </div>
+              <div class="col-12 mb-3 pb-3 border-bottom">
+                <span class="mr-2">Finance Permission</span>
+                <%= f.check_box :is_billing, data: { switch: "blue" } %>
+                <%= f.label :is_billing, "&nbsp;".html_safe %>
+              </div>
+              <div class="col-12 mb-3">
+                <span class="header2">Sales</span>
+              </div>
+              <div class="col-6 mb-3">
+                <span>Sales Permission</span>
+                <%= f.select :sales_permission, options_for_select(Employee.sales_permissions.keys.map { |w| [w.titleize, w] }, :selected => f.object.sales_permission), { include_blank: true }, class: "form-control" %>
+              </div>
+              <div class="w-100"></div>
+              <div class="col-6 mb-3" id="showroom-sale" <% unless @employee.sales_permission == "sales" %> style="display: none" <% end %>>
+                <span>Showroom</span>
+                <%= f.select :showroom_id, options_for_select(Showroom.all.map { |s| [s.name, s.id] }, f.object.showroom_id), { include_blank: true }, class: "form-control" %>
+              </div>
+              <div class="w-100"></div>
+              <div class="row mx-0" id="showroom-manager" <% unless @employee.sales_permission == "manager" %> style="display: none" <% end %>>
+                <div class="col-12 mb-3">
+                  <span>Showroom Manager Permissions</span>
+                </div>
+                <%= f.fields_for :showroom_manage_permissions, f.object.showroom_manage_permissions.eager_load(:showroom).order("showrooms.store, showrooms.name") do |ff| %>
+                  <div class="col-6 mb-3">
+                    <span><%= ff.object.showroom.name %> (<%= ff.object.showroom.store.upcase %>)</span>
+                  </div>
+                  <div class="col-6 mb-3">
+                    <%= ff.check_box :permission, data: { switch: "blue" } %>
+                    <%= ff.label :permission, "&nbsp;".html_safe %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <span class="btn btn-secondary mr-4" data-dismiss="modal">Cancel</span>
+            <%= submit_tag "Submit", class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script type="text/javascript">
+  $("#employee_sales_permission").on("change", function() {
+    if ($(this).val() == "sales") {
+      $("#showroom-sale").show();
+    } else {
+      $("#showroom-sale").hide();
+      $("#employee_showroom_id").val("");
+    }
+
+    if ($(this).val() == "manager") {
+      $("#showroom-manager").show();
+    } else {
+      $("#showroom-manager").hide();
+      $("#showroom-manager input").prop("checked", false);
+    }
+  });
+</script>

@@ -1,0 +1,989 @@
+<div class="container p-4">
+  <div class="row">
+    <div class="col-12 mb-4">
+      <h5>Logistics Report</h5>
+    </div>
+    <div class="col-3 mb-4">
+      <a class="a-ignore" href="<%= report_logistics_admin_orders_path(year: Date.today.year, currency: current_store) %>">
+        <div class="w-100 p-4 rounded text-center bg-grey100">
+          <p class="h5 text-white">Logistics</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-3 mb-4">
+      <a class="a-ignore" href="<%= report_orders_admin_orders_path(b: Date.today.year) %>">
+        <div class="w-100 p-4 rounded text-center bg-grey100">
+          <p class="h5 text-white">Orders</p>
+        </div>
+      </a>
+    </div>
+    
+    <div class="col-3 mb-4">
+      <a class="a-ignore" href="<%= report_logistics_export_admin_orders_path(format: "csv", report_type: "shipment") %>">
+        <div class="w-100 p-4 rounded text-center bg-grey100">
+          <p class="h5 text-white">Export Shipment</p>
+        </div>
+      </a>
+    </div>
+    
+    <div class="col-3 mb-4">
+      <a class="a-ignore" href="<%= report_logistics_export_admin_orders_path(format: "csv", report_type: "issue") %>">
+        <div class="w-100 p-4 rounded text-center bg-grey100">
+          <p class="h5 text-white">Export Claims</p>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="row justify-content-end">
+        <div class="col-2" style="max-width: 150px">
+          <div class="drop-toggle ml-auto">
+            Date Range
+            <i class="dripicons-chevron-down"></i>
+          </div>
+          <div class="drop-menu">
+            <a href="<%= report_logistics_admin_orders_path(year: Date.today.year, currency: @store, state: @state) %>">
+              <div class="drop-item">Current Year</div>
+            </a>
+            <a href="<%= report_logistics_admin_orders_path(year: (Date.today.year - 1), currency: @store, state: @state) %>">
+              <div class="drop-item">Last Year</div>
+            </a>
+            <a href="<%= report_logistics_admin_orders_path(year: (Date.today.year + 1), currency: @store, state: @state) %>">
+              <div class="drop-item">All Time</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="col-2" style="max-width: 150px">
+          <div class="drop-toggle ml-auto">
+            Currency
+            <i class="dripicons-chevron-down"></i>
+          </div>
+          <div class="drop-menu">
+            <a href="<%= report_logistics_admin_orders_path(year: @year, currency: "us", state: @state) %>">
+              <div class="drop-item">USD</div>
+            </a>
+            <a href="<%= report_logistics_admin_orders_path(year: @year, currency: "canada", state: @state) %>">
+              <div class="drop-item">CAD</div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-4 mb-4">
+      <div class="h-100 w-100 p-4 rounded bg-grey10">
+        <div class="row h-100 position-relative">
+          <div class="col-12">
+            <% if @year <= Date.today.year %>
+              <h5><%= @year %> US & CA</h5>
+            <% else %>
+              <h5>TOTAL US & CA</h5>
+            <% end %>
+            <p>Shipping Cost</p>
+          </div>
+          <div class="col-3 mt-5 text-center position-absolute" style="left: 0; bottom: 0">
+            <div class="bg-grey40 text-white rounded-circle rounded-circle-5">
+              <span>$</span>
+            </div>
+          </div>
+          <div class="col-9 mt-5 text-right position-absolute" style="right: 0; bottom: 0">
+            <span class="h1 font-weight-bold">
+              <%= number_to_currency((@us_overview.sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } + @us_overview.joins(:shipping_costs).where(shipping_costs: { cost_type: "charges" }).sum(:amount) + @ca_overview.sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } + @ca_overview.joins(:shipping_costs).where(shipping_costs: { cost_type: "charges" }).sum(:amount)) * @exchange_rate) %>
+            </span>
+            <span class="ml-2">(<%= @currency %>)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-4 mb-4">
+      <div class="w-100 p-4 mb-4 rounded bg-grey10">
+        <div class="row">
+          <div class="col-3 text-center">
+            <div class="bg-grey40 text-white rounded-circle rounded-circle-5">
+              <span>$</span>
+            </div>
+          </div>
+          <div class="col-9">
+            <% if @year <= Date.today.year %>
+              <h5><%= @year %> US AVG LTL PER ORDER</h5>
+            <% else %>
+              <h5>TOTAL US AVG LTL PER ORDER</h5>
+            <% end %>
+            <span class="h1 font-weight-bold">
+              <% if @us_overview.present? %>
+                <%= number_to_currency(@us_overview.sum { |a| a.actual_invoiced.to_f } / @us_overview.length  * @exchange_rate) %>
+              <% else %>
+                $0
+              <% end %>
+            </span>
+            <span class="ml-2">(<%= @currency %>)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-100 p-4 rounded bg-grey20">
+        <div class="row">
+          <div class="col-3 text-center">
+            <div class="bg-grey40 text-white rounded-circle rounded-circle-5">
+              <span>$</span>
+            </div>
+          </div>
+          <div class="col-9">
+            <% if @year <= Date.today.year %>
+              <h5><%= @year %> US AVG WGD PER ORDER</h5>
+            <% else %>
+              <h5>TOTAL US AVG WGD PER ORDER</h5>
+            <% end %>
+            <span class="h1 font-weight-bold">
+              <% if @us_overview.present? %>
+                <%= number_to_currency(@us_overview.sum { |a| a.white_glove_fee.to_f } / @us_overview.length  * @exchange_rate) %>
+              <% else %>
+                $0
+              <% end %>
+            </span>
+            <span class="ml-2">(<%= @currency %>)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-4 mb-4">
+      <div class="w-100 p-4 mb-4 rounded bg-grey10">
+        <div class="row">
+          <div class="col-3 text-center">
+            <div class="bg-grey40 text-white rounded-circle rounded-circle-5">
+              <span>$</span>
+            </div>
+          </div>
+          <div class="col-9">
+            <% if @year <= Date.today.year %>
+              <h5><%= @year %> CA AVG LTL PER ORDER</h5>
+            <% else %>
+              <h5>TOTAL CA AVG LTL PER ORDER</h5>
+            <% end %>
+            <span class="h1 font-weight-bold">
+              <% if @ca_overview.present? %>
+                <%= number_to_currency(@ca_overview.sum { |a| a.actual_invoiced.to_f } / @ca_overview.length  * @exchange_rate) %>
+              <% else %>
+                $0
+              <% end %>
+            </span>
+            <span class="ml-2">(<%= @currency %>)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-100 p-4 rounded bg-grey10">
+        <div class="row">
+          <div class="col-3 text-center">
+            <div class="bg-grey40 text-white rounded-circle rounded-circle-5">
+              <span>$</span>
+            </div>
+          </div>
+          <div class="col-9">
+            <% if @year <= Date.today.year %>
+              <h5><%= @year %> CA AVG WGD PER ORDER</h5>
+            <% else %>
+              <h5>TOTAL CA AVG WGD PER ORDER</h5>
+            <% end %>
+            <span class="h1 font-weight-bold">
+              <% if @ca_overview.present? %>
+                <%= number_to_currency(@ca_overview.sum { |a| a.white_glove_fee.to_f } / @ca_overview.length * @exchange_rate) %>
+              <% else %>
+                $0
+              <% end %>
+            </span>
+            <span class="ml-2">(<%= @currency %>)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 mb-2">
+      <div class="row mx-0">
+        <div class="col-6 col-fit-content shipping-tab <%= "active" if current_store == "us" %>" data-shiptab="us-overview" data-group="overview">
+          <h5>US OVERVIEW</h5>
+        </div>
+
+        <div class="col-6 col-fit-content shipping-tab <%= "active" if current_store == "canada" %>" data-shiptab="canada-overview" data-group="overview">
+          <h5>CA OVERVIEW</h5>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-4 offset-2 mb-2 shipping-content <%= "active" if current_store == "us" %>" data-shiptab="us-overview" data-group="overview">
+      <div class="drop-toggle ml-auto w-50">
+        Filter State
+        <i class="dripicons-chevron-down"></i>
+      </div>
+      <div class="drop-menu row no-gutters mx-0 bg-grey10">
+        <div class="col-4">
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store) %>">
+            <div class="drop-item">SHOW ALL</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "alabama") %>">
+            <div class="drop-item">Alabama (AL)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "alaska") %>">
+            <div class="drop-item">Alaska (AK)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "american_samoa") %>">
+            <div class="drop-item">American Samoa (AS)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "arizona") %>">
+            <div class="drop-item">Arizona (AZ)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "arkansas") %>">
+            <div class="drop-item">Arkansas (AR)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "california") %>">
+            <div class="drop-item">California (CA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "colorado") %>">
+            <div class="drop-item">Colorado (CO)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "connecticut") %>">
+            <div class="drop-item">Connecticut (CT)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "delaware") %>">
+            <div class="drop-item">Delaware (DE)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "district_of_columbia") %>">
+            <div class="drop-item">District of Columbia (DC)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "florida") %>">
+            <div class="drop-item">Florida (FL)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "georgia") %>">
+            <div class="drop-item">Georgia (GA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "guam") %>">
+            <div class="drop-item">Guam (GU)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "hawaii") %>">
+            <div class="drop-item">Hawaii (HI)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "idaho") %>">
+            <div class="drop-item">Idaho (ID)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "illinois") %>">
+            <div class="drop-item">Illinois (IL)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "indiana") %>">
+            <div class="drop-item">Indiana (IN)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "iowa") %>">
+            <div class="drop-item">Iowa (IA)</div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "kansas") %>">
+            <div class="drop-item">Kansas (KS)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "kentucky") %>">
+            <div class="drop-item">Kentucky (KY)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "louisiana") %>">
+            <div class="drop-item">Louisiana (LA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "maine") %>">
+            <div class="drop-item">Maine (ME)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "maryland") %>">
+            <div class="drop-item">Maryland (MD)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "massachusetts") %>">
+            <div class="drop-item">Massachusetts (MA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "michigan") %>">
+            <div class="drop-item">Michigan (MI)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "minnesota") %>">
+            <div class="drop-item">Minnesota (MN)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "mississippi") %>">
+            <div class="drop-item">Mississippi (MS)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "missouri") %>">
+            <div class="drop-item">Missouri (MO)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "montana") %>">
+            <div class="drop-item">Montana (MT)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "nebraska") %>">
+            <div class="drop-item">Nebraska (NE)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "nevada") %>">
+            <div class="drop-item">Nevada (NV)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "new_hampshire") %>">
+            <div class="drop-item">New Hampshire (NH)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "new_jersey") %>">
+            <div class="drop-item">New Jersey (NJ)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "new_mexico") %>">
+            <div class="drop-item">New Mexico (NM)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "new_york") %>">
+            <div class="drop-item">New York (NY)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "north_carolina") %>">
+            <div class="drop-item">North Carolina (NC)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "north_dakota") %>">
+            <div class="drop-item">North Dakota (ND)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "northern_mariana_islands") %>">
+            <div class="drop-item">Northern Mariana Islands (MP)</div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "ohio") %>">
+            <div class="drop-item">Ohio (OH)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "oklahoma") %>">
+            <div class="drop-item">Oklahoma (OK)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "oregon") %>">
+            <div class="drop-item">Oregon (OR)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "pennsylvania") %>">
+            <div class="drop-item">Pennsylvania (PA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "puerto_rico") %>">
+            <div class="drop-item">Puerto Rico (PR)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "rhode_island") %>">
+            <div class="drop-item">Rhode Island (RI)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "south_carolina") %>">
+            <div class="drop-item">South Carolina (SC)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "south_dakota") %>">
+            <div class="drop-item">South Dakota (SD)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "tennessee") %>">
+            <div class="drop-item">Tennessee (TN)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "texas") %>">
+            <div class="drop-item">Texas (TX)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "us_virgin_islands") %>">
+            <div class="drop-item">U.S. Virgin Islands (VI)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "utah") %>">
+            <div class="drop-item">Utah (UT)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "vermont") %>">
+            <div class="drop-item">Vermont (VT)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "virginia") %>">
+            <div class="drop-item">Virginia (VA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "washington") %>">
+            <div class="drop-item">Washington (WA)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "west_virginia") %>">
+            <div class="drop-item">West Virginia (WV)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "wisconsin") %>">
+            <div class="drop-item">Wisconsin (WI)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "wyoming") %>">
+            <div class="drop-item">Wyoming (WY)</div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-2 offset-4 mb-2 shipping-content <%= "active" if current_store == "canada" %>" data-shiptab="canada-overview" data-group="overview">
+      <div class="drop-toggle ml-auto">
+        Filter State
+        <i class="dripicons-chevron-down"></i>
+      </div>
+      <div class="drop-menu">
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store) %>">
+            <div class="drop-item">SHOW ALL</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "alberta") %>">
+            <div class="drop-item">Alberta (AB)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "british_columbia") %>">
+            <div class="drop-item">British Columbia (BC)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "manitoba") %>">
+            <div class="drop-item">Manitoba (MB)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "new_brunswick") %>">
+            <div class="drop-item">New Brunswick (NB)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "newfoundland_and_labrador") %>">
+            <div class="drop-item">Newfoundland and Labrador (NL)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "northwest_territories") %>">
+            <div class="drop-item">Northwest Territories (NT)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "nova_scotia") %>">
+            <div class="drop-item">Nova Scotia (NS)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "nunavut") %>">
+            <div class="drop-item">Nunavut (NU)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "ontario") %>">
+            <div class="drop-item">Ontario (ON)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "prince_edward_island") %>">
+            <div class="drop-item">Prince Edward Island (PE)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "quebec") %>">
+            <div class="drop-item">Quebec (QC)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "saskatchewan") %>">
+            <div class="drop-item">Saskatchewan (SK)</div>
+          </a>
+          <a href="<%= report_logistics_admin_orders_path(year: @year, currency: @store, state: "yukon") %>">
+            <div class="drop-item">Yukon (YT)</div>
+          </a>
+      </div>
+    </div>
+
+    <div class="col-12 mb-4 shipping-content <%= "active" if current_store == "us" %>" data-shiptab="us-overview" data-group="overview">
+      <div class="row w-100 mx-0">
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @us_shipping_details != @us_overview %> VOLUME OVERVIEW
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>CURB & WGD + LTL #</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= @us_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= @us_shipping_details.count %></td>
+              </tr>
+              <tr>
+                <th>WGD + LTL ONLY #</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= @us_wgs.where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= @us_wgs.count %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @us_shipping_details != @us_overview %> COST OVERVIEW
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>CURB & WGD + LTL $</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@us_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@us_shipping_details.sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+              </tr>
+              <tr>
+                <th>WGD + LTL ONLY $</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@us_wgs.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@us_wgs.sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+              </tr>
+              <tr>
+                <th>CUSTOMER FEE</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@us_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a&.order&.shipping_line&.price&.to_f + a.shipping_costs.where(cost_type: "fees").sum(:amount) } * @exchange_rate) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@us_shipping_details.sum { |a| a&.order&.shipping_line&.price&.to_f + a.shipping_costs.where(cost_type: "fees").sum(:amount) } * @exchange_rate) %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      
+        <div class="col-6 mb-4">
+          <h5>LTL VOLUME SHIP TO US</h5>
+          <% default = {"JAN" => 0, "FEB" => 0, "MAR" => 0, "APR" => 0, "MAY" => 0, "JUN" => 0, "JUL" => 0, "AUG" => 0, "SEP" => 0, "OCT" => 0, "NOV" => 0, "DEC" => 0} %>
+          <% us_volume = default.merge @us_shipping_details.group_by_month(:created_at, format: "%^b").count %>
+          <%= column_chart us_volume %>
+        </div>
+
+        <div class="col-6 mb-4">
+          <h5>LTL COST SHIP TO US</h5>
+          <% us_cost = default.clone %>
+          <% (1..12).each do |i| %>
+            <% us_cost[us_cost.keys[i - 1]] = (@us_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate).round(2) %>
+          <% end %>
+          <%= column_chart us_cost, prefix: "$" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mb-4 shipping-content <%= "active" if current_store == "canada" %>" data-shiptab="canada-overview" data-group="overview">
+      <div class="row w-100 mx-0">
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @ca_shipping_details != @ca_overview %> VOLUME OVERVIEW
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>CURB & WGD + LTL #</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= @ca_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= @ca_shipping_details.count %></td>
+              </tr>
+              <tr>
+                <th>WGD + LTL ONLY #</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= @ca_wgs.where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= @ca_wgs.count %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @ca_shipping_details != @ca_overview %> COST OVERVIEW
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+                <th>CURB & WGD + LTL $</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@ca_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@ca_shipping_details.sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+              </tr>
+              <tr>
+                <th>WGD + LTL ONLY $</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@ca_wgs.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@ca_wgs.sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate) %></td>
+              </tr>
+              <tr>
+                <th>CUSTOMER FEE</th>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@ca_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a&.order&.shipping_line&.price&.to_f + a.shipping_costs.where(cost_type: "fees").sum(:amount) } * @exchange_rate) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@ca_shipping_details.sum { |a| a&.order&.shipping_line&.price&.to_f + a.shipping_costs.where(cost_type: "fees").sum(:amount) } * @exchange_rate) %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      
+        <div class="col-6 mb-4">
+          <% ca_volume = default.merge @ca_shipping_details.group_by_month(:created_at, format: "%^b").count %>
+          <h5>LTL VOLUME SHIP TO CA</h5>
+          <%= column_chart ca_volume %>
+        </div>
+
+        <div class="col-6 mb-4">
+          <h5>LTL $ SHIP TO CA</h5>
+          <% ca_cost = default.clone %>
+          <% (1..12).each do |i| %>
+            <% ca_cost[ca_cost.keys[i - 1]] = (@ca_shipping_details.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f + a.white_glove_fee.to_f } * @exchange_rate).round(2) %>
+          <% end %>
+          <%= column_chart ca_cost, prefix: "$" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-3 col-fit-content shipping-tab <%= "active" if current_store == "us" %>" data-shiptab="us-curbside" data-group="curbside">
+      <h5>CURBSIDE US DELIVERIES</h5>
+    </div>
+
+    <div class="col-3 col-fit-content shipping-tab <%= "active" if current_store == "canada" %>" data-shiptab="canada-curbside" data-group="curbside">
+      <h5>CURBSIDE CA DELIVERIES</h5>
+    </div>
+
+    <div class="col-12 mb-4 shipping-content <%= "active" if current_store == "us" %>" data-shiptab="us-curbside" data-group="curbside">
+      <div class="row w-100 mx-0">
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @us_shipping_details != @us_overview %> CURBSIDE VOLUME
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% Carrier.where(country: "us").each do |carrier| %>
+                <% if @us_curb.where(shipping_details: { carrier_id: carrier.id }).count > 0 %>
+                  <tr>
+                    <td><%= carrier.name %> CURB #</td>
+                    <% (1..12).each do |i| %>
+                      <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                        <td><%= @us_curb.where(shipping_details: { carrier_id: carrier.id }).where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                      <% else %>
+                        <td>-</td>
+                      <% end %>
+                    <% end %>
+                    <td><%= @us_curb.where(shipping_details: { carrier_id: carrier.id }).count %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @us_shipping_details != @us_overview %> CURBSIDE COST
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% Carrier.where(country: "us").each do |carrier| %>
+                <% if @us_curb.where(shipping_details: { carrier_id: carrier.id }).count > 0 %>
+                  <tr>
+                    <td><%= carrier.name %> CURB $</td>
+                    <% (1..12).each do |i| %>
+                      <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                        <td><%= number_to_currency(@us_shipping_details.where(shipping_details: { carrier_id: carrier.id }).where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f }) %></td>
+                      <% else %>
+                        <td>-</td>
+                      <% end %>
+                    <% end %>
+                    <td><%= number_to_currency(@us_shipping_details.where(shipping_details: { carrier_id: carrier.id }).sum { |a| a.actual_invoiced.to_f }) %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mb-4 shipping-content <%= "active" if current_store == "canada" %>" data-shiptab="canada-curbside" data-group="curbside">
+      <div class="row w-100 mx-0">
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @ca_shipping_details != @ca_overview %> CURBSIDE VOLUME
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% Carrier.where(country: "canada").each do |carrier| %>
+                <% if @ca_curb.where(shipping_details: { carrier_id: carrier.id }).count > 0 %>
+                  <tr>
+                    <td><%= carrier.name %> CURB #</td>
+                    <% (1..12).each do |i| %>
+                      <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                        <td><%= @ca_curb.where(shipping_details: { carrier_id: carrier.id }).where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                      <% else %>
+                        <td>-</td>
+                      <% end %>
+                    <% end %>
+                    <td><%= @ca_curb.where(shipping_details: { carrier_id: carrier.id }).count %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @ca_shipping_details != @ca_overview %> CURBSIDE COST
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% Carrier.where(country: "canada").each do |carrier| %>
+                <% if @ca_curb.where(shipping_details: { carrier_id: carrier.id }).count > 0 %>
+                  <tr>
+                    <td><%= carrier.name %> CURB $</td>
+                    <% (1..12).each do |i| %>
+                      <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                        <td><%= number_to_currency(@ca_curb.where(shipping_details: { carrier_id: carrier.id }).where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.actual_invoiced.to_f }) %></td>
+                      <% else %>
+                        <td>-</td>
+                      <% end %>
+                    <% end %>
+                    <td><%= number_to_currency(@ca_curb.where(shipping_details: { carrier_id: carrier.id }).sum { |a| a.actual_invoiced.to_f }) %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-3 col-fit-content shipping-tab <%= "active" if current_store == "us" %>" data-shiptab="us-whiteglove" data-group="whiteglove">
+      <h5>WHITE GLOVE US DELIVERIES</h5>
+    </div>
+
+    <div class="col-3 col-fit-content shipping-tab <%= "active" if current_store == "canada" %>" data-shiptab="canada-whiteglove" data-group="whiteglove">
+      <h5>WHITE GLOVE CA DELIVERIES</h5>
+    </div>
+
+    <div class="col-12 mb-4 shipping-content <%= "active" if current_store == "us" %>" data-shiptab="us-whiteglove" data-group="whiteglove">
+      <div class="row w-100 mx-0">
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @us_shipping_details != @us_overview %> WHITE GLOVE VOLUME
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WGD #</td>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= @us_wgs.where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= @us_wgs.count %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @us_shipping_details != @us_overview %> WHITE GLOVE COST
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WGD $</td>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= number_to_currency(@us_wgs.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.white_glove_fee.to_f }) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@us_wgs.sum { |a| a.white_glove_fee.to_f }) %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mb-4 shipping-content <%= "active" if current_store == "canada" %>" data-shiptab="canada-whiteglove" data-group="whiteglove">
+      <div class="row w-100 mx-0">
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @ca_shipping_details != @ca_overview %> WHITE GLOVE VOLUME
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WGD #</td>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%= @ca_wgs.where("extract(month from shipping_details.created_at) = ?", i).count %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= @ca_wgs.count %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col-12 mb-4">
+          <table class="table table-borderless table-hover">
+            <thead>
+              <tr>
+                <th style="width: 20%">
+                  <%= @state.humanize.upcase if @state.present? && @ca_shipping_details != @ca_overview %> WHITE GLOVE 
+                </th>
+                <% (1..12).each do |i| %>
+                  <th style="width: 6%"><%= Date.new(@year, i, 1).strftime("%^b") %></th>
+                <% end %>
+                <th style="width: 8%">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WGD $</td>
+                <% (1..12).each do |i| %>
+                  <% if Date.new(@year, i, 1) <= Date.today || @year > Date.today.year %>
+                    <td><%=number_to_currency(@ca_wgs.where("extract(month from shipping_details.created_at) = ?", i).sum { |a| a.white_glove_fee.to_f }) %></td>
+                  <% else %>
+                    <td>-</td>
+                  <% end %>
+                <% end %>
+                <td><%= number_to_currency(@ca_wgs.sum { |a| a.white_glove_fee.to_f }) %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).on("click", ".shipping-tab", function() {
+    var index = $(this).data("shiptab");
+    var group = $(this).data("group");
+    $(".shipping-tab").each(function() {
+      if ($(this).data("group") == group) {
+        $(this).removeClass("active");
+      }
+      if ($(this).data("shiptab") == index) {
+        $(this).addClass("active");
+      }
+    });
+    
+    $(".shipping-content").each(function() {
+      if ($(this).data("group") == group) {
+        $(this).removeClass("active");
+      }
+      if ($(this).data("shiptab") == index) {
+        $(this).addClass("active");
+      }
+    });
+  });
+
+  $("#exchange_rate").on("change", function() {
+    $(this).parent().attr("data-amount", $(this).val());
+  });
+</script>
+
+<style>
+  .shipping-tab h5 { color: var(--grey60); }
+  .shipping-tab.active h5 { color: var(--grey100); }
+  .shipping-tab.active { border: none; }
+</style>

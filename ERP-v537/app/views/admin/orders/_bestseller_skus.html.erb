@@ -1,0 +1,119 @@
+<div class="row">
+  <div class="col-6">
+    <span class="header2">BESTSELLERS</span>
+    <% if params[:b].to_i == 0 %>
+      (This Week)
+    <% elsif params[:b].to_i == 1 %>
+      (This month)
+    <% elsif params[:b].to_i == 2 %>
+      (Past 90 Days)
+    <% end %>
+  </div>
+
+  <div class="col-6 text-right">
+    <div class="dropdown">
+      <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+        Date Range <%= show_svg("arrow.svg") %>
+      </div>
+      <div class="dropdown-menu">
+        <a href="<%= bestseller_skus_admin_orders_path(b: 0) %>", data-remote="true">
+          <div class="dropdown-item">This Week</div>
+        </a>
+        <a href="<%= bestseller_skus_admin_orders_path(b: 1) %>", data-remote="true">
+          <div class="dropdown-item">This Month</div>
+        </a>
+        <a href="<%= bestseller_skus_admin_orders_path(b: 2) %>", data-remote="true">
+          <div class="dropdown-item">Past 90 days</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <% if @items.present? %>
+    <% @items.group(:variant_id).count.sort_by { |k, v| v }.reverse!.first(6).to_h.keys.each do |id| %>
+      <% variant = ProductVariant.find_by(id: id) %>
+      <% if variant.present? %>
+        <div class="col-2 mb-3">
+          <% product = variant.product if variant.product.present? %>
+          <% product_image = ProductImage.find_by(shopify_image_id: variant.image_id) if variant.image_id.present? %>
+          <% if product_image.present? && product_image.src.present? %>
+            <%= image_tag product_image.src, class: "img-fluid border mb-3" %>
+          <% elsif product.present? && product.product_images.present? %>
+            <%= image_tag product.product_images[0].src, class: "img-fluid border mb-3" %>
+          <% else %>
+            <%= image_tag "logo-em.png", class: "img-fluid border mb-3" %>
+          <% end %>
+          <h5>SKU: <%= variant.sku %></h5>
+          <h5 class="fc-red-clay"><%= variant.title %></h5>
+          <span>Material: <%= variant.option1 %></span>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="col-12 mb-3">
+      <p>No Data</p>
+    </div>
+  <% end %>
+</div>
+
+<div class="row">
+  <div class="col-6">
+    <span class="header2">BESTSELLING SWATCHES</span>
+    <% if params[:b].to_i == 0 %>
+      (This Week)
+    <% elsif params[:b].to_i == 1 %>
+      (This month)
+    <% elsif params[:b].to_i == 2 %>
+      (Past 90 Days)
+    <% end %>
+  </div>
+
+  <div class="col-6 text-right">
+    <div class="dropdown">
+      <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+        Date Range <%= show_svg("arrow.svg") %>
+      </div>
+      <div class="dropdown-menu">
+        <a href="<%= report_orders_admin_orders_path(b: params[:b], c: "this_month") %>", data-remote="true">
+          <div class="dropdown-item">This Month</div>
+        </a>
+        <a href="<%= report_orders_admin_orders_path(b: params[:b], c: "90_days") %>", data-remote="true">
+          <div class="dropdown-item">90 Days</div>
+        </a>
+        <a href="<%= report_orders_admin_orders_path(b: params[:b], c: "current") %>", data-remote="true">
+          <div class="dropdown-item">Current Year</div>
+        </a>
+        <a href="<%= report_orders_admin_orders_path(b: params[:b], c: "previous") %>", data-remote="true">
+          <div class="dropdown-item">Previous Year</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <% if @swatch_items.present? %>
+    <% @swatch_items.group(:variant_id).count.sort_by { |k, v| v }.reverse!.first(6).to_h.keys.each do |id| %>
+      <% variant = ProductVariant.find_by(id: id) %>
+      <% if variant.present? %>
+        <div class="col-2 mb-3">
+          <% product = variant.product if variant.product.present? %>
+          <% product_image = ProductImage.find_by(shopify_image_id: variant.image_id) if variant.image_id.present? %>
+
+          <% if product_image.present? && product_image.src.present? %>
+            <%= image_tag product_image.src, class: "img-fluid border mb-3" %>
+          <% elsif product.present? && product.product_images.present? %>
+            <%= image_tag product.product_images[0].src, class: "img-fluid border mb-3" %>
+          <% else %>
+            <%= image_tag "logo-em.png", class: "img-fluid border mb-3" %>
+          <% end %>
+          <h5>SKU: <%= variant.sku %></h5>
+          <h5 class="fc-red-clay"><%= variant.title %></h5>
+          <span>Material: <%= variant.option1 %></span>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="col-12 mb-3">
+      <p>No Data</p>
+    </div>
+  <% end %>
+</div>

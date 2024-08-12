@@ -1,0 +1,259 @@
+<div class="sb-topnav navbar bg-white">
+  <% if current_user.supplier? %>
+    <div class="col-8 d-flex">
+      <div class="mr-5" style="width: 20%">
+        <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+      </div>
+      <span class="font-weight-bold text-black mr-4"><%= current_user.supplier.name %></span>
+      <a class="underline-hover <%= "active" if params[:action] == "supplier_index" || params[:source] == "index" %>" href="<%= supplier_index_admin_purchases_path %>">订单</a>
+      <a class="underline-hover <%= "active" if params[:action] == "complete" || params[:source] == "complete" %>" href="<%= complete_admin_purchases_path %>">完成</a>
+      <a class="underline-hover <%= "active" if params[:action] == "cancel_request" || params[:source] == "request" %>" href="<%= cancel_request_admin_purchases_path(req_status: "ongoing") %>">特例</a>
+    </div>
+
+  <% else %>
+    <div class="col-8 d-flex">
+      <div class="mr-5" style="width: 20%">
+        <%= image_tag "logo-em-2.png", class: "img-fluid" %>
+      </div>
+      <% if current_store == "us" %>
+        <span class="underline-hover active">EMUS</span>
+        <a class="underline-hover mr-5" data-turbolinks=false href="<%= dashboard_redirect_store_path(store: "canada") %>">EMCA</a>
+      <% else %>
+        <a class="underline-hover" data-turbolinks=false href="<%= dashboard_redirect_store_path(store: "us") %>">EMUS</a>
+        <span class="underline-hover active mr-5">EMCA</span>
+      <% end %>
+
+      <% if current_user.user_group.overview_view && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+        <a class="text-grey underline-hover" href="<%= admin_tasks_path %>">myConnect</a>
+      <% end %>
+      
+      <% if current_user.user_group.orders_view && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+        <div class="hover-toggle">
+          <span class="underline-hover">Orders</span>
+          <div class="hover-container">
+            <div class="hover-menu">
+              <a href="<%= shipping_list_admin_orders_path(ship_status: "not_ready") %>">
+                <div class="hover-item">Orders</div>
+              </a>
+              <a href="<%= cancel_request_admin_orders_path(type: "cancel_request") %>">
+                <div class="hover-item">Cancel Orders</div>
+              </a>
+              <a href="<%= hold_request_admin_orders_path %>">
+                <div class="hover-item">Hold Orders</div>
+              </a>
+              <a href="<%= pending_payment_section_admin_orders_path(pending_status: "1-3") %>">
+                <div class="hover-item">Pending Payment</div>
+              </a>
+              <a href="<%= admin_returns_path(status: "pending") %>">
+                <div class="hover-item">Returns</div>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <% if current_user.user_group.inventory_view && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+        <div class="hover-toggle">
+          <span class="underline-hover">Inventory</span>
+          <div class="hover-container">
+            <div class="hover-menu">
+              <a href="<%= current_store == "us" ? stock_admin_orders_path : emca_stock_admin_orders_path %>">
+                <div class="hover-item">All Inventory</div>
+              </a>
+              <a href="<%= current_store == "us" ? stock_admin_orders_path(type: "swatch") : emca_stock_admin_orders_path(type: "swatch") %>">
+                <div class="hover-item">Swatches</div>
+              </a>
+              <% if current_user.user_group.warehouse_permissions.where(permission: true).any? %>
+                <a href="<%= warehouse_inventories_admin_orders_path(warehouse_name: current_user.user_group.warehouse_permissions.where(permission: true).eager_load(:warehouse).joins(:warehouse).where(warehouses: {store: current_store}).first&.warehouse&.name ) %>">
+                  <div class="hover-item">Warehouse Inventories</div>
+                </a>
+              <% end %>
+              <% if current_user.user_group.warehouse_permissions.where(permission: true).any? %>
+                <a href="<%= admin_warehouse_transfer_orders_path %>">
+                  <div class="hover-item">Warehouse Transfer</div>
+                </a>
+              <% end %>
+              <a href="<%= purchase_admin_supplier_path(Supplier.order(:name).first) %>">
+                <div class="hover-item">Purchase Orders</div>
+              </a>
+              <a href="<%= current_store == "us" ? admin_containers_path(container_status: "en_route", time: "this_week") : emca_container_index_admin_containers_path(container_status: "en_route", time: "this_week") %>">
+                <div class="hover-item">Containers</div>
+              </a>
+              <a href="<%= reserved_skus_admin_orders_path(reserve_status: "reserved") %>">
+                <div class="hover-item">Reserved</div>
+              </a>
+              <% if current_user.user_group.inventory_admin_cru %>
+                <a href="<%= current_store == "us" ? admin_products_path : emca_products_admin_products_path %>">
+                  <div class="hover-item">Parent Products</div>
+                </a>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <% if current_user.employee.present? %>
+        <% if current_user.employee.sales_permission.present? %>
+          <a class="text-grey underline-hover" href="<%= admin_sales_path %>">Sales</a>
+        <% end %>
+        
+        <% if current_user.user_group.issues_view && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+          <a class="text-grey underline-hover" href="<%= admin_issues_path(issue_status: "assigned") %>">Claims</a>
+        <% end %>
+        
+        <% if current_user.employee&.is_billing %>
+          <div class="hover-toggle">
+            <span class="underline-hover">Finance</span>
+            <div class="hover-container">
+              <div class="hover-menu">
+                <a href="<%= review_admin_billing_sections_path %>">
+                  <div class="hover-item">Shipping</div>
+                </a>
+                <a href="<%= expense_posting_admin_expenses_path %>">
+                  <div class="hover-item">Expense Submission</div>
+                </a>
+                <a href="<%= container_posting_admin_finance_containers_path %>">
+                  <div class="hover-item">Containers</div>
+                </a>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+
+      <a class="text-grey underline-hover" href="<%= admin_orders_path(store1: "us", date: Date.today, store2: "us", ytd: false, store2_2: "us", ytd_2: false, store3: "us", store4: "us") %>">Dashboard</a>
+    </div>
+  <% end %>
+
+  <div class="col-3">
+    <div class="" style="width: 85%">
+      <div class="search-bar">
+        <input type="text" placeholder="Search Order..." class="form-control" data-reflex="debounced:input->OrderReflex#search" data-store-type="<%= current_store %>">
+      </div>
+      <section class="search-results" id="order-search-edit-results" style="width: 125%">
+        <% render partial: "admin/orders/search_edit", locals: { current_user: current_user } %>
+      </section>
+    </div>
+  </div>
+    
+  <div class="col-1 d-flex justify-content-end">
+    <% if current_user.user_group.admin_view && !current_user.supplier? %>
+      <a class="text-red mr-2" href="<%= admin_groups_path %>">
+        Admin
+      </a>
+    <% end %>
+
+    <% unless current_user.supplier? %>
+      <div class="dropdown">
+        <div class="dropdown-toggle notification-toggle arrow-none rotate-none mr-4" data-toggle="dropdown">
+          <%= show_svg("notification.svg") %>
+        </div>
+
+        <div class="dropdown-menu dropdown-menu-right">
+          <form id="notification" style="width: 350px">
+            <div class="row mx-0" style="max-height: 450px; overflow-y: auto">
+              <% if @notifications.present? %>
+                <div class="col-12 text-right">
+                  <a class="text-black" data-reflex="click->NotificationReflex#clear_all_notifications" data-user-id="<%= current_user.id %>"  data-reflex-root="#notification">Clear All</a>
+                </div>
+                <%= render partial: "includes/notifications", notifications: @notifications %>
+              <% else %>
+                <div class="col-12">
+                  There are no notifications.
+                </div>
+              <% end %>
+            </div>
+
+            <div class="row mx-0 border-top">
+              <div class="col-12 p-3">
+                <a data-toggle="modal" data-target="#notificationModal">
+                  Notification Settings
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="dropdown">
+      <div class="dropdown-toggle arrow-none rotate-none" data-toggle="dropdown">
+        <div class="rounded-circle bg-light-blue" style="height: 20px; width: 20px; margin-top: 1px">
+          <span class="header2 text-blue"><%= current_user.full_name[0] %></span>
+        </div>
+      </div>
+      
+      <div class="dropdown-menu dropdown-menu-right">
+        <div class="switch-content active" data-switch-group="user-profile" data-switch-index="main" style="width: 300px">
+          <div class="row no-gutters">
+            <div class="col-12 text-right">
+              <a href="<%= destroy_user_session_path %>" class="text-grey p-3 d-inline-block" id="sign_out" data-method="delete">
+                Sign Out
+              </a>
+              <style>
+                #sign_out:hover { background: var(--light-grey) }
+              </style>
+            </div>
+            <div class="col-6">
+              <div class="rounded-circle bg-light-blue mx-auto" style="height: 7.5rem; width: 7.5rem">
+                <span class="header1 text-blue" style="font-size: 25px">
+                  <%= current_user.full_name[0] %>
+                </span>
+              </div>
+            </div>
+            <div class="col-6">
+              <p>
+                <span class="header2 text-black"><%= current_user.full_name %></span><br>
+                <span class="text-grey"><%= current_user.email %></span>
+              </p>
+              <p>
+                <a class="switch-tab prevent" data-switch-group="user-profile" data-switch-index="password">Change Password</a><br>
+                <a href="<%= enable_2fa_admin_user_path(current_user) %>">2FA</a>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="switch-content" data-switch-group="user-profile" data-switch-index="password" style="width: 300px">
+          <%= form_for current_user, url: update_password_admin_user_path(current_user), html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+            <% if current_user.errors.any? %>
+              <div class="alert alert-danger" role="alert">
+                <% current_user.errors.full_messages.each do |message| %>
+                  <%= message %><br>
+                <% end %>
+              </div>
+            <% end %>
+            <div class="row mx-0 my-3">
+              <div class="col-12 mb-3">
+                <p class="header2">Change Password</p>
+              </div>
+              <div class="col-12 mb-3">
+                <%= f.label :password %>
+                <%= f.password_field :password, class: "form-control", required: true %>
+              </div>
+              <div class="col-12 mb-3">
+                <%= f.label :password_confirmation %>
+                <%= f.password_field :password_confirmation, class: "form-control", required: true %>
+              </div>
+              <div class="col-12 mb-3 text-center">
+                <a class="btn btn-secondary mr-4 switch-tab" data-switch-group="user-profile" data-switch-index="main">Cancel</a>
+                <%= f.submit "Submit", class: "btn btn-primary" %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    if ($(".unread-notification").length > 0) {
+      $(".notification-toggle").prepend('<div class="new-notification-indicator"></div>');
+    }
+  });
+  
+  $(".notification-toggle").on("click", function() {
+    $(this).children(".new-notification-indicator").remove();
+  });
+</script>

@@ -1,0 +1,30 @@
+<div class="row">
+  <div class="col-12 mb-3">
+    <div class="table-responsive">
+      <%= form_tag assign_admin_products_path(product_id: @product.id) do |f| %>
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th <% if current_user.user_group.inventory_cru %>style="width: 30%"<% else %>style="width: 38%"<% end %>>Description</th>
+              <th style="width: 10%">SKU</th>
+              <th style="width: 8%">On Hand</th>
+            </tr>
+          </thead>
+          <% if @variants.present? %>
+            <tbody>
+              <% @variants.where(store: current_store).each do |variant| %>
+                <tr>
+                  <td><%= link_to variant.try(:title), admin_product_variant_path(id: variant.id) %></td>
+                  <td><%= variant.sku.upcase %></td>
+                  <td><%= variant.try(:inventory_quantity).to_i %></td>
+                  <td><%= check_box_tag "var_ids[]", variant.id %></td>
+                </tr>
+              <% end %>
+            </tbody>
+            <div><%= submit_tag "Submit", class: "btn btn-primary" %></div>
+          <% end %>
+        </table>
+      <% end %>
+    </div>
+  </div>
+</div>

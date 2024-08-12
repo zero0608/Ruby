@@ -1,0 +1,23 @@
+<div class="container px-4">
+  <div class="row mb-3">
+    <div class="col-12">
+      <p class="header1">Requests</p>
+    </div>
+    
+    <div class="col-12">
+      <a class="underline-hover <%= "active" if params[:req_status] == "ongoing" %>" href="<%= cancel_request_admin_purchases_path(req_status: "ongoing") %>">Ongoing</a>
+      <a class="underline-hover <%= "active" if params[:req_status] == "completed" %>" href="<%= cancel_request_admin_purchases_path(req_status: "completed") %>">Completed</a>
+    </div>
+  </div>
+
+  <% if params[:req_status] == "ongoing" %>
+    <section id="ongoing">
+      <%= render partial: "ongoing_request", locals: { current_user: current_user } %>
+    </section>
+
+  <% elsif params[:req_status] == "completed" %>
+    <section id="completed">
+      <%= render partial: "completed_request", locals: { current_user: current_user } %>
+    </section>
+  <% end %>
+</div>

@@ -1,0 +1,211 @@
+<% current_user = @current_user if @current_user.present? && current_user.nil? %>
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 12%">
+          <%= link_to "Order Number #{arrow :name}", "#", data: { reflex: "click->OrderReflex#order", column_name: :name, direction: direction } %>
+        </th>
+        <th style="width: 10%">Type</th>
+        <th style="width: 12%">Customer</th>
+        <th style="width: 12%">
+          <%= link_to "Order Date #{arrow :created_at}", "#", data: { reflex: "click->OrderReflex#order", column_name: :created_at, direction: direction } %>
+        </th>
+        <th style="width: 10%">Amount</th>
+        <th style="width: 12%">Shipping Method</th>
+        <th style="width: 12%">ETC</th>
+        <th style="width: 10%">Days +/-</th>
+        <th style="width: 10%">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if @pagy.count > 0 %>
+        <% @orders.order(eta: :asc).each do |order| %>
+          <% type_order(order) if order.order_type.nil? %>
+          <% order_status_update(order) %>
+          <tr>
+            <td><%= link_to order.name, edit_admin_order_path(order), data: { turbolinks: false } %></td>
+            <td><%= order.order_type %></td>
+            <td><%= order&.customer&.full_name&.titleize %></td>
+            <td><%= order.created_at.to_date.strftime('%B %d, %Y') %></td>
+            <td>
+              <% sum = 0 %>
+              <% if order.line_items.present? %>
+                <% order.line_items.where(order_from: nil).each_with_index do |item, i| %>
+                  <% sum = sum + mul(item.try(:price), item.try(:quantity)) %>
+                <% end %>
+              <% end %>
+            
+              <%if order.discount_codes.present? %>
+                <% if order.discount_codes["discount_amount"].to_f.negative?() %>
+                  <% sum = sum + order.discount_codes["discount_amount"].to_f %>
+                <% else %>
+                  <% sum = sum - order.discount_codes["discount_amount"].to_f %>
+                <% end %>
+              <% end %>
+            
+              <% if order.shipping_line.present? %>
+                <% sum = sum + order.try(:shipping_line).try(:price).to_f %>
+              <% end %>
+
+              <% if order.tax_lines.present? %>
+                <% sum = sum + order.tax_lines['price'].to_f %>
+              <% end %>
+
+              <% if order.refunds.present? && order.order_adjustments.present? %>
+                <% order.refunds.each do |ref| %>
+                  <% order.order_adjustments.each do |adj| %>
+                    <% sum = sum + (adj.amount).to_f %>
+                  <% end %>
+                <% end %>
+              <% end %>
+                  
+              <%= number_to_currency(sum) %>
+            </td>
+            <td>
+              <% if order&.shipping_line&.title&.downcase&.include? "white glove" or order.shipping_details.any? { |w| w.white_glove_delivery } %>
+                <span class="badge badge-outline-dark">White Glove</span>
+              <% elsif ["curbside", "contactless"].any? { |w| order&.shipping_line&.title&.downcase&.include? w } %>
+                <span class="badge badge-outline-success">Curbside</span>
+              <% elsif order&.shipping_line&.title&.downcase&.include? "admin shipping method - free" %>
+                <span class="badge badge-outline-info">Admin - Free Ship</span>
+              <% elsif order&.shipping_line&.title&.downcase&.include? "local" %>
+                <span class="badge badge-outline-warning">Local Pickup</span>
+              <% else %>
+                <%= order&.shipping_line&.title %>
+              <% end %>
+              <% if order.line_items.joins(:variant).where(variant: { oversized: true }).present? %>
+                <span class="badge badge-outline-red">OS</span>
+              <% end %>
+              <% if order.shipping_details.any? { |s| s.local_pickup == "1" } %>
+                <span class="btn-primary ml-2 px-1 font-weight-bold" title="Local Delivery" style="border-radius: 3px; cursor: default">L</span>
+              <% end %>
+              <% if order.shipping_details.any? { |s| s.remote == "1" } %>
+                <span class="btn-primary ml-2 px-1 font-weight-bold" title="Remote Shipping" style="border-radius: 3px; cursor: default">R</span>
+              <% end %>
+              <% if order.shipping_details.any? { |s| s.upgrade == "pending" } %>
+                <span class="fc-yolk bg-yolk-light uil-upload-alt ml-2 px-1 font-weight-bold" title="Upgrade Pending" style="border-radius: 3px"></span>
+              <% elsif order.shipping_details.any? { |s| s.upgrade == "accepted" } %>
+                <span class="fc-shipped bg-shipped-light uil-upload-alt ml-2 px-1 font-weight-bold" title="Upgrade Accepted" style="border-radius: 3px"></span>
+              <% elsif order.shipping_details.any? { |s| s.upgrade == "declined" } %>
+                <span class="fc-unbooked bg-unbooked-light uil-upload-alt ml-2 px-1 font-weight-bold" title="Upgrade Declined" style="border-radius: 3px"></span>
+              <% end %>
+            </td>
+            <td><%= order&.eta&.strftime("%B %d, %Y") %></td>
+            <td>
+              <% if order.eta.present? %>
+                <% if (Date.today - order.eta).to_i > 0 %>
+                  <span class="fc-unbooked">
+                    <%= "+" + ((Date.today - order.eta).to_i + 1).to_s %>
+                  <span>
+                <% else %>
+                  <span class="fc-shipped">
+                    <%= (Date.today - order.eta).to_i.to_s %>
+                  </span>
+                <% end %>
+              <% end %>
+            </td>
+            <td>
+              <% case order.try(:status) %>
+                <% when "new_order" %>
+                  <span class="badge badge-light border">
+                    <%= order.try(:status).try(:titleize) %>
+                  </span>
+
+                <% when "pending_payment" %>
+                  <span class="badge badge-primary">
+                    Pending Payment
+                  </span>
+
+                <% when "in_progress" %>
+                  <!-- all shipped -->
+                  <% if order.shipping_details.all? {|ship| ship.status == 'shipped'} %>
+                    <span class="badge badge-success-lighten">
+                      Order Fulfilled
+                    </span>
+                        
+                  <!-- partial shipped -->
+                  <% elsif order.shipping_details.any? {|ship| ship.status == 'shipped'} %>
+                    <span class="badge badge-success-lighten">
+                      Partial Shipped
+                    </span>
+                      
+                  <% elsif order.shipping_details.first.status == "not_ready" %>
+                    <span class="badge badge-light border">
+                      Not Ready
+                    </span>
+
+                  <% elsif order.shipping_details.first.status == "staging" %>
+                    <span class="badge badge-primary-lighten">
+                      Staging
+                    </span>
+
+                  <% elsif order.shipping_details.first.status == "ready_to_ship" %>
+                    <span class="badge badge-warning-lighten">
+                      Ready to Ship
+                    </span>
+
+                  <% elsif order.shipping_details.first.status == "booked" %>
+                    <span class="badge badge-info-lighten">
+                      Booked
+                    </span>
+
+                  <% elsif order.shipping_details.first.status == "ready_for_pickup" %>
+                    <span class="badge badge-success-lighten">
+                      Ready for Pickup
+                    </span>
+
+                  <% else %>
+                    <span class="badge badge-info-lighten">
+                      <%= order.shipping_details.first.status.titleize %>
+                    </span>
+                  <% end %>
+
+                <% when "cancel_request" %>
+                  <span class="badge badge-outline-danger">
+                    Cancel Request
+                  </span>
+
+                <% when "cancel_confirmed" %>
+                  <span class="badge badge-danger">
+                    Cancelled
+                  </span>
+
+                <% when "rejected" %>
+                  <span class="badge badge-dark-lighten">
+                    Cancel Rejected
+                  </span>
+
+                <% when "delayed" %>
+                  <span class="badge badge-danger-lighten">
+                    <%= order.try(:status).try(:titleize) %>
+                  </span>
+
+                <% when "hold_request" %>
+                  <span class="badge badge-outline-warning">
+                    Hold Request
+                  </span>
+
+                <% when "hold_confirmed" %>
+                  <span class="badge badge-warning text-white">
+                    On Hold
+                  </span>
+                    
+                <% when "completed" %>
+                  <span class="badge badge-success">
+                    Shipped
+                  </span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @pagy.count > 1 %>
+  <div id="page-nav">
+    <%= render partial: 'paginator', locals: { current_user: current_user } %>
+  </div>
+<% end %>

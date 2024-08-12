@@ -1,0 +1,37 @@
+<div class="container p-4">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h5><%= @product_variant&.product&.title %> | <%= @product_variant.sku %> </h5>
+    </div>
+  </div>
+
+  <div class="row mx-0 mb-4 p-3 clr-white">
+    <div class="col-12">
+      <div class="table-responsive">
+      <table class="table table-borderless table-hover">
+        <thead>
+          <tr>
+            <th class="col-2">Order Number</th>
+            <th class="col-2">Customer</th>
+            <th class="col-2">Order Date</th>
+            <th class="col-2">Order Quantity</th>
+            <th class="col-4">Status</th>
+          </tr>
+        </thead>
+          
+        <tbody>
+          <% @orders.where.not(status: 'cancel_confirmed').each do |order| %>
+            <tr>
+              <td><%= link_to order.name, edit_admin_order_path(order.name) %></td>
+              <td><%= order.customer&.full_name&.titleize %></td>
+              <td><%= order.created_at.to_date.strftime('%B %d, %Y') %></td>
+              <td><%= order.line_items.where(sku: @product_variant.sku).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+              <td><%= order.status.humanize %></td>
+            </tr>
+          <%end%>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>

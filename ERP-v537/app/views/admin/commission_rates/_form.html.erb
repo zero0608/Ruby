@@ -1,0 +1,31 @@
+<% if @commission_rate.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @commission_rate.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<%= f.hidden_field :employee_id %>
+
+<div class="row">
+  <div class="col-4 mb-3">
+    <%= f.label :lower_range, "Lower Range" %>
+    <%= f.number_field :lower_range, step: :any, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-4 mb-3">
+    <%= f.label :upper_range, "Upper Range" %>
+    <%= f.number_field :upper_range, step: :any, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-4 mb-3">
+    <%= f.label :rate, "Commission Rate (%)" %>
+    <%= f.number_field :rate, step: :any, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_commission_rates_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

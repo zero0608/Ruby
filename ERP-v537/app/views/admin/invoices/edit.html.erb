@@ -1,0 +1,525 @@
+<div class="container px-4 flex-auto">
+  <%= form_for @invoice, url: { action: "update" }, html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+    <%= render partial: "form", locals: { f: f, current_user: current_user } %>
+  <% end %>
+
+  <div class="row">
+    <div class="col-12 mb-3 text-right">
+      <% unless @invoice.order_id.present? || @invoice.status == "no_sale" %>
+        <button class="btn btn-red mr-4" type="button" data-toggle="modal" data-target="#noSaleModal">No Sale</button>
+        <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#createOrderModal">Create Order</button>
+      <% end %>
+      <% if @invoice.status == "deposit" %>
+        <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#paymentModal">Pay Balance</button>
+      <% end %>
+      <% if @invoice.status == "new_lead" %>
+        <button class="btn btn-primary ml-4" type="button" id="generate_quote">Generate Quote</button>
+      <% else %>
+        <button class="btn btn-primary ml-4" type="button" id="generate_quote">Print Quote</button>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<% unless @invoice.order_id.present? || @invoice.status == "no_sale" %>
+  <%= form_for [@invoice], :url => create_order_admin_invoices_path(invoice_id: @invoice.id), method: :post, html: { id: "create_order", class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+    <div class="modal" id="createOrderModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="header1 modal-title">Confirm Order</span>
+            <button type="button" class="close" data-dismiss="modal">
+              <span class="text-black"><%= show_svg("close.svg") %></span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              <span class="header2 mr-2">Ship To</span><br>
+              <%= @invoice.customer.customer_shipping_address.first_name.present? ? @invoice.customer.customer_shipping_address&.first_name + " " + @invoice.customer.customer_shipping_address&.last_name : @invoice.customer.full_name %><br>
+              <%= @invoice.customer.customer_shipping_address.address %>
+              <%= @invoice.customer.customer_shipping_address.city %>,
+              <%= @invoice.customer.customer_shipping_address.state %>
+              <%= @invoice.customer.customer_shipping_address.full_country %>
+              <%= @invoice.customer.customer_shipping_address.zip %>
+            </p>
+            <div class="table-responsive">
+              <table class="table table-borderless table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 20%">
+                      <span class="header2">SKU</span>
+                    </th>
+                    <th style="width: 50%">
+                      <span class="header2">Description</span>
+                    </th>
+                    <th style="width: 15%">
+                      <span class="header2">Amount</span>
+                    </th>
+                    <th style="width: 15%">
+                      <span class="header2">Subtotal</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% total = 0 %>
+                  <% @invoice.invoice_line_items.order(:created_at).each do |line_item| %>
+                    <tr>
+                      <td><%= line_item.product_variant.sku %></td>
+                      <td>
+                        <%= line_item.product_variant.title %>
+                        <% if line_item.additional_notes.present? %>
+                          <i>(<%= line_item.additional_notes %>)</i>
+                        <% end %>
+                      </td>
+                      <td><%= line_item.quantity %></td>
+                      <td>
+                        <% if line_item.price.present? %>
+                          <% sum = line_item.quantity * line_item.price %>
+                        <% else %>
+                          <% sum = line_item.quantity * (line_item.product_variant&.special_price.present? && line_item.product_variant&.special_price.to_f > 0 ? line_item.product_variant&.special_price.to_f : line_item.product_variant&.price.to_f) %>
+                        <% end %>
+                        <%= number_to_currency(sum) %>
+                        <% total += sum %>
+                      </td>
+                    </tr>
+                  <% end %>
+                  <% if @invoice.discount_amount.present? %>
+                    <tr>
+                      <td class="text-right" colspan=2>
+                        <span class="header2">Discount: <%= @invoice.discount %></span>
+                      </td>
+                      <td><%= @invoice.discount_amount %>%</td>
+                      <td>
+                        <% discount = total * @invoice.discount_amount * 0.01 %>
+                        <%= number_to_currency(-discount) %>
+                        <% total -= discount %>
+                      </td>
+                    </tr>
+                  <% end %>
+                          
+                  <% shipping_amount = 0 %>
+                  <% if @invoice.shipping_type == "Standard" %>
+                    <% shipping_amount = StandardShippingRate.where(store: current_store).where("shipping_method ILIKE ?", "%#{@invoice.shipping_method}%").where("order_min_price <= ? AND order_max_price >= ?", total, total)&.first&.discount.to_f %>
+                  <% elsif @invoice.shipping_type == "Local" %>
+                    <% if @invoice.shipping_method == "Curbside Delivery - Waive Fee" %>
+                      <% shipping_amount = 0 %>
+                    <% else %>
+                      <% shipping_amount = LocalShippingRate.where(store: current_store).where("shipping_method ILIKE ?", "%#{@invoice.shipping_method}%").where("order_min_price <= ? AND order_max_price >= ?", total, total)&.first&.discount.to_f %>
+                    <% end %>
+                  <% elsif @invoice.shipping_type == "Remote" %>
+                    <% shipping_amount = RemoteShippingRate.where(store: current_store).where("shipping_method ILIKE ?", "%#{@invoice.shipping_method}%").where("order_min_price <= ? AND order_max_price >= ?", total, total)&.first&.discount.to_f %>
+                  <% elsif @invoice.shipping_type == "Admin" %>
+                    <% shipping_amount = @invoice.shipping_amount.to_f %>
+                  <% end %>
+                          
+                  <tr>
+                    <td class="text-right" colspan=2>
+                      <span class="header2">
+                        Shipping: <%= @invoice.shipping_type %> - <%= @invoice.shipping_method %>
+                      </span>
+                    </td>
+                    <td></td>
+                    <td>
+                      <%= number_to_currency(shipping_amount) %>
+                      <% total += shipping_amount %>
+                    </td>
+                  </tr>
+                          
+                  <% if @invoice.tax_amount.present? %>
+                    <tr>
+                      <td class="text-right" colspan=2>
+                        <span class="header2">Tax</span>
+                      </td>
+                      <td><%= @invoice.tax_amount %>%</td>
+                      <td>
+                        <% tax = total * @invoice.tax_amount * 0.01 %>
+                        <%= number_to_currency(tax) %>
+                        <% total += tax %>
+                      </td>
+                    </tr>
+                  <% end %>
+
+                  <tr>
+                    <td class="text-right" colspan=2>
+                      <span class="header2">Total</span>
+                    </td>
+                    <td></td>
+                    <td>
+                      <span class="header2"><%= number_to_currency(total) %></span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="row no-gutters">
+              <div class="col-6 mb-3">
+                <span class="header2">Payment Method</span>
+                <span class="text-red">*</span>
+              </div>
+              <div class="col-6 mb-3">
+                <%= f.select :payment_method, options_for_select(Invoice.payment_methods.keys.map { |w| [w, w] }, f.object.payment_method), { include_blank: true }, class: "form-control", required: true %>
+              </div>
+              <div class="col-6 mb-3 deposit-column">
+                <span class="header2">Deposit Amount</span>
+              </div>
+              <div class="col-6 mb-3 deposit-column">
+                <%= f.number_field :deposit, class: "form-control", step: :any %>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+            <%= f.submit "Submit", class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<% if @invoice.status == "deposit" %>
+  <%= form_for [@invoice], :url => additional_payment_admin_invoices_path(invoice_id: @invoice.id), method: :post, html: { id: "additional_payment", class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+    <div class="modal" id="paymentModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="header1 modal-title">Pay Balance</span>
+            <button type="button" class="close" data-dismiss="modal">
+              <span class="text-black"><%= show_svg("close.svg") %></span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="row no-gutters">
+              <div class="col-6">
+                <p>
+                  <span class="header2 mr-2">Ship to</span>
+                  <%= @invoice.customer.customer_shipping_address&.first_name.present? ? @invoice.customer.customer_shipping_address&.first_name + " " + @invoice.customer.customer_shipping_address&.last_name : @invoice.customer.full_name %>, <%= @invoice.customer.customer_shipping_address&.complete_address %>
+                </p>
+              </div>
+              <div class="col-6 text-right">
+                <p>
+                  <span class="header2 mr-2">Source</span>
+                  <%= @invoice.source&.titleize %>
+                </p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-borderless table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 30%">
+                      <span class="header2">SKU</span>
+                    </th>
+                    <th style="width: 40%">
+                      <span class="header2">Description</span>
+                    </th>
+                    <th style="width: 15%">
+                      <span class="header2">Amount</span>
+                    </th>
+                    <th style="width: 15%">
+                      <span class="header2">Subtotal</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% total = 0 %>
+                  <% @invoice.invoice_line_items.order(:created_at).each do |line_item| %>
+                    <tr>
+                      <td><%= line_item.product_variant.sku %></td>
+                      <td>
+                        <%= line_item.product_variant.title %>
+                        <% if line_item.additional_notes.present? %>
+                          <i>(<%= line_item.additional_notes %>)</i>
+                        <% end %>
+                      </td>
+                      <td><%= line_item.quantity %></td>
+                      <td>
+                        <% if line_item.price.present? %>
+                          <% sum = line_item.quantity * line_item.price %>
+                        <% else %>
+                          <% sum = line_item.quantity * (line_item.product_variant&.m2_product_id.present? ? line_item.product_variant&.special_price.to_f : line_item.product_variant&.price.to_f) %>
+                        <% end %>
+                        <%= number_to_currency(sum) %>
+                        <% total += sum %>
+                      </td>
+                    </tr>
+                  <% end %>
+                  <% if @invoice.discount_amount.present? %>
+                    <tr>
+                      <td class="text-right" colspan=2>
+                        <span class="header2">Discount: <%= @invoice.discount %></span>
+                      </td>
+                      <td><%= @invoice.discount_amount %>%</td>
+                      <td>
+                        <% discount = total * @invoice.discount_amount * 0.01 %>
+                        <%= number_to_currency(-discount) %>
+                        <% total -= discount %>
+                      </td>
+                    </tr>
+                  <% end %>
+                        
+                  <% shipping_amount = 0 %>
+                  <% if @invoice.shipping_type == "Standard" %>
+                    <% shipping_amount = StandardShippingRate.where(store: current_store).where("shipping_method ILIKE ?", "%#{@invoice.shipping_method}%").where("order_min_price <= ? AND order_max_price >= ?", total, total)&.first&.discount.to_f %>
+                  <% elsif @invoice.shipping_type == "Local" %>
+                    <% if @invoice.shipping_method == "Curbside Delivery - Waive Fee" %>
+                      <% shipping_amount = 0 %>
+                    <% else %>
+                      <% shipping_amount = LocalShippingRate.where(store: current_store).where("shipping_method ILIKE ?", "%#{@invoice.shipping_method}%").where("order_min_price <= ? AND order_max_price >= ?", total, total)&.first&.discount.to_f %>
+                    <% end %>
+                  <% elsif @invoice.shipping_type == "Remote" %>
+                    <% shipping_amount = RemoteShippingRate.where(store: current_store).where("shipping_method ILIKE ?", "%#{@invoice.shipping_method}%").where("order_min_price <= ? AND order_max_price >= ?", total, total)&.first&.discount.to_f %>
+                  <% elsif @invoice.shipping_type == "Admin" %>
+                    <% shipping_amount = @invoice.shipping_amount.to_f %>
+                  <% end %>
+                        
+                  <tr>
+                    <td class="text-right" colspan=2>
+                      <span class="header2">
+                        Shipping: <%= @invoice.shipping_type %> - <%= @invoice.shipping_method %>
+                      </span>
+                    </td>
+                    <td></td>
+                    <td>
+                      <%= number_to_currency(shipping_amount) %>
+                      <% total += shipping_amount %>
+                    </td>
+                  </tr>
+                        
+                  <% if @invoice.tax_amount.present? %>
+                    <tr>
+                      <td class="text-right" colspan=2>
+                        <span class="header2">Tax</span>
+                      </td>
+                      <td><%= @invoice.tax_amount %>%</td>
+                      <td>
+                        <% tax = total * @invoice.tax_amount * 0.01 %>
+                        <%= number_to_currency(tax) %>
+                        <% total += tax %>
+                      </td>
+                    </tr>
+                  <% end %>
+                  <tr>
+                    <td class="text-right" colspan=2>
+                      <span class="header2">Total</span>
+                    </td>
+                    <td></td>
+                    <td><%= number_to_currency(total) %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-right" colspan=2>
+                      <span class="header2">Deposit: <%= @invoice.payment_method %></span>
+                    </td>
+                    <td></td>
+                    <td>-<%= number_to_currency(@invoice.deposit.to_f) %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-right" colspan=2>
+                      <span class="header2">Pending Payment</span>
+                    </td>
+                    <td></td>
+                    <td><span class="header2"><%= number_to_currency(total - @invoice.deposit.to_f) %></span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="row no-gutters">
+              <div class="col-6 mb-3">
+                <span class="header2">Payment Method</span>
+                <span class="text-red">*</span>
+              </div>
+              <div class="col-6 mb-3">
+                <%= f.select :additional_payment_method, options_for_select(Invoice.additional_payment_methods.keys.map { |w| [w, w] }), { include_blank: true },class: "form-control", required: true %>
+              </div>
+              <div class="col-6 mb-3">
+                <span class="header2">Payment Amount</span>
+                <span class="text-red">*</span>
+              </div>
+              <div class="col-6 mb-3">
+                <%= f.number_field :additional_deposit, class: "form-control", value: ((total - @invoice.deposit.to_f).round(2)), step: :any, readonly: true, required: true %>
+              </div>
+              <div class="col-12">
+                <span class="header2">Additional Notes</span>
+                <%= f.text_area :additional_notes, class: "form-control", style: "height: 10rem" %>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+            <%= f.submit "Submit", class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<div class="modal" id="taskModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_for [:admin, Task.new], html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header1 modal-title">Create Task</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-12 mb-3">
+              <%= f.label :title, "Title" %>
+              <%= f.text_field :title, class: "form-control", required: true %>
+            </div>
+            <div class="col-6 mb-3">
+              <%= f.label :due_date, "Due Date" %>
+              <%= f.date_field :due_date, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <%= f.label :priority, "Priority" %>
+              <div class="row no-gutters">
+                <div class="col-5">
+                  <label class="checkbox checkbox-blue radio mr-2" style="vertical-align: middle">
+                    <%= f.radio_button :priority, "high" %>
+                    <span class="checkmark"></span>
+                  </label>
+                  <label class="mb-0" style="vertical-align: middle">High</label>
+                </div>
+                <div class="col-5">
+                  <label class="checkbox checkbox-blue radio mr-2" style="vertical-align: middle">
+                    <%= f.radio_button :priority, "medium" %>
+                    <span class="checkmark"></span>
+                  </label>
+                  <label class="mb-0" style="vertical-align: middle">Medium</label>
+                </div>
+                <div class="col-2">
+                  <label class="checkbox checkbox-blue radio mr-2" style="vertical-align: middle">
+                    <%= f.radio_button :priority, "low" %>
+                    <span class="checkmark"></span>
+                  </label>
+                  <label class="mb-0" style="vertical-align: middle">Low</label>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 mb-3">
+              <%= f.label :tag_user_id, "Assign To" %>
+              <%= f.hidden_field :tag_user_id %>
+              <input type="text" placeholder="Tag someone..." class="form-control mb-3" data-reflex="debounced:input->OrderReflex#search_task_user">
+              <section class="search-results" id="task-user-search-edit-results">
+                <% render partial: "admin/tasks/search_user", locals: { current_user: current_user } %>
+              </section>
+              <span class="user-list">
+                <span class="tag" data-id="<%= current_user.id %>">
+                  <%= current_user.username.present? ? "@" + current_user.username : "@" + current_user.full_name %>
+                  <span class="user-list-remove"><%= show_svg("close.svg") %></span>
+                </span>
+              </span>
+              <script type="text/javascript">
+                $(document).on("click", "#new_task .user-search", function() {
+                  var id = $(this).data("id");
+                  var name = $(this).text().trim().toLowerCase().split(' ').join('_');
+                  $("#new_task .user-list").append('<span class="tag" data-id="' + id + '">@' + name + '<span class="user-list-remove"><%= show_svg("close.svg") %></span></span>');
+                });
+              </script>
+            </div>
+            <div class="col-6 mb-3">
+              <%= f.label :tag_order_id, "Link Order" %>
+              <%= f.hidden_field :tag_order_id %>
+              <input type="text" placeholder="Link order..." class="form-control mb-3" data-reflex="debounced:input->OrderReflex#search_task_order">
+              <section class="search-results" id="task-search-edit-results">
+                <% render partial: "admin/tasks/search_order", locals: { current_user: current_user } %>
+              </section>
+              <span class="order-list">
+                <% if @invoice&.order.present? %>
+                <span class="tag" data-id="<%= @invoice&.order&.id %>">
+                  <%= @invoice&.order&.name %>
+                  <span class="user-list-remove"><%= show_svg("close.svg") %></span>
+                </span>
+                <% end %>
+              </span>
+              <script type="text/javascript">
+                $(document).on("click", "#new_task .order-search", function() {
+                  var id = $(this).data("id");
+                  var name = $(this).text().trim();
+                  $("#new_task .order-list").append('<span class="tag" data-id="' + id + '">' + name + '<span class="user-list-remove"><%= show_svg("close.svg") %></span></span>');
+                });
+              </script>
+            </div>
+            <div class="col-12 mb-3">
+              <%= f.label :description, "Description" %>
+              <%= f.text_area :description, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary mr-4" type="button" data-dismiss="modal">Cancel</span>
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="modal" id="noSaleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%=  form_for @invoice, url: no_sale_admin_invoices_path, method: :post, html: { class: "form-horizontal form-bordered" } do |f| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header1 modal-title">No Sale</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <label>Additional Notes</label>
+          <%= f.hidden_field :id, value: @invoice.id %>
+          <%= f.text_area :no_sale_notes, class: "form-control" %>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary mr-4" type="button" data-dismiss="modal">Cancel</span>
+          <button class="btn btn-primary" type="submit">Submit</button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%= form_tag add_cem_admin_invoices_path(invoice_id: @invoice.id), id: "add-cem-form", html: { class: "form-horizontal form-bordered d-none" } do |f| %>
+  <%= hidden_field_tag :product_id %>
+  <%= hidden_field_tag :category_name %>
+  <%= hidden_field_tag :material_name %>
+<% end %>
+
+<script type="text/javascript">   
+  $("#generate_quote").on("click", function() {
+    window.open("<%= pdf_admin_invoice_path(id: @invoice.id, type: "quote_offered") %>", "print", "height=750px, width=750px");
+    document.getElementById("loaderOverlay").style.display = "flex";
+    document.getElementById("loaderOverlay").style.left = 0;
+    setTimeout(function() {
+      location.reload();
+    }, 2000);
+  });
+
+  $("button[data-target='#createOrderModal']").on("click", function(e) {
+    if (!$("#edit_invoice_<%= @invoice.id %>")[0].checkValidity()) {
+      e.preventDefault();
+      e.stopPropagation();
+      $("#edit_invoice_<%= @invoice.id %>").addClass("was-validated");
+    }
+  });
+
+  $("#creat_order").on("click", function() {
+    if ($(this)[0].checkValidity()) {
+      window.open("<%= create_order_admin_invoices_path(id: @invoice.id) %>");
+      window.open("<%= pdf_admin_invoice_path(id: @invoice.id, type: "payment") %>", "print", "height=750px, width=750px");
+      location.reload();
+    }
+  });
+
+  $("#additional_payment").on("submit", function(e) {
+    if($(this)[0].checkValidity()) {
+      window.open("<%= pdf_admin_invoice_path(id: @invoice.id, type: "payment") %>", "print", "height=750px, width=750px");
+      document.getElementById("loaderOverlay").style.display = "flex";
+      document.getElementById("loaderOverlay").style.left = 0;
+    }
+  });
+</script>

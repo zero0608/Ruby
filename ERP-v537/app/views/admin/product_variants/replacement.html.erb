@@ -1,0 +1,52 @@
+<div class="container px-4">
+  <%= render "includes/admin_sub_nav" %>
+
+  <div class="row">
+    <div class="col-2">
+      <%= render "includes/side_nav_production" %>
+    </div>
+
+    <div class="col-10">
+      <% if current_user.user_group.replacement_cru %>
+        <a href="<%= new_replacement_admin_product_variants_path %>">
+          <button class="btn btn-primary">
+            <%= show_svg("plus.svg") %>
+            Create Replacement
+          </button>
+        </a>
+      <% end %>
+
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 40%">Description</th>
+              <th style="width: 40%">Category</th>
+              <th style="width: 10%">Qty</th>
+              <th style="width: 10%">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @product_variants.each do |product_variant| %>
+              <tr>
+                <td><%= product_variant.title %></td>
+                <td><%= product_variant.product_part.name %></td>
+                <td><%= product_variant.inventory_quantity %></td>
+                <td>
+                  <% if current_user.user_group.replacement_cru %>
+                    <a href="<%= edit_replacement_admin_product_variant_path(product_variant.id) %>" class="mr-4">
+                      <%= show_svg("recent_activity.svg") %>
+                    </a>
+                    <a href="<%= delete_replacement_admin_product_variant_path(product_variant.id) %>">
+                      <%= show_svg("close.svg") %>
+                    </a>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

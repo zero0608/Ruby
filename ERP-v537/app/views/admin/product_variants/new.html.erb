@@ -1,0 +1,8 @@
+<div class="px-5 py-5">
+  <div class="container">
+    <%= form_for @product_variant, url: {action: "create"}, html: {class: "form-horizontal form-bordered"} do |f| %>
+      <h4 class="mb-4">New Product Variant</h4>
+      <%= render partial: "form", locals: {f: f, current_user: current_user } %>
+    <% end %>
+  </div>
+</div>

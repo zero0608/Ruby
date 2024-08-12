@@ -1,0 +1,254 @@
+<div class="container px-4">
+  <%= form_for @employee, url: { action: "update" }, html: { class: "form-horizontal form-bordered" } do |f| %>
+    <div class="row">
+      <div class="col-6 mb-3">
+        <span class="header1">Update <%= @employee.full_name %></span><br>
+        <span>(Last updated: <%= @employee.updated_at.strftime("%B %d, %Y") %>)</span>
+      </div>
+      <div class="col-6 mb-3 text-right">
+        <a href="<%= reset_checklist_admin_employee_path(@employee.id) %>" class="btn btn-secondary" data-confirm="This will reset all checklists items for this employee. Are you sure you want to do this?">
+          Reset Checklist
+        </a>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-6">
+        <div class="table-responsive">
+          <table class="table table-borderless table-hover">
+            <%= f.fields_for :checklists, f.object.checklists.where(list_type: "Onboarding").order(:created_at) do |ff| %>
+              <% unless ff.object.list_group_id.present? %>
+                <tr>
+                  <td class="text-center" style="width: 10%">
+                    <label class="checkbox checkbox-blue">
+                      <%= ff.check_box :is_checked, data: { reflex: "change->EmployeeReflex#update", employee_id: f.object.id } %>
+                      <span class="checkmark"></span>
+                    </label>
+                  </td>
+                  <td style="width: 80%" colspan=2>
+                    <% if ff.object.is_default %>
+                      <%= ff.text_field :description, class: "form-control", disabled: :disabled %>
+                    <% else %>
+                      <%= ff.text_field :description, class: "form-control", data: { reflex: "input->EmployeeReflex#update", employee_id: f.object.id } %>
+                    <% end %>
+                  </td>
+                  <td style="width: 10%">
+                    <% unless ff.object.group_members.present? %>
+                      <a data-reflex="click->ChecklistReflex#delete_checklist" data-id="<%= ff.object.id %>">
+                        <%= show_svg("close.svg") %>
+                      </a>
+                    <% end %>
+                  </td>
+                </tr>
+                <% if ff.object.group_members.present? %>
+                  <%= ff.fields_for :group_members, ff.object.group_members.all do |fff| %>
+                    <tr>
+                      <td class="text-right" style="width: 10%">
+                        <p class="icon-right mb-0" style="margin-top: -1px">
+                          <%= show_svg("arrow.svg") %>
+                        </p>
+                      </td>
+                      <td class="text-center" style="width: 10%">
+                        <label class="checkbox checkbox-blue">
+                          <%= fff.check_box :is_checked, data: { reflex: "change->EmployeeReflex#update", employee_id: f.object.id } %>
+                          <span class="checkmark"></span>
+                        </label>
+                      </td>
+                      <td style="width: 70%">
+                        <% if fff.object.is_default %>
+                          <%= fff.text_field :description, class: "form-control", disabled: :disabled %>
+                        <% else %>
+                          <%= fff.text_field :description, class: "form-control", data: { reflex: "input->EmployeeReflex#update", employee_id: f.object.id } %>
+                        <% end %>
+                      </td>
+                      <td style="width: 10%">
+                        <a data-reflex="click->ChecklistReflex#delete_checklist" data-id="<%= fff.object.id %>">
+                          <%= show_svg("close.svg") %>
+                        </a>
+                      </td>
+                    </tr>
+                  <% end %>
+                <% end %>
+              <% end %>
+            <% end %>
+          </table>
+        </div>
+        <a class="btn btn-secondary" data-toggle="modal" data-target="#onboardingModal">
+          Add New Task
+        </a>
+      </div>
+
+      <div class="col-6">
+        <div class="table-responsive">
+          <table class="table table-borderless table-hover">
+            <%= f.fields_for :checklists, f.object.checklists.where(list_type: "Offboarding").order(:created_at) do |ff| %>
+              <% unless ff.object.list_group_id.present? %>
+                <tr>
+                  <td class="text-center" style="width: 10%">
+                    <label class="checkbox checkbox-blue">
+                      <%= ff.check_box :is_checked, data: { reflex: "change->EmployeeReflex#update", employee_id: f.object.id } %>
+                      <span class="checkmark"></span>
+                    </label>
+                  </td>
+                  <td style="width: 80%" colspan=2>
+                    <% if ff.object.is_default %>
+                      <%= ff.text_field :description, class: "form-control", disabled: :disabled %>
+                    <% else %>
+                      <%= ff.text_field :description, class: "form-control", data: { reflex: "input->EmployeeReflex#update", employee_id: f.object.id } %>
+                    <% end %>
+                  </td>
+                  <td style="width: 10%">
+                    <% unless ff.object.group_members.present? %>
+                      <a data-reflex="click->ChecklistReflex#delete_checklist" data-id="<%= ff.object.id %>">
+                        <%= show_svg("close.svg") %>
+                      </a>
+                    <% end %>
+                  </td>
+                  <% if ff.object.group_members.present? %>
+                    <%= ff.fields_for :group_members, ff.object.group_members.all do |fff| %>
+                      <tr>
+                        <td class="text-right" style="width: 10%">
+                          <p class="icon-right mb-0" style="margin-top: -1px">
+                            <%= show_svg("arrow.svg") %>
+                          </p>
+                        </td>
+                        <td class="text-center" style="width: 10%">
+                          <label class="checkbox checkbox-blue">
+                            <%= fff.check_box :is_checked, data: { reflex: "change->EmployeeReflex#update", employee_id: f.object.id } %>
+                            <span class="checkmark"></span>
+                          </label>
+                        </td>
+                        <td style="width: 70%">
+                          <% if fff.object.is_default %>
+                            <%= fff.text_field :description, class: "form-control", disabled: :disabled %>
+                          <% else %>
+                            <%= fff.text_field :description, class: "form-control", data: { reflex: "input->EmployeeReflex#update", employee_id: f.object.id } %>
+                          <% end %>
+                        </td>
+                        <td style="width: 10%">
+                          <a data-reflex="click->ChecklistReflex#delete_checklist" data-id="<%= fff.object.id %>">
+                            <%= show_svg("close.svg") %>
+                          </a>
+                        </td>
+                      </tr>
+                    <% end %>
+                  <% end %>
+                </tr>
+              <% end %>
+            <% end %>
+          </table>
+        </div>
+        <a class="btn btn-secondary" data-toggle="modal" data-target="#offboardingModal">
+          Add New Task
+        </a>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-12 mb-3 text-right">
+      <a href="<%= edit_admin_employee_path(@employee.id) %>">
+        <button class="btn btn-primary" type="button">
+          <span class="icon-left">
+            <%= show_svg("arrow.svg") %>
+          </span>
+          Back
+        </button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="onboardingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-thin">
+    <%= form_for @employee.checklists.new, url: { action: "create" }, html: { class: "form-horizontal form-bordered" }, data: { reflex: "submit->ChecklistReflex#create_checklist", employee_id: @employee.id } do |f| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Add New Onboarding Item</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black">
+              <%= show_svg("close.svg") %>
+            </span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <%= f.hidden_field :employee_id, value: @employee.id %>
+          <%= f.hidden_field :list_type, value: "Onboarding" %>
+          <%= f.hidden_field :is_default, value: false %>
+          <div class="row mx-0">
+            <div class="col-2 mb-3 text-center">
+              <label>Checked?</label>
+              <label class="checkbox checkbox-blue">
+                <%= f.check_box :is_checked %>
+                <span class="checkmark"></span>
+              </label>
+            </div>
+            <div class="col-10 mb-3">
+              <%= f.label :description %>
+              <%= f.text_field :description, class: "form-control" %>
+            </div>
+            <div class="w-100 mb-3 border-bottom"></div>
+            <div class="col-12 mb-3">
+              <%= f.label :list_group_id, "Add To Group" %>
+              <%= f.collection_select :list_group_id, @employee.checklists.where(list_type: "Onboarding").where(list_group_id: nil), :id, :description, { include_blank: true }, class: "form-control" %> 
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer text-right">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="modal" id="offboardingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-thin">
+    <%= form_for @employee.checklists.new, url: { action: "create" }, html: { class: "form-horizontal form-bordered" }, data: { reflex: "submit->ChecklistReflex#create_checklist", employee_id: @employee.id } do |f| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Add New Onboarding Item</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black">
+              <%= show_svg("close.svg") %>
+            </span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <%= f.hidden_field :employee_id, value: @employee.id %>
+          <%= f.hidden_field :list_type, value: "Offboarding" %>
+          <%= f.hidden_field :is_default, value: false %>
+          <div class="row mx-0">
+            <div class="col-2 mb-3 text-center">
+              <label>Checked?</label>
+              <label class="checkbox checkbox-blue">
+                <%= f.check_box :is_checked %>
+                <span class="checkmark"></span>
+              </label>
+            </div>
+            <div class="col-10 mb-3">
+              <%= f.label :description %>
+              <%= f.text_field :description, class: "form-control" %>
+            </div>
+            <div class="w-100 mb-3 border-bottom"></div>
+            <div class="col-12 mb-3">
+              <%= f.label :list_group_id, "Add To Group" %>
+              <%= f.collection_select :list_group_id, @employee.checklists.where(list_type: "Offboarding").where(list_group_id: nil), :id, :description, { include_blank: true }, class: "form-control" %> 
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer text-right">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+  .form-control { height: calc(1.5em + 0.25rem + 2px) }
+  .table td { padding: 0.5rem 0.75rem }
+  .table .btn { padding: 0.25rem 1.5rem }
+</style>

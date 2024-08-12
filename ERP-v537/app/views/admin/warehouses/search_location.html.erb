@@ -1,0 +1,102 @@
+<div class="container px-4">
+  <div class="row justify-content-center">
+    <div class="col-12 mb-3">
+      <span class="header1">Admin</span>
+    </div>
+    <% if current_user.warehouse_admin? %>
+      <div class="col-6 col-md-3 mb-4">
+        <a href="<%= search_admin_sku_admin_warehouses_path %>">
+          <button class="btn btn-primary-light w-100 font-weight-bold" style="height: 10rem">Search SKU</button>
+        </a>
+      </div>
+      <div class="col-6 col-md-3 mb-4">
+        <a href="<%= unassigned_locations_admin_warehouses_path %>">
+          <button class="btn btn-primary-light w-100 font-weight-bold" style="height: 10rem">All Locations</button>
+        </a>
+      </div>
+      <div class="w-100"></div>
+      <div class="col-6 col-md-3 mb-4">
+        <button class="btn btn-primary-light w-100 font-weight-bold" style="height: 10rem" data-toggle="modal" data-target="#addLocationModal">Add Location</button>
+      </div>
+      <div class="col-6 col-md-3 mb-4">
+        <button class="btn btn-primary-light w-100 font-weight-bold" style="height: 10rem" data-toggle="modal" data-target="#searchLocationModal">Search Location</button>
+      </div>
+      <div class="w-100"></div>
+      <% if params[:search].present? %>
+        <div class="col-12 mb-3">
+          <p>Location not found.</p>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<!-- add location modal -->
+<div class="modal" id="addLocationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog" style="width: 300px">
+    <%= form_tag(create_location_admin_warehouses_path, method: :get) do %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Add Location</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">   
+          <div class="row mx-0">
+            <div class="col-4 mb-3 text-center">
+              <h6>Rack</h6>
+              <%= text_field_tag :rack, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3 text-center">
+              <h6>Level</h6>
+              <%= text_field_tag :level, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3 text-center">
+              <h6>Bin</h6>
+              <%= text_field_tag :bin, "", class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <%= submit_tag "Submit", class: "btn btn-primary w-100" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- search location modal -->
+<div class="modal" id="searchLocationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog" style="width: 300px">
+    <%= form_tag(search_location_results_admin_warehouses_path, method: :get) do %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Search Location</span>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">      
+            <div class="col-4 mb-3 text-center">
+              <h6>Rack</h6>
+              <%= text_field_tag :rack, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3 text-center">
+              <h6>Level</h6>
+              <%= text_field_tag :level, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3 text-center">
+              <h6>Bin</h6>
+              <%= text_field_tag :bin, "", class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <%= submit_tag "Submit", class: "btn btn-primary w-100" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

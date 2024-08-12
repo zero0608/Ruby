@@ -1,0 +1,137 @@
+<div class="row">
+  <div class="col-12 mb-4">
+    <h5>Order Shipment Report</h5>
+  </div>
+  <div class="col-3 mb-4">
+    <label class="mr-2">Start Date</label>
+    <input type="date" class="form-control d-inline-block" style="width: calc(100% - 60px - 0.5rem)" value="<%= (@report_start_date - 8.hours).to_date %>" data-end-date="<%= @report_end_date %>" data-reflex="change->OrderReflex#update_report_start_date">
+  </div>
+  <div class="col-3 mb-4">
+    <label class="mr-2">End Date</label>
+    <input type="date" class="form-control d-inline-block" style="width: calc(100% - 60px - 0.5rem)" value="<%= (@report_end_date - 8.hours).to_date %>" data-start_date="<%= @report_start_date %>" data-reflex="change->OrderReflex#update_report_end_date">
+  </div>
+  <div class="col-2 mb-4">
+    <div class="drop-toggle w-100">
+      <%= @report_label %>
+      <i class="dripicons-chevron-down" style="left: auto; right: 25px"></i>
+    </div>
+    <div class="drop-menu" style="width: calc(100% - 30px)">
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_today">Today</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_7_days">Past 7 Days</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_30_days">Past 30 Days</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_90_days">Past 90 Days</div>
+      <div class="drop-item" data-reflex="click->OrderReflex#update_report_year_to_date">Year To Date</div>
+    </div>
+  </div>
+  <div class="col-4 mb-4">
+    <%= link_to "Export", report_admin_orders_path(format: "csv", report_type: "shipment", report_start_date: @report_start_date, report_end_date: @report_end_date), class: "btn btn-primary" %>
+  </div>
+  <% ship_show = ShippingDetail.eager_load(:line_items, order: [:customer, :shipping_details]).joins(:line_items,:order).where("(line_items.sku NOT LIKE ?) and (line_items.sku NOT LIKE ?) and (line_items.sku NOT LIKE ?) and (line_items.sku NOT LIKE ?) and (orders.store ILIKE ?) or (line_items.order_from ILIKE ?)", "%#{"warranty"}%", "WGS001", "HLD001", "HFE001", current_store, nil).where("(shipping_details.created_at > ?) and (shipping_details.created_at < ?)", @report_start_date, @report_end_date) %>
+  <% ship_white_glove = 0 %>
+  <% ship_curbside = 0 %>
+  <% estimated_shipping_cost = 0 %>
+  <% actual_invoiced = 0 %>
+  <% white_glove_fee = 0 %>
+  <% additional_charge = 0 %>
+  <% total = 0 %>
+  <% ship_show.each do |ship| %>
+    <% if ship.order&.shipping_line&.title == "Curbside Delivery" %>
+      <% ship_curbside += 1 %>
+    <% elsif ship.order&.shipping_line&.title == "White Glove Delivery" %>
+      <% ship_white_glove += 1 %>
+    <% end %>
+    <% estimated_shipping_cost += ship&.estimated_shipping_cost.to_f %>
+    <% actual_invoiced += ship&.actual_invoiced.to_f %>
+    <% white_glove_fee += ship&.white_glove_fee.to_f %>
+    <%- ship.shipping_costs.each do |cost| -%>
+      <%- if cost.cost_type == "charges" -%>
+        <%- additional_charge = additional_charge + cost.amount.to_f -%>
+      <%- end -%>
+    <%- end -%>
+    <% if ship.actual_invoiced.present? %>
+      <% total += ship&.actual_invoiced.to_f + ship&.white_glove_fee.to_f %>
+    <% else %>
+      <% total += ship&.estimated_shipping_cost.to_f + ship&.white_glove_fee.to_f %>
+    <% end %>
+  <% end %>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= ship_show.count %></h3>
+        <span>Shipment</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= ship_white_glove %></h3>
+        <span>White Glove Shipping</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= ship_curbside %></h3>
+        <span>Curbside Shipping</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= ship_show.where(upgrade: 2).count %></h3>
+        <span>Shipping Upgraded</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= ship_show.where(local_pickup: 1).count %></h3>
+        <span>Shipping Local</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= number_to_currency(estimated_shipping_cost, precise: 2) %></h3>
+        <span>Estimated Shipping Cost</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= number_to_currency(actual_invoiced, precise: 2) %></h3>
+        <span>Actual Invoiced</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= number_to_currency(white_glove_fee, precise: 2) %></h3>
+        <span>WGD Cost</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= number_to_currency(additional_charge, precise: 2) %></h3>
+        <span>Additional Charges</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-2 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h3 class="fc-red-clay"><%= number_to_currency(total + additional_charge, precise: 2) %></h3>
+        <span>Total Shipping Cost</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,113 @@
+<div class="container px-4">
+  <%= render partial: "admin/suppliers/navigation" %>
+
+  <%= form_for @purchase, url: { action: "update" }, html: { class: "form-horizontal form-bordered position-relative", style: "top: calc(57px + 1rem)" } do |f| %>
+    <div class="row mb-3">
+      <div class="col-12">
+        <span class="header1">
+          Purchase Number: <%= current_store == "us" ? "TUS" + @purchase.id.to_s : "TCA" + @purchase.id.to_s %>
+        </span>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-2">
+        <%= f.label "Supplier" %>
+        <%= f.hidden_field :store, value: current_store %>
+        <%= f.collection_select :supplier_id, Supplier.order(:name), :id, :name,{include_blank: true}, data: { reflex: "change->PurchaseReflex#quantity", reflex_dataset: "combined", store_type: current_store, purchase_id: @purchase.id }, class: "d-inline form-control" %> 
+      </div>
+
+      <div class="col-10 text-right">
+        <%= link_to "Search Product", add_product_admin_purchases_path(@purchase), class: "btn btn-primary mr-4", style: "width: 150px", remote: true %>
+        <%= link_to "Low Inventory", add_variant_admin_purchases_path(@purchase), class: "btn btn-primary mr-4", style: "width: 150px", remote: true %>
+        <%= link_to "Orders to be Fulfilled", add_item_admin_purchases_path(@purchase), class: "btn btn-primary", style: "width: 150px", remote: true %>
+      </div>
+
+      <div id="newPurchase"></div>
+      <div id="variantPurchase"></div>
+      <div id="productPurchase"></div>
+    </div>
+      
+    <div class="row">
+      <div class="col-12">
+        <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 20%">Description</th>
+              <th style="width: 20%">SKU</th>
+              <th style="width: 20%">Type</th>
+              <th style="width: 10%">On Hand</th>
+              <th style="width: 10%">Order Quantity</th>
+              <th style="width: 10%">Warehouse</th>
+              <th style="width: 10%">State</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= f.fields_for :purchase_items do |ff| %>
+              <% if !(ff.object.status == "cancelled") && ff.object.line_item_id.present? %>
+                <tr>
+                  <td><%= ff.object&.line_item&.title %></td>
+                  <td><%= ff.object&.line_item&.sku&.upcase %></td>
+                  <td><%= ff.object&.purchase_type %></td>
+                  <td><%= ff.object&.line_item&.variant&.inventory_quantity unless ff.object&.line_item&.variant&.inventory_quantity.to_i.negative? %></td>
+                  <td><%= ff.object.quantity %></td>
+                  <%= ff.hidden_field :status, value: "not_started" %>
+                </tr>
+              <% end %>
+
+              <% if !(ff.object.status == "cancelled") && ff.object.product_id.present? %>
+                <tr>
+                  <% if ff.object.product_variant_id.present? %>
+                    <td><%= ff.object&.product_variant&.title %></td>
+                  <% else %>
+                    <td><%= ff.object&.product&.title %></td>
+                  <% end %>
+                  <td><%= ff.object&.product_variant&.sku&.upcase %></td>
+                  <td><%= ff.object&.purchase_type %></td>
+                  <td><%= ff.object&.product_variant&.inventory_quantity unless ff.object&.product_variant&.inventory_quantity.to_i.negative? %></td>
+                  <td><%= ff.object.quantity %></td>
+                  <%= ff.hidden_field :status, value: "not_started" %>
+                </tr>
+              <% end %>
+
+              <% if !(ff.object.status == "cancelled") && ff.object.product_variant_id.present? && !(ff.object.product_id.present?) && !(ff.object.line_item_id.present?) %>
+                <tr>
+                  <td><%= ff.object&.product_variant&.title %></td>
+                  <td><%= ff.object&.product_variant&.sku&.upcase %></td>
+                  <td><%= ff.object&.purchase_type %></td>
+                  <td><%= ff.object&.product_variant&.inventory_quantity unless ff.object&.product_variant&.inventory_quantity.to_i.negative? %></td>
+                  <td><%= ff.object.quantity %></td>
+                  <%= ff.hidden_field :status, value: "not_started" %>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="4">Totals</th>
+              <th><%= @purchase.try(:purchase_items).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></th>
+            </tr>
+          </tfoot>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 text-right">
+        <%= link_to "Cancel", admin_purchase_path(id: @purchase.id), method: :delete, class: "btn btn-secondary mr-4" %>
+        <%= link_to "Create", purchase_admin_supplier_path(@purchase.supplier.present? ? @purchase.supplier : Supplier.order(:name).first), class: "btn btn-primary", id: "supplier_alert" %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script type="text/javascript">
+  $("#supplier_alert").on("click", function(e) {
+    if ($("#purchase_supplier_id").val() == "") {
+      e.preventDefault();
+      alert("Please select a supplier.");
+    }
+  })
+</script>

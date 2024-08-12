@@ -1,0 +1,79 @@
+Bundler/OrderedGems:
+  Exclude:
+    - 'Gemfile'
+
+# Offense count: 1
+# Cop supports --auto-correct.
+# Configuration parameters: Include.
+# Include: **/*.gemspec
+Gemspec/RequireMFA:
+  Exclude:
+    - 'lib/mimemagic/mimemagic.gemspec'
+
+# Offense count: 1
+# Configuration parameters: Include.
+# Include: **/*.gemspec
+Gemspec/RequiredRubyVersion:
+  Exclude:
+    - 'lib/mimemagic/mimemagic.gemspec'
+
+# Configuration parameters: IgnoreScopes, Include.
+# Include: app/models/**/*.rb
+Rails/InverseOf:
+  Exclude:
+    - 'app/models/checklist.rb'
+
+Lint/DuplicateBranch:
+  Exclude:
+    - 'app/models/order.rb'
+
+Layout/LineLength:
+  Exclude:
+    - 'app/controllers/admin/orders_controller.rb'
+    - 'app/models/container.rb'
+    - 'app/models/order.rb'
+
+
+
+# Configuration parameters: IgnoredMethods, CountRepeatedAttributes.
+Metrics/AbcSize:
+  Max: 450
+
+# Configuration parameters: CountComments, CountAsOne, ExcludedMethods, IgnoredMethods.
+# IgnoredMethods: refine
+Metrics/BlockLength:
+  Max: 2000
+
+# Configuration parameters: CountBlocks.
+Metrics/BlockNesting:
+  Max: 5
+
+# Configuration parameters: CountComments, CountAsOne.
+Metrics/ClassLength:
+  Max: 1500
+
+# Configuration parameters: IgnoredMethods.
+Metrics/CyclomaticComplexity:
+  Max: 120
+
+# Configuration parameters: CountComments, CountAsOne, ExcludedMethods, IgnoredMethods.
+Metrics/MethodLength:
+  Max: 270
+
+# Configuration parameters: CountComments, CountAsOne.
+Metrics/ModuleLength:
+  Max: 1000
+
+# Configuration parameters: CountKeywordArgs.
+Metrics/ParameterLists:
+  Max: 17
+  MaxOptionalParameters: 6
+
+# Configuration parameters: IgnoredMethods.
+Metrics/PerceivedComplexity:
+  Max: 150
+
+# Configuration parameters: MinSize.
+Performance/CollectionLiteralInLoop:
+  Exclude:
+    - 'app/models/order.rb'

@@ -1,0 +1,99 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <%= render partial: "admin/orders/navigation" %>
+
+  <% if params[:ship_status] == "shipped" %>
+    <!-- shipped -->
+    <div class="d-flex flex-column flex-auto">
+      <%= render partial: "shipped_order_results", locals: { current_user: current_user } %>
+    </div>
+        
+  <% elsif params[:ship_status] == "ready_for_pickup" %>
+    <!-- dc/carriers(ready_for_pickup) -->
+    <div class="d-flex flex-column flex-auto" id="ready_for_pickup_1">
+      <%= render partial: "carrier_list", locals: { current_user: current_user } %>
+    </div>
+
+  <% else %>
+    <!-- not_ready -->
+    <!-- staging -->
+    <!-- ready_to_ship -->
+    <!-- dc/booked -->
+    <div class="d-flex flex-column flex-auto" id="order_shippings">
+      <%= render partial: "order_shippings", locals: { current_user: current_user } %>
+    </div>
+  <% end %>
+</div> 
+
+<% if params[:ship_status] == "ready_to_ship" %>
+  <%= form_tag update_packing_slip_admin_white_glove_directories_path, html: { id: "merge-packing-slip", class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+    <div class="modal" id="mergeModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="header2 mr-4">WG Packing Slip</span>
+          </div>
+          <%= hidden_field_tag "ship_ids", "" %>
+          <div class="modal-body">
+            <div class="row mx-0 ">
+              <div class="col-6 mb-3">
+                <label>Company Name</label>
+                <%= select_tag :directory_id, options_for_select(WhiteGloveDirectory.where(store: current_store).map { |s| [s.company_name.titleize, s.id]}), { include_blank: true, class: "form-control", required: true } %>
+              </div>
+
+              <div class="col-6 mb-3">
+                <label>Company Address</label>
+                <%= select_tag :address_id, options_for_select(WhiteGloveAddress.where(country: current_store).map { |s| [s.address1.to_s + ", " + s.address2.to_s, s.id, { "data-directory-id" => s.white_glove_directory_id, style: "display: none" }]}), { include_blank: true, class: "form-control", required: true } %>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+            <%= submit_tag "Submit", class: "btn btn-primary" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<style>
+  .address-content {
+    display: none;
+  }
+
+  .address-content.active {
+    display: flex;
+  }
+</style>
+
+<script type="text/javascript">
+  $("#check-none").on("click", function() {
+    $("input[type='checkbox']").prop("checked", false);
+  });
+</script>
+
+<script type="text/javascript">
+  $(".address-tab").on("click", function() {
+    var index = $(this).data("address-tab");
+        
+    $(".address-content").each(function() {
+      $(this).removeClass("active");
+      if ($(this).data("address-tab") == index) {
+        $(this).addClass("active");
+      }
+    });
+  });
+
+  $("#directory_id").on("change", function() {
+    var id = $(this).val();
+    $("#address_id").val("");
+    $("#address_id option").hide();
+    $("#address_id option[data-directory-id='" + id + "']").show();
+  });
+
+  $("#merge-packing-slip").on("submit", function() {
+    setTimeout(function() {
+      location.reload();
+    }, 3000)
+  });
+</script>

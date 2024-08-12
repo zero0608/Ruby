@@ -1,0 +1,198 @@
+<% if @user_group.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @user_group.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-6 mb-3">
+    <p class="header2">Group Name</p>
+    <%= f.text_field :name, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-6 mb-3">
+    <p class="header2">Stores</p>
+    <%= f.label :store, "US", class:"mb-3 mr-2", style: "vertical-align: middle" %>
+    <label class="checkbox checkbox-blue mr-4">
+      <%= f.check_box :permission_us %>
+      <span class="checkmark"></span>
+    </label>
+
+    <%= f.label :store, "CA", class: "mb-3 mr-2", style: "vertical-align: middle" %>
+    <label class="checkbox checkbox-blue">
+      <%= f.check_box :permission_ca %>
+      <span class="checkmark"></span>
+    </label>
+  </div>
+
+  <div class="col-12 mb-3">
+    <p class="header2">Permissions</p>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <tr>
+          <td style="width: 80%">View Overview</td>
+          <td style="width: 20%">
+            <%= f.select :overview_view, options_for_select({"Yes" => true, "No" => false}, @user_group.overview_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Overview</td>
+          <td style="width: 20%">
+            <%= f.select :overview_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.overview_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Orders</td>
+          <td style="width: 20%">
+            <%= f.select :orders_view, options_for_select({"Yes" => true, "No" => false}, @user_group.orders_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Orders</td>
+          <td style="width: 20%">
+            <%= f.select :orders_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.orders_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Inventory</td>
+          <td style="width: 20%">
+            <%= f.select :inventory_view, options_for_select({"Yes" => true, "No" => false}, @user_group.inventory_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Inventory</td>
+          <td style="width: 20%">
+            <%= f.select :inventory_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.inventory_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="wdith: 80%">CRU Admin Inventory</td>
+          <td style="width: 20%">
+            <%= f.select :inventory_admin_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.inventory_admin_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Distribution Center</td>
+          <td style="width: 20%">
+            <%= f.select :dc_view, options_for_select({"Yes" => true, "No" => false}, @user_group.dc_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Distribution Center</td>
+          <td style="width: 20%">
+            <%= f.select :dc_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.dc_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Claims</td>
+          <td style="width: 20%">
+            <%= f.select :issues_view, options_for_select({"Yes" => true, "No" => false}, @user_group.issues_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Claims</td>
+          <td style="width: 20%">
+            <%= f.select :issues_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.issues_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Admin</td>
+          <td style="width: 20%">
+            <%= f.select :admin_view, options_for_select({"Yes" => true, "No" => false}, @user_group.admin_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Admin</td>
+          <td style="width: 20%">
+            <%= f.select :admin_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.admin_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View HR</td>
+          <td style="width: 20%">
+            <%= f.select :hr_view, options_for_select({"Yes" => true, "No" => false}, @user_group.hr_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU HR</td>
+          <td style="width: 20%">
+            <%= f.select :hr_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.hr_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View All Manager</td>
+          <td style="width: 20%">
+            <%= f.select :manager_view, options_for_select({"Yes" => true, "No" => false}, @user_group.manager_view), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU All Manager</td>
+          <td style="width: 20%">
+            <%= f.select :manager_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.manager_cru), { include_blank: true }, class: "form-control" %>
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Billing</td>
+          <td style="width: 20%">
+            <%= f.select :billing_view, options_for_select({"Yes" => true, "No" => false}, @user_group.billing_view), { include_blank: true }, class: "form-control" %>      
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Billing</td>
+          <td style="width: 20%">
+            <%= f.select :billing_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.billing_cru), { include_blank: true }, class: "form-control" %>      
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Board</td>
+          <td style="width: 20%">
+            <%= f.select :board_view, options_for_select({"Yes" => true, "No" => false}, @user_group.board_view), { include_blank: true }, class: "form-control" %>      
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Board</td>
+          <td style="width: 20%">
+            <%= f.select :board_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.board_cru), { include_blank: true }, class: "form-control" %>      
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">View Replacement</td>
+          <td style="width: 20%">
+            <%= f.select :replacement_view, options_for_select({"Yes" => true, "No" => false}, @user_group.replacement_view), { include_blank: true }, class: "form-control" %>      
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 80%">CRU Replacement</td>
+          <td style="width: 20%">
+            <%= f.select :replacement_cru, options_for_select({"Yes" => true, "No" => false}, @user_group.replacement_cru), { include_blank: true }, class: "form-control" %>      
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-12 mb-3">
+    <p class="header2">Warehouse Permissions</p>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <%= f.fields_for :warehouse_permissions, f.object.warehouse_permissions.eager_load(:warehouse).order("warehouses.name") do |ff| %>
+          <tr>
+            <td style="width: 80%">
+              <%= ff.object.warehouse.name %>
+            </td>
+            <td style="width: 20%">
+              <%= ff.select :permission, options_for_select({"Yes" => true, "No" => false}, ff.object.permission), { include_blank: true }, class: "form-control" %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_groups_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>

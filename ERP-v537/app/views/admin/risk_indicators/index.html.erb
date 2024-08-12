@@ -1,0 +1,46 @@
+<div class="container px-4">
+  <%= render "includes/admin_sub_nav" %>
+
+  <div class="row">
+    <div class="col-2">
+      <%= render "includes/side_nav_shipping" %>
+    </div>
+
+    <div class="col-10">
+      <a href="<%= new_admin_risk_indicator_path %>">
+        <button class="btn btn-primary">
+          <%= show_svg("plus.svg") %>
+          Create Risk Indicator
+        </button>
+      </a>
+
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 45%">Risk Type</th>
+              <th style="width: 45%">Assigned Status</th>
+              <th style="width: 10%">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @risk_indicators.each do |indicator| %>
+              <tr>
+                <td><%= indicator.risk_type %></td>
+                <td><%= indicator.assigned_status&.titleize %></td>
+                <td>
+                  <a href="<%= edit_admin_risk_indicator_path(indicator) %>" class="mr-4">
+                    <%= show_svg("recent_activity.svg") %>
+                  </a>
+                  <%= link_to admin_risk_indicator_path(indicator), method: :delete, data: { confirm: "Are your sure you want to delete this indicator?" } do %>
+                    <%= show_svg("close.svg") %>
+                  <% end %>                
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

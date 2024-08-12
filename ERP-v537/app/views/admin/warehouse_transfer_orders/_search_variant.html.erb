@@ -1,0 +1,27 @@
+<% unless @query == "" %>
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 60%">Description</th>
+          <th style="width: 10%">SKU</th>
+          <th style="width: 10%">On Hand</th>
+          <th style="width: 20%">Supplier</th>
+        </tr>
+      </thead>
+      <tbody>    
+        <% @warehouse_variants&.each do |war_var| %>
+          <% var = war_var.product_variant %>
+          <tr>
+            <td><%= var&.title %></td>
+            <td><%= var&.sku.upcase %></td>
+            <td><%= war_var&.warehouse_quantity.to_i unless war_var&.warehouse_quantity.to_i.negative? %></td>
+            <td><%= var.product&.supplier&.name%></td>
+            <td><%= text_field_tag "transfer[quantity][#{war_var.id}][]" %></td>
+            <td><%= check_box_tag "transfer[war_var_ids][]", war_var.id %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

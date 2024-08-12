@@ -1,0 +1,33 @@
+<div class="container px-4">
+  <%= form_for @shipment_code, url: { action: "update" }, html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+    <% if @shipment_code.errors.any? %>
+      <div class="alert alert-danger" role="alert">
+        <% @shipment_code.errors.full_messages.each do |message|%>
+          <%= message %><br>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="row">
+      <div class="col-12 mb-3">
+        <p class="header1">Edit Service Code</p>
+      </div>
+
+      <div class="col-6 mb-3">
+        <%= f.label :sku_for_discount, "SKU" %>
+        <%= f.text_field :sku_for_discount, class: "form-control", required: true %>
+      </div>
+      <div class="w-100"></div>
+
+      <div class="col-6 mb-3">
+        <%= f.label :description, "Description" %>
+        <%= f.text_area :description, class: "form-control", required: true %>
+      </div>
+
+      <div class="col-12 mb-3">
+        <%= link_to "Cancel", params[:variant_id].present? ? edit_admin_product_variant_path(@product_variant.id) : admin_products_path, class: "btn btn-secondary mr-4" %>
+        <%= f.submit "Submit", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+</div>

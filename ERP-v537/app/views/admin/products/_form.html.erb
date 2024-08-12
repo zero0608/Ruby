@@ -1,0 +1,293 @@
+<script src="https://cdn.ckeditor.com/ckeditor5/27.1.0/classic/ckeditor.js"></script>
+<script src="https://cdn.jsdelivr.net/bootstrap.tagsinput/0.4.2/bootstrap-tagsinput.min.js"></script>
+
+<% if @product.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @product.errors.full_messages.each do |message| %>
+        <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+<%= f.hidden_field :store, value: current_store %>
+<%= f.hidden_field :m2_product_id, value: @m2_product.id if @m2_product.present? %>
+
+<div class="row">
+  <% if @product.m2_original == "yes" %>
+    <div class="col-12 mb-3">
+      <%= link_to new_admin_product_path(m2_product_id: @product.id), class: "btn btn-primary", data: { turbolinks: false } do %>
+        <%= show_svg("plus.svg") %> Add Related Products
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="col-3 mb-3">
+    <%= f.label :title %>
+    <%= f.text_field :title, class: "form-control" %>
+  </div>
+
+  <div class="col-3 mb-3">
+    <%= f.label :sku, @product.m2_original == "yes" ? "M2 Product SKU" : "Product SKU" %>
+    <%= f.text_field :sku, class: "form-control" %>
+  </div>
+
+  <% unless @product.m2_original == "yes" %>
+    <div class="col-3 mb-3">
+      <%= f.label :sku, "M2 Product SKU" %>
+      <%= text_field_tag :m2_product_sku, Product.find_by(id: @product.m2_product_id)&.sku, class: "form-control" %>
+    </div>
+
+    <div class="col-3 mb-3 text-right">
+      <br>
+      <%= f.check_box :oversized, data: { switch: "blue" } %>
+      <%= f.label :oversized, "&nbsp;".html_safe %>
+      <label class="mt-2 ml-4">Oversized</label>
+    </div>
+  <% end %>
+  <div class="w-100"></div>
+
+  <div class="col mb-3">
+    <%= f.label :status %>
+    <%= f.text_field :status, class: "form-control", disabled: true %>
+  </div>
+
+  <div class="col mb-3">
+    <%= f.label "Factory" %>
+    <%= f.select :factory_id, options_for_select(Factory.all.map{|s|[s.name, s.id]}, f.object.factory_id), { include_blank: true }, { class: "form-control" } %>
+  </div>
+
+  <div class="col mb-3">
+    <%= f.label "Assign Supplier" %>
+    <%= f.select :supplier_id, options_for_select(Supplier.all.map{|s|[s.name, s.id]}, f.object.supplier_id), {}, { class: "form-control" } %>
+  </div>
+
+  <div class="col mb-3">
+    <%= f.label :category, "Category" %>
+    <%= f.select :category_id, options_for_select(Category.all.map{|s|[s.title, s.id]}, f.object.category_id), {include_blank: true}, class: "form-control", data: { reflex: "change->ProductReflex#select_category" } %>
+  </div>
+
+  <% if f.object.category_id.present? %>
+    <% if @category.present? && !(f.object.category_id == @category.id) %>
+      <div class="col mb-3">
+        <%= f.label :subcategory, "Sub-Category" %>
+        <%= f.select :subcategory_id, options_for_select(Subcategory.all.where(category_id: @category.id).map{|s|[s.name, s.id]}, f.object.subcategory_id), { include_blank: true }, class: "form-control" %>
+      </div>
+    <% else %>
+      <div class="col mb-3">
+        <%= f.label :subcategory, "Sub-Category" %>
+        <%= f.select :subcategory_id, options_for_select(Subcategory.all.where(category_id: f.object.category_id).map{|s|[s.name, s.id]}, f.object.subcategory_id), { include_blank: true }, class: "form-control" %>
+      </div>
+    <% end %>
+  <% else %>
+    <% if @category.present? %>
+      <div class="col mb-3">
+        <%= f.label :subcategory, "Sub-Category" %>
+        <%= f.select :subcategory_id, options_for_select(Subcategory.all.where(category_id: @category.id).map{|s|[s.name, s.id]}, f.object.subcategory_id), { include_blank: true }, class: "form-control" %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <% unless @product.m2_original == "yes" %>
+    <div class="col-12 mb-3">
+      <%= f.label :carton_detail, class: "mr-2" %>  
+      <a data-reflex="click->ProductReflex#build_carton" data-product_id="<%= f.object.id %>">
+        <%= show_svg("plus.svg") %>
+      </a>
+
+      <% if f.object.carton_details.present? %>
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 18%">Index</th>
+              <th style="width: 18%">Length</th>
+              <th style="width: 18%">Width</th>
+              <th style="width: 18%">Height</th>
+              <th style="width: 18%">Cubic Meter</th>
+              <th style="width: 18%">Weight</th>
+              <th style="width: 10%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= f.fields_for :carton_details do |carton_attributes| %>
+              <%= render "carton_detail_fields", f: carton_attributes %>
+            <% end %>
+            <th colspan='4'>Total: </th>
+            <th style="width: 18%"><%= number_with_precision(f.object.carton_details.pluck(:cubic_meter).reject(&:blank?).map(&:to_f).sum, precision: 4) %></th>
+            <th style="width: 18%"><%= f.object.carton_details.pluck(:weight).reject(&:blank?).map(&:to_f).sum %></th>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_products_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+
+  <% if @product.m2_original == "yes" %>
+    <div class="col-12 mb-3">
+      <h4>Related Products</h4>
+      <div class="col-12 mb-4">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 8%">SKU</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% Product.where(m2_product_id: @product.id).each do |product| %>
+              <tr>
+                <td><%= link_to product&.sku&.upcase, admin_product_path(id: product.id) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <% if params[:action] == "edit" %>
+    <% if @product.product_images.present? && @product.m2_original != "yes" %>
+      <div class="col-12 mb-3">
+        <span class="header1">Product Images</span>
+      </div>
+      <% @product.product_images.each do |image| %>
+        <div class="col-2 mb-3">
+          <%= image_tag image.src, class: "img-fluid" %>
+        </div>
+      <% end %>
+    <% end %>
+    
+    <div class="col-12 mb-3">
+      <span class="header1">
+        <% if @product.m2_original == "yes" %>
+          Related Product Variants
+        <% else %>
+          Product Variants
+        <% end %>
+      </span>
+    </div>
+    <div class="col-12 mb-3">
+      <table class="table table-borderless table-hover">
+        <thead>
+          <tr>
+            <th style="width: 25%">Description</th>
+            <th style="width: 10%">SKU</th>
+            <th style="width: 10%">Price</th>
+            <th style="width: 10%">Special Price</th>
+            <th style="width: 10%">Cost</th>
+            <th style="width: 10%">Alert Limit</th>
+            <th style="width: 10%">Stock</th>
+            <th style="width: 10%">On Hand</th>
+            <th style="width: 5%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @product.product_variants.where(store: current_store).each do |variant| %>
+            <tr>
+              <td>
+                <%= link_to variant&.title&.html_safe, admin_product_variant_path(id: variant.id) %>
+                <% if ShipmentCode.pluck(:sku_for_discount).include? variant.sku %>
+                  <span class="badge badge-outline-light-grey ml-2" style="vertical-align: middle">Service Code</span>
+                <% end %>
+              </td>
+              <td><%= variant&.sku&.upcase %></td>
+              <td><%= variant&.price %></td>
+              <td><%= number_to_currency(number_with_precision(variant&.special_price, precision: 4)) %></td>
+              <td><%= variant&.unit_cost %></td>
+              <td><%= variant&.inventory_limit%></td>
+              <td><%= variant&.stock %></td>
+              <td><%= variant&.inventory_quantity.to_i%></td>
+              <td>
+                <%= link_to edit_admin_product_variant_path(variant.id, product_id: @product.id), class: "mr-4" do %>
+                  <%= show_svg("recent_activity.svg") %>
+                <% end %>
+
+                <%= link_to admin_product_variant_path(variant.id), method: :delete, data: { confirm: "Are you sure you want to delete this variant?" } do %>
+                  <%= show_svg("close.svg") %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <% if ProductVariant.where(m2_product_id: @product.id).present? %>
+            <% ProductVariant.where(m2_product_id: @product.id).each do |variant| %>
+              <tr>
+                <td>
+                  <%= link_to variant&.title&.html_safe, admin_product_variant_path(id: variant.id) %>
+                  <% if ShipmentCode.pluck(:sku_for_discount).include? variant.sku %>
+                    <span class="badge badge-outline-light-grey ml-2" style="vertical-align: middle">Service Code</span>
+                  <% end %>
+                </td>
+                <td><%= variant&.sku&.upcase %></td>
+                <td><%= variant&.price %></td>
+                <td></td>
+                <td></td>
+                <td><%= variant&.inventory_limit%></td>
+                <td><%= variant&.stock %></td>
+                <td><%= variant&.inventory_quantity.to_i%></td>
+                <td>
+                  <%= link_to edit_admin_product_variant_path(variant.id, product_id: @product.id), class: "mr-4" do %>
+                    <%= show_svg("recent_activity.svg") %>
+                  <% end %>
+                  <%= link_to admin_product_variant_path(variant.id), method: :delete, data: { confirm: "Are you sure you want to delete this variant?" } do %>
+                    <%= show_svg("close.svg") %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .ck-editor__editable { max-height: 500px; }
+</style>
+
+<script type="text/javascript">
+  var ready = function() {
+    ClassicEditor.create( document.querySelector( '#product_body_html' ),{
+      toolbar: {
+      
+      }
+    } ).catch( error => {
+
+    });
+
+    $("#product_shopify_tag_list").tagsinput('items');
+    $('.bootstrap-tagsinput').addClass('form-control');
+    $('.bootstrap-tagsinput input').css({"width": "auto"});
+  };
+
+  $(document).on('turbolinks:load', ready); 
+
+  class addFields {
+    constructor() {
+      this.links = document.querySelectorAll('.add_fields')
+      this.iterateLinks()
+    }
+
+    iterateLinks() {
+      if (this.links.length === 0) return
+      this.links.forEach(link => {
+        link.addEventListener('click', e => {
+          this.handleClick(link, e)
+        })
+      })
+    }
+
+    handleClick(link, e) {
+      if (!link || !e) return
+      e.preventDefault()
+      let time = new Date().getTime()
+      let linkId = link.dataset.id
+      let regexp = linkId ? new RegExp(linkId, 'g') : null
+      let newFields = regexp ? link.dataset.fields.replace(regexp, time) : null
+      newFields ? link.insertAdjacentHTML('beforebegin', newFields) : null
+    }
+  }
+  window.addEventListener('turbolinks:load', () => new addFields())
+
+</script>

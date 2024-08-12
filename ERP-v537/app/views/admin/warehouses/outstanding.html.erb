@@ -1,0 +1,64 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-6 mb-3 pr-2">
+        <a href="<%= outstanding_pick_admin_warehouses_path %>" class="d-block w-100 bg-light-red border-red rounded-5 p-4" style="height: 200px">
+          <span class="header1 text-red">Pick Inventory</span>
+          <p class="position-absolute" style="bottom: 0.5rem">
+            <span class="header1"><%= @product_variants.sum(:to_do_quantity) %></span><br>
+            <span class="text-black">products from in-stock</span>
+          </p>
+        </a>
+      </div>
+
+      <div class="col-6 mb-3 pl-2">
+        <a href="<%= outstanding_preorder_admin_warehouses_path %>" class="d-block w-100 bg-light-blue border-blue rounded-5 p-4" style="height: 200px">
+          <span class="header1 text-blue">Pre-Orders</span>
+          <p class="position-absolute" style="bottom: 0.5rem">
+            <span class="header1">
+              <%= @container_items.sum(:preorder_quantity) %>
+            </span><br>            
+            <span class="text-black">products from container</span>
+          </p>
+        </a>
+      </div>
+
+      <div class="col-6 mb-3 pr-2">
+        <a href="<%= outstanding_reserve_admin_warehouses_path %>" class="d-block w-100 bg-light-yellow border-yellow rounded-5 p-4" style="height: 200px">
+          <span class="header1 text-yellow">Reserved</span>
+          <p class="position-absolute" style="bottom: 0.5rem">
+            <span class="header1"><%= @to_be_reserved.sum { |line_item| line_item.quantity.to_i - line_item.reserve_items.pluck(:quantity).min.to_i } %></span><br>
+            <span class="text-black">products to be reserved</span>
+          </p>
+        </a>
+      </div>
+
+      <div class="col-6 mb-3 pl-2">
+        <a href="<%= outstanding_put_admin_warehouses_path %>" class="d-block w-100 bg-light-green border-green rounded-5 p-4" style="height: 200px">
+          <span class="header1 text-green">Put Products</span>
+          <p class="position-absolute" style="bottom: 0.5rem">
+            <span class="header1"><%= @product_variants.sum(:received_quantity) %></span><br>
+            <span class="text-black">add to stock</span>
+          </p>
+        </a>
+      </div>
+
+      <% if current_user.warehouse_admin? %>
+        <div class="col-12">
+          <a href="<%= admin_admin_warehouses_path %>" class="d-block w-100 bg-white border-light-grey rounded-5 p-4" style="height: 100px">
+            <span class="header1 position-center">Administrator</span>
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+</div>

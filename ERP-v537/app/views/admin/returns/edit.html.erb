@@ -1,0 +1,331 @@
+<div class="container px-4">
+  <%= render partial: "admin/returns/navigation" %>
+
+  <div class="row position-relative" style="top: calc(57px + 1rem)">
+    <div class="col-10">
+      <span class="header1 mr-2">
+        <%= @return.name %>
+      </span>
+      
+      <% case @return&.status %>
+        <% when "pending" %>
+          <span class="badge badge-outline-blue">
+            <%= @return&.status&.titleize %>
+          </span>
+
+        <% when "complete" %>
+          <span class="badge badge-outline-green">
+            <%= @return&.status&.titleize %>
+          </span>
+
+        <% when "cancelled" %>
+          <span class="badge badge-outline-black">
+            <%= @return&.status&.titleize %>
+          </span>
+      <% end %>
+    </div>
+
+    <div class="col-2 text-right">
+      <% if @return.status == "pending" %>
+        <a data-reflex="click->ReturnReflex#cancel_return" data-return-id="<%= @return.id %>">
+          Cancel Return Order
+        </a>
+      <% end %>
+    </div>
+    
+    <div class="col-3 mb-4 d-flex">
+      <div class="w-25">
+        <span class="text-black font-weight-bold">Return Created</span><br>
+        <span class="text-black font-weight-bold">Claim Ticket</span><br>
+        <span class="text-black font-weight-bold">Customer</span><br>
+        <span class="text-black font-weight-bold">Phone</span><br>
+        <span class="text-black font-weight-bold">Email</span><br>
+      </div>
+      <div class="w-75">
+        <%= @return.created_at.strftime("%B %d, %Y") %><br>
+        <%= link_to "ISS" + (@return.order.store == "us" ? "US" : "CA") + @return.issue.id.to_s, edit_admin_issue_path(@return.issue.id) %><br>
+        <%= @return.order&.customer&.full_name&.titleize %><br>        
+        <% if @return.order.customer.present? && @return.order.customer.phone.present? %>
+          <%= @return.order.customer.phone %>
+        <% elsif @return.order.billing_address.phone.present? %>
+          <%= @return.order.billing_address.phone %>
+        <% end %>
+        <br>
+        <% if @return.order.customer.present? && @return.order.customer.email.present? %>
+          <%= @return.order.customer.email %>
+        <% end %>
+      </div>
+    </div>
+  
+    <div class="col-5 offset-4 mb-4 d-flex pl-5">
+      <div class="w-50 mr-4">
+        <label class="text-black mr-2">Pick-Up Address</label><br>
+        <% if @return.order.shipping_address.present? %>
+          <%= @return.order.shipping_address&.full_name&.titleize %><br>
+          <% if @return.order.billing_address&.company.present? %>
+            <%= @return.order.billing_address&.company %><br>
+          <% end %>
+          <%= @return.order.shipping_address&.address1.tr('[]','').tr('" "', '')&.titleize %><br>
+          <%= @return.order.shipping_address&.city&.titleize %>
+          <%= @return.order.shipping_address&.address2&.titleize %>,
+          <%= @return.order.shipping_address&.zip&.upcase %>,
+          <%= @return.order.shipping_address&.country %><br>
+          <span class="text-blue">T:</span>
+          <%= @return.order.shipping_address&.phone %>
+        <% end %>
+      </div>
+
+      <div class="w-50">
+        <label class="text-black">Return Address</label>
+        <a class="ml-3" data-toggle="modal" data-target="#returnAddressModal">Edit</a><br>
+        <% if @return.return_contact.present? %>
+          <%= @return.return_contact&.titleize %><br>
+        <% end %>
+        <%= @return.return_company&.titleize %><br>
+        <%= @return.return_address&.titleize %><br>
+        <%= @return.return_city&.titleize %>
+        <%= @return.return_state&.titleize %>,
+        <%= @return.return_zip_code&.upcase %>,
+        <%= @return.return_country %>
+      </div>
+    </div>
+    <div class="col-12 mb-3 py-2 d-flex">
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2">Return Reason</span>
+        <p><%= @return.return_reason %></p>
+      </div>
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2">Return Pick Up Date</span>
+        <p><%= @return.return_date&.strftime("%B %d, %Y") %></p>
+      </div>
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2">Return Carrier</span>
+        <p><%= @return.return_carrier %></p>
+      </div>
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2">Repackaging Fee</span>
+        <p><%= number_to_currency(@return.issue.repacking_fee) %></p>
+      </div>
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2">Restocking Fee</span>
+        <p><%= number_to_currency(@return.issue.restocking_fee) %></p>
+      </div>
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2"><%= @return.disposal ? "Disposal Quote" : "Return Quote" %></span>
+        <%= form_for @return, url: { action: "update" }, html: { class: "text-center" } do |f| %>
+          <%= f.number_field :return_quote, class: "form-control w-50 mb-3 d-inline-block", step: :any, data: { reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+        <% end %>
+      </div>
+      <div class="col pt-3 bg-light-blue text-center">
+        <span class="header2">Return Number</span>
+        <p><%= @return.return_number %></p>
+      </div>
+    </div>
+    <div class="col-12 mb-3">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 10%">Status</th>
+              <th style="width: 19%">Description</th>
+              <th style="width: 10%">SKU</th>
+              <th style="width: 10%">Quantity</th>
+              <th style="width: 10%"></th>
+              <th class="text-center" style="width: 6%">Package In Good Condition</th>
+              <th class="text-center" style="width: 6%">Product In Good Condition</th>
+              <th class="text-center" style="width: 9%">Product In Good Condition Requires New Packaging</th>
+              <th style="width: 20%">
+                Visible Damage(s)
+                <%= form_for @return, url: { action: "update" }, html: { class: "float-right" } do |f| %>
+                  <%= f.check_box :disposal, data: { switch: "blue", reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+                  <%= f.label :disposal,"&nbsp;".html_safe %>
+                  <label class="ml-2">Disposal
+                <% end %>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @return.return_line_items.each do |li| %>
+              <tr>
+                <td>
+                  <% if li.status == "pending" %>
+                    <span class="badge badge-outline-blue">
+                      <%= li.status.titleize %>
+                    </span>
+                  <% else %>
+                    <span class="badge badge-outline-green">
+                      <%= li.status.titleize %>
+                    </span>
+                  <% end %>
+                </td>
+                <td><%= li.line_item.title %></td>
+                <td><%= li.line_item.sku %></td>
+                <td><%= li.quantity %></td>
+                <td class="text-center border-left">
+                  <% if li.status == "pending" %>
+                    <%= link_to "Received", edit_admin_return_path(id: @return.id, line_item_id: li.id), class: "btn btn-primary", remote: true %>
+                    <div id="receiveLineItem"></div>
+                  <% else %>
+                    <button class="btn btn-primary" disabled>Received</button>
+                  <% end %>
+                </td>
+                <td class="text-center border-left">
+                  <label class="checkbox checkbox-blue">
+                    <input type="checkbox" disabled <%= "checked" if li.package_condition %>>
+                    <span class="checkmark"></span>
+                  </label>
+                </td>
+                <td class="text-center">
+                  <label class="checkbox checkbox-blue">
+                    <input type="checkbox" disabled <%= "checked" if li.product_condition %>>
+                    <span class="checkmark"></span>
+                  </label>
+                </td>
+                <td class="text-center">
+                  <label class="checkbox checkbox-blue">
+                    <input type="checkbox" disabled <%= "checked" if li.new_packaging %>>
+                    <span class="checkmark"></span>
+                  </label>
+                </td>
+                <td><%= li.notes %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-6 mb-3">
+      <div class="btn btn-light-blue d-flex mb-3">
+        <div class="w-100 text-left">
+          <span class="header2">Recent Activity</span>
+        </div>
+      </div>
+  		<%= render partial: "admin/comments/return", locals: { commentable: @return, current_user: current_user } %>
+    </div>
+    <div class="col-6 mb-3">
+			<%= form_for @return, url: { action: "update" } do |f| %>
+        <div class="btn btn-light-blue d-flex mb-3">
+          <div class="w-100 text-left">
+            <span class="header2">Return Shipping Cost</span>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col">
+            <label>Broker</label>
+            <%= f.select :truck_broker_id, options_for_select(TruckBroker.where(country: current_store).map { |s| [s.name, s.id]}, f.object.truck_broker_id), { include_blank: true }, class: "form-control", data: { reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+          </div>
+          <div class="col">
+						<label>Freight Carrier</label>
+						<%= f.collection_select :carrier_id, Carrier.get_carriers(current_store).where(inactive: false, truck_broker_id: f.object.truck_broker_id).order(:name), :id, :name, { include_blank: true }, class: "form-control", data: { reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+          </div>
+          
+          <div class="col">
+            <label>White Glove Carrier</label>
+            <%= f.select :white_glove_directory_id, options_for_select(WhiteGloveDirectory.where(store: current_store).map { |s| [s.company_name, s.id] }, f.object.white_glove_directory_id), { include_blank: true }, class: "form-control", data: { reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+          </div>
+
+          <div class="col">
+            <label>White Glove Address</label>
+            <%= f.select :white_glove_address_id, options_for_select(WhiteGloveAddress.where(white_glove_directory_id: f.object.white_glove_directory_id).map { |s| [s.address1.to_s + ", " + s.address2.to_s, s.id] }, f.object.white_glove_address_id), { include_blank: true }, class: "form-control", data: { reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+          </div>
+
+          <div class="col">
+            <label>Shipping Cost</label>
+            <%= f.number_field :shipping_cost, class: "form-control", step: :any, data: { reflex: "change->ReturnReflex#update", return_id: @return.id } %>
+          </div>
+        </div>
+
+        <div class="btn btn-light-blue d-flex mb-3">
+          <div class="w-100 text-left">
+            <span class="header2">Supporting Documents</span>
+          </div>
+        </div>
+      
+        <div class="file-input-container d-inline-block">
+          <%= f.file_field :files, multiple: true, class: "d-none", accept: ".png, .jpg, .jpeg, .pdf" %>
+          <a class="file-input">Upload</a>
+        </div>
+
+        <% if @return.files.present? %>
+          <span class="pr-4 mr-4 border-right"></span>
+          <% @return.files.each do |file| %>
+            <%= link_to file.filename, file, class: "mr-4", target: :_blank %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+
+<%= form_for @return, url: update_address_admin_return_path(@return.id), method: :post, html: {class: "form-horizontal form-bordered" } do |f| %>
+  <div class="modal" id="returnAddressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Return Address</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-6 mb-3">
+              <label>Contact</label>
+              <%= f.text_field :return_contact, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>Company</label>
+              <%= f.text_field :return_company, class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <label>Address</label>
+              <%= f.text_field :return_address, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>City</label>
+              <%= f.text_field :return_city, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>State</label>
+              <%= f.text_field :return_state, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>Zip Code</label>
+              <%= f.text_field :return_zip_code, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <label>Country</label>
+              <%= f.text_field :return_country, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script type="text/javascript">
+  $(document).on("click", "#return_line_item_status_marketplace", function() {
+    $("#return_line_item_market_value").attr("readonly", false);
+  });
+
+  $(document).on("click", "#return_line_item_statu_dispose, #return_line_item_status_return_to_stock, #return_line_item_status_overstock", function() {
+    $("#return_line_item_market_value").attr("readonly", true).val(null);
+  });
+
+  $(document).on("submit", ".edit_return", function() {
+    setTimeout(function() {
+      location.reload();
+    }, 500)
+  });
+
+  $("#return_truck_broker_id").on("change", function() {
+    document.getElementById('loaderOverlay').style.display = "flex";
+  });
+</script>

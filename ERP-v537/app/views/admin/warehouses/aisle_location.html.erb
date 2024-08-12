@@ -1,0 +1,45 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-12 mb-3">
+        <span class="header1"><%= params[:rack] %></span><br>
+        <span class="text-light-grey">Rack</span>
+      </div>
+      <% @product_locations.order(:rack, :level, :bin).each do |location| %>
+        <div class="col-12 mb-3">
+          <a href="<%= show_location_admin_warehouses_path(location_id: location.id) %>" class="d-block w-100 bg-white border-light-grey rounded-5 p-4">
+            <div class="row">
+              <div class="col-4 mb-3 text-center">
+                <span class="text-light-grey">Rack</span><br>
+                <span class="header1"><%= location.rack %></span>
+              </div>
+              <div class="col-4 mb-3 text-center">
+                <span class="text-light-grey">Level</span><br>
+                <span class="header1"><%= location.level %></span>
+              </div>
+              <div class="col-4 mb-3 text-center">
+                <span class="text-light-grey">Bin</span><br>
+                <span class="header1"><%= location.bin %></span>
+              </div>
+            </div>
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= unassigned_locations_admin_warehouses_path %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>

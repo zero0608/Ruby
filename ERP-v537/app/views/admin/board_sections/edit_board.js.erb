@@ -1,0 +1,13 @@
+<% if @board_page.present? %>
+  $("#page-content").empty().append("<%= escape_javascript(render partial: "page_content", locals: { board_page: @board_page }) %>");
+<% end %>
+
+<% if @create_section.present? %>
+  $("#create-section").empty().append("<%= escape_javascript(render partial: "create_section", locals: { create_section: @create_section }) %>");
+  $("#createSectionModal-<%= @create_section.id %>").modal('show');
+<% end %>
+
+<% if @delete_section.present? %>
+  $("#delete-section").empty().append("<%= escape_javascript(render partial: "delete_section", locals: { delete_section: @delete_section }) %>");
+  $("#deleteModal-<%= @delete_section.id %>").modal('show');
+<% end %>

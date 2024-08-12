@@ -1,0 +1,14 @@
+<% @reserved.order("LOWER(sku)").each do |line_item| %>
+  <a href="<%= reserve_variant_pick_admin_warehouses_path(line_item_id: line_item.id) %>" class="row mx-0 pt-3 border-grey bg-white rounded-5 mb-3">
+    <div class="col-9 mb-3">
+      <span class="header1 font-weight-bold"><%= line_item.sku&.upcase %></span><br>
+      <span class="text-light-grey">
+        <%= line_item.order.name %>
+      </span>
+    </div>
+    <div class="col-3 mb-3 text-right">
+      <span class="header2">pick</span><br>
+      <span class="header1"><%= line_item.quantity.to_i - line_item.reserve_items.pluck(:quantity).min.to_i %></span>
+    </div>
+  </a>
+<% end %>

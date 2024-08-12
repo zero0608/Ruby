@@ -1,0 +1,13 @@
+<tr>
+  <td><%= f.text_field :index, class: "form-control" %></td>
+  <td><%= f.text_field :length, class: "form-control" %></td>
+  <td><%= f.text_field :width, class: "form-control" %></td>
+  <td><%= f.text_field :height, class: "form-control" %></td>
+  <td><%= f.text_field :cubic_meter, class: "form-control", disabled: true %></td>
+  <td><%= f.text_field :weight, class: "form-control" %></td>
+  <td>
+    <a data-reflex="click->ProductReflex#destroy_carton" data-carton_id="<%= f.object.id %>">
+      <%= show_svg("delete.svg") %>
+    </a>
+  </td>
+</tr>

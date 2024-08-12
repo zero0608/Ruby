@@ -1,0 +1,17 @@
+<div class="table-responsive">
+  <table class="table table-borderless table-hover">
+    <tbody>
+      <% unless @query == "" %>
+        <% @products&.each do |product| %>
+          <tr>
+            <td class="pl-5">
+              <a href="<%= edit_admin_product_path(product.id) %>">
+                <%= product.title %> | <%= product.sku %>
+              </a>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

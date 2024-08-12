@@ -1,0 +1,17 @@
+<% if @department.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @department.errors.full_messages.each do |message| %>
+        <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="col-6 mb-3">
+  <%= f.label :name %>
+  <%= f.text_field :name, class: "form-control", required: true %>
+</div>
+
+<div class="col-12 mb-3">
+  <%= link_to "Cancel", admin_departments_path, class: "btn btn-secondary mr-4" %>
+  <%= f.submit "Submit", class: "btn btn-primary" %>
+</div>

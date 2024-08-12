@@ -1,0 +1,222 @@
+<% if current_user.user_group.overview_view && !current_user.supplier? %>
+  <div class="container p-4">
+    <div class="row mb-5">
+      <div class="col-12">
+        <h4 class="mb-4">
+          <% if current_store == "us" %>
+            EMUS Dashboard 
+          <% else %>
+            EMCA Dashboard
+          <% end %>
+        </h4>
+        <h5 class="mb-4">Orders</h5>
+      </div>
+
+      <div class="col">
+        <div class="card card-red-clay">
+          <div class="card-body">
+            <div class="row no-gutters">
+              <div class="col-3 text-center">
+                <div class="h2 card-icon rounded-circle" style="position: relative; height: 45px; width: 45px">
+                  <div class="uil-clock-three position-center"></div>
+                </div>
+              </div>
+              <div class="col-9 text-right">
+                <h3 class="fc-red-clay"><span class="h1 font-weight-bold"><%= @orders_not_ready %></span> <%= "Order".pluralize(@orders_not_ready) %></h3>
+                <p class="fc-grey60 font-weight-bold">NOT READY</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card card-red-clay">
+          <div class="card-body">
+            <div class="row no-gutters">
+              <div class="col-3 text-center">
+                <div class="h2 card-icon rounded-circle" style="position: relative; height: 45px; width: 45px">
+                  <div class="uil-truck-loading position-center"></div>
+                </div>
+              </div>
+              <div class="col-9 text-right">
+                <h3 class="fc-red-clay"><span class="h1 font-weight-bold"><%= @orders_staging %></span> <%= "Order".pluralize(@orders_staging) %></h3>
+                <p class="fc-grey60 font-weight-bold">STAGING</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card card-red-clay">
+          <div class="card-body">
+            <div class="row no-gutters">
+              <div class="col-3 text-center">
+                <div class="h2 card-icon rounded-circle" style="position: relative; height: 45px; width: 45px">
+                  <div class="uil-schedule position-center"></div>
+                </div>
+              </div>
+              <div class="col-9 text-right">
+                <h3 class="fc-red-clay"><span class="h1 font-weight-bold"><%= @orders_booked %></span> <%= "Order".pluralize(@orders_booked) %></h3>
+                <p class="fc-grey60 font-weight-bold">BOOKED</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card card-red-clay">
+          <div class="card-body">
+            <div class="row no-gutters">
+              <div class="col-3 text-center">
+                <div class="h2 card-icon rounded-circle" style="position: relative; height: 45px; width: 45px">
+                  <div class="uil-truck position-center"></div>
+                </div>
+              </div>
+              <div class="col-9 text-right">
+                <h3 class="fc-red-clay"><span class="h1 font-weight-bold"><%= @orders_ready_for_pickup %></span> <%= "Order".pluralize(@orders_ready_for_pickup) %></h3>
+                <p class="fc-grey60 font-weight-bold">READY FOR PICKUP</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card card-red-clay">
+          <div class="card-body pb-0">
+            <div class="row no-gutters">
+              <div class="col-3 text-center">
+                <div class="h2 card-icon rounded-circle" style="position: relative; height: 45px; width: 45px">
+                  <div class="dripicons-rocket position-center"></div>
+                </div>
+              </div>
+              <div class="col-9 text-right">
+                <h3 class="fc-red-clay"><span class="h1 font-weight-bold"><%= @orders_shipped %></span> <%= "Order".pluralize(@orders_shipped) %></h3>
+                <p class="fc-grey60 font-weight-bold">
+                  SHIPPED<br>
+                  <span class="font-weight-normal">(This Week)</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-5">
+      <div class="col-10 mb-4">
+        <h5>Containers Arriving</h5>
+      </div>
+      <div class="col-2">
+        <div class="drop-toggle ml-auto">
+          <%= @con_label %>
+          <i class="dripicons-chevron-down"></i>
+        </div>
+        <div class="drop-menu">
+          <div class="drop-item" data-reflex="click->DashboardReflex#con_this_week">This Week</div>
+          <div class="drop-item" data-reflex="click->DashboardReflex#con_next_week">Next Week</div>
+          <div class="drop-item" data-reflex="click->DashboardReflex#con_this_month">This Month</div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="d-flex scroll--simple" style="overflow: auto">
+          <% if @con_arriving.present? %>
+            <% @con_arriving.order(:arriving_to_dc).each do |container| %>
+              <div class="col-2 pl-0">
+                <a href="<%= edit_admin_container_path(container) %>">
+                  <div class="card bg-off-white">
+                    <div class="card-body">
+                      <div class="row no-gutters">
+                        <div class="col-4 text-center">
+                          <div class="h4 text-white bg-red-clay rounded-circle" style="position: relative; height: 45px; width: 45px">
+                            <div class="uil-ship position-center"></div>
+                          </div>
+                        </div>
+            
+                        <div class="col-8 text-right">
+                          <h4 class="card-title fc-red-clay">
+                            <% if container.store == "us" %>
+                              <%= "CTUS" + container.container_number.to_s %>
+                            <% else %>
+                              <%= "CTCA" + container.container_number.to_s %>
+                            <% end %>
+                          </h4>
+                          <div class="card-text">
+                            <%= container.arriving_to_dc.to_date.strftime('%B %d, %Y') %>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            <% end %>
+          <% else %>
+            <p>There are no arriving containers for the time period selected.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <!--
+    <div class="row">
+      <div class="col-4 mb-4">
+        <h5>Sales Performance</h5>
+      </div>
+      
+      <div class="col-3 mb-4">
+        <label>Start Date</label>
+        <input class="form-control ml-3" type="date" style="display: inline; width: calc(100% - 75px)" data-reflex="input->Dashboard#chart_set_begin_date">
+      </div>
+
+      <div class="col-3 mb-4">
+        <label>End Date</label>
+        <input class="form-control ml-3" type="date" style="display: inline; width: calc(100% - 75px)" date-reflex="input->Dashboard#_chart_set_end_date">
+      </div>
+
+      <div class="col-2 mb-4">
+        <div class="drop-toggle ml-auto">
+          <%= @con_label %>
+          <i class="dripicons-chevron-down"></i>
+        </div>
+        <div class="drop-menu">
+          <div class="drop-item" data-reflex="click->DashboardReflex#chart_set_week">This Week</div>
+          <div class="drop-item" data-reflex="click->DashboardReflex#chart_set_month">This Month</div>
+          <div class="drop-item" data-reflex="click->DashboardReflex#chart_set_quarter">This Quarter</div>
+          <div class="drop-item" data-reflex="click->DashboardReflex#chart_set_year">This Year</div>
+        </div>
+      </div>
+
+      <div class="col-4 mb-4">
+        <div class="card no-hover">
+          <div class="card-body">
+            <h5 class="card-title">Orders</h5>
+            <%# line_chart Order.where(created_at: (@chart_date_begin)..(@chart_date_end)).group_by_day(:created_at).count #%>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4 mb-4">
+        <div class="card no-hover">
+          <div class="card-body">
+            <h5 class="card-title">Revenue</h5>
+            <%# line_chart Order.where(created_at: (@chart_date_begin)..(@chart_date_end)).group_by_day(:created_at).sum("CAST(COALESCE(current_subtotal_price, '0') AS DECIMAL)") #%>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-4 mb-4">
+        <div class="card no-hover">
+          <div class="card-body">
+            <h5 class="card-title">Refund</h5>
+            <%# line_chart Refund.where(created_at: (@chart_date_begin)..(@chart_date_end)).group_by_day(:created_at).count #%>
+          </div>
+        </div>
+      </div>
+    </div>
+    -->
+  </div>
+<% end %>

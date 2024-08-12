@@ -1,0 +1,2 @@
+$("#productPurchase").append("<%= escape_javascript(render partial: 'products', locals: { current_user: current_user, location: @product_location })%>");
+$("#productPurchaseModal").modal('show');

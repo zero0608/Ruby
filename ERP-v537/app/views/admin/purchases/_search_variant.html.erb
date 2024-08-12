@@ -1,0 +1,26 @@
+<% unless @query == "" %>
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 60%">Description</th>
+          <th style="width: 10%">SKU</th>
+          <th style="width: 10%">On Hand</th>
+          <th style="width: 20%">Supplier</th>
+        </tr>
+      </thead>
+      <tbody>    
+        <% @variants&.each do |var| %>
+          <tr>
+            <td><%= var&.title %></td>
+            <td><%= var&.sku.upcase %></td>
+            <td><%= var&.inventory_quantity unless var&.inventory_quantity.to_i.negative? %></td>
+            <td><%= var.product&.supplier&.name%></td>
+            <td><%= text_field_tag "purchase[quantity][#{var.id}][]" %></td>
+            <td><%= check_box_tag "purchase[variant_ids][]", var.id %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

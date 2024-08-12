@@ -1,0 +1,112 @@
+#!/usr/bin/env ruby
+
+# bin/console
+require_relative '../lib/vending_machine/version'
+require_relative '../lib/vending_machine'
+require_relative '../lib/product'
+require 'date'
+
+def display_menu
+  puts "Welcome to the Vending Machine!"
+  puts "1. Add Product"
+  puts "2. Restock Product"
+  puts "3. Insert Money"
+  puts "4. Select Product"
+  puts "5. Refund"
+  puts "6. Show Balance"
+  puts "7. Show Version"
+  puts "8. List Products"
+  puts "9. Exit"
+end
+
+def handle_add_product(vending_machine)
+  puts "Enter product name:"
+  name = gets.chomp
+  puts "Enter product price:"
+  price = gets.chomp.to_f
+  puts "Enter quantity:"
+  quantity = gets.chomp.to_i
+  puts "Enter expiration date (YYYY-MM-DD) or leave blank:"
+  expiration_date = gets.chomp
+  expiration_date = expiration_date.empty? ? nil : Date.parse(expiration_date)
+  product = Product.new(name, price)
+  vending_machine.add_product(product, quantity, expiration_date)
+end
+
+def handle_list_products(vending_machine)
+  vending_machine.inventory.list_products
+end
+
+def handle_restock_product(vending_machine)
+  puts "Enter product name:"
+  name = gets.chomp
+  puts "Enter quantity to restock:"
+  quantity = gets.chomp.to_i
+  vending_machine.restock_product(name, quantity)
+end
+
+def handle_insert_money(vending_machine)
+  puts "Enter amount to insert (in VND):"
+  amount = gets.chomp.to_i
+  vending_machine.insert_money(amount)
+end
+
+def handle_select_product(vending_machine)
+  puts "Enter product name to select:"
+  name = gets.chomp
+  vending_machine.select_product(name)
+end
+
+def handle_refund(vending_machine)
+  refunded_amount = vending_machine.refund
+  puts "Refunded #{refunded_amount} VND."
+end
+
+def handle_show_balance(vending_machine)
+  puts "Current balance: #{vending_machine.money_handler.balance} VND."
+end
+
+def handle_version
+  puts "Vending Machine version: #{VendingMachine::Version::VERSION}"
+  puts "Available Functions:"
+  puts "1. Add Product - Adds a new product to the inventory."
+  puts "2. Restock Product - Restocks an existing product in the inventory."
+  puts "3. Insert Money - Inserts money into the vending machine."
+  puts "4. Select Product - Selects a product and processes the purchase."
+  puts "5. Refund - Refunds the current balance."
+  puts "6. Show Balance - Displays the current balance."
+  puts "7. Show Version - Displays the version and available functions."
+  puts "8. List Products - Lists all products in the inventory."
+  puts "9. Exit - Exits the vending machine interface."
+end
+
+vending_machine = VendingMachine.new
+
+loop do
+  display_menu
+  choice = gets.chomp.to_i
+
+  case choice
+  when 1
+    handle_add_product(vending_machine)
+  when 2
+    handle_restock_product(vending_machine)
+  when 3
+    handle_insert_money(vending_machine)
+  when 4
+    handle_select_product(vending_machine)
+  when 5
+    handle_refund(vending_machine)
+  when 6
+    handle_show_balance(vending_machine)
+  when 7
+    handle_version
+  when 8
+    handle_list_products(vending_machine)
+  when 9
+    puts "Exiting. Thank you for using the Vending Machine!"
+    break
+  elseRemove Money
+    puts "Invalid choice. Please try again."
+  end
+end

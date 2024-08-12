@@ -1,0 +1,6 @@
+<div class="container px-4">
+  <%= render partial: "admin/orders/navigation_product" %>
+  <section class="d-flex flex-column position-relative" id="emca-product-search-results" style="height: calc(100vh - 60px - 56px - 1rem); top: calc(57px + 1rem)">
+    <%= render partial: "emca_search_results", locals: { pagy: @pagy, current_user: 'canada', current_store: current_store } %>
+  </section>
+</div>

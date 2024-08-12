@@ -1,0 +1,56 @@
+<%= form_for [@product_variant.comments.new], remote: true, :url => admin_purchase_comments_path(@product_variant), data: {reflex: "submit->CommentReflex#submit", user_id: current_user.id} do |f| %>
+  <div class="row mb-3">
+    <div class="col-12" data-reflex-permanent>
+      <div id="editor"></div>
+      <%= f.hidden_field :description %>
+      <button type="submit" class="btn btn-primary mt-2">Add</button>
+    </div>
+  </div>
+<% end %>
+
+<div class="timeline-container">
+  <div class="row mx-0 mb-3 timeline timeline-line">
+    <% Audit.where("auditable_type = ? AND associated_id = ? AND associated_type = ?", "Comment", @product_variant.id, "ProductVariant").order(created_at: :desc).each do |audit| %>
+      <% if audit.audited_changes["description"].present? %>
+        <div class="col-2 mb-5">
+          <%= render partial: "/admin/comments/timeline_icon" %>
+        </div>
+        <div class="col-10 mb-5">
+          <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+          <p><%= audit.audited_changes["description"]&.html_safe %></p>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $("#new_comment").on("submit", function() {
+    $("#comment_description").val($(".ql-editor").html());
+    $(".ql-editor").html("");
+  });
+</script>
+
+<link href="//cdn.quilljs.com/1.0.0/quill.snow.css" rel="stylesheet" />
+
+<script src="https://cdn.quilljs.com/1.0.0/quill.js"></script>
+
+<script>
+var toolbarOptions = [
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+  [{ 'script': 'sub'}, { 'script': 'super' }],
+  [{ 'color': [] }, { 'background': [] }]
+];
+
+
+  if (!$(".ql-toolbar").length) {
+    var editor = new Quill("#editor", {
+        
+      modules: { 
+        toolbar: toolbarOptions 
+      },
+      theme: "snow",
+    });
+  }
+</script>

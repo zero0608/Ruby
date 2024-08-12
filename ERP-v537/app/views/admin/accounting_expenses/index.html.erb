@@ -1,0 +1,32 @@
+<div class="container px-4">
+  <%= render "includes/admin_sub_nav" %>
+
+  <div class="row">
+    <div class="col-2">
+      <%= render "includes/side_nav_accounting" %>
+    </div>
+
+    <div class="col-10">
+      <% if current_user.user_group.admin_cru %>
+        <a href="<%= new_admin_accounting_expense_path %>">
+          <button class="btn btn-primary">
+            <%= show_svg("plus.svg") %>
+            Create Expense
+          </button>
+        </a>
+      <% end %>
+
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <tbody>
+            <% @expenses.each do |expense| %>
+              <tr>
+                <td><%= expense.expense_type.title %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

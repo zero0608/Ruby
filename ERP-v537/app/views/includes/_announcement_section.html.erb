@@ -1,0 +1,30 @@
+<% @announcement_notifications.each do |notification| %>
+  <div class="notification-item col-12 pr-0 mb-3 d-flex no-gutters">
+    <div class="col-10">
+      <% case notification.params[:topic] %>
+        <% when "Company" %>
+          <div class="color-tab bg-blue" title="Company"></div>
+
+        <% when "Product/Marketing" %>
+          <div class="color-tab bg-yellow" title="Product/Marketing"></div>
+
+        <% when "System/Staff" %>
+          <div class="color-tab bg-black" title="System/Staff"></div>
+      <% end %>
+
+      <span><%= "#{User.find_by(id: notification.params[:user].id).full_name}".titleize %>: </span>
+      <span class="<%= notification.read_at.present? ? "text-black" : "text-grey" %>">
+        <%= notification.params[:description] %>
+      </span><br>
+      <span>
+        <%= notification.created_at.strftime("%B %d, %Y") %>
+      </span>
+    </div>
+
+    <div class="col-2 text-right">
+      <a data-reflex="click->NotificationReflex#clear_announcement" data-notification-id="<%= notification.id %>">
+        <%= show_svg("close.svg") %>
+      </a>
+    </div>
+  </div>
+<% end %>

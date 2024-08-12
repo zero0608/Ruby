@@ -1,0 +1,17 @@
+<div class="container h-100 p-4 d-flex flex-column">
+  <div class="row mb-3">
+    <div class="col-10">
+      <h5>Products - <% if current_store == 'us' %>EMUS<% else %>EMCA<% end %></h5>
+    </div>
+  
+    <div class="col-2">
+      <div class="search-bar d-inline-block">
+        <input type="text" placeholder="Search..." class="form-control" data-reflex="debounced:input->ProductReflex#emca_search" data-store-type="<%= current_store %>" data-user_id="<%= current_user.id %>">
+			</div>
+    </div>
+  </div>
+
+  <section class="d-flex flex-column flex-auto" id="emca_stock_result">
+    <%= render partial: "emca_stock_result", locals: { pagy: @pagy, current_user: current_user } %>
+  </section>
+</div>

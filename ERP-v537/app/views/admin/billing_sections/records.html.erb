@@ -1,0 +1,66 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <div class="row mb-3">
+    <div class="col-6">
+      <p class="header1 mr-4 d-inline-block">Shipping</p>
+      <div class="search-bar d-inline-block">
+        <input type="text" placeholder="Search Order..." class="form-control" data-reflex="debounced:input->BillingSectionReflex#record_search" data-current-store="<%= current_store %>">
+      </div>
+    </div>
+    <div class="col-6 text-right">
+      <div class="search-bar d-inline-block mr-4">
+        <input type="text" placeholder="Search Invoice..." class="form-control" data-reflex="debounced:input->BillingSectionReflex#record_search_invoice" data-current-store="<%= current_store %>">
+      </div>
+      <button class="btn btn-primary" data-toggle="modal" data-target="#exportInvoice">Export</button>
+    </div>
+    <div class="col-12">
+      <%= render partial: "navigation" %>
+    </div>
+  </div>
+  <section class="d-flex flex-column flex-auto" id="filter-record">
+    <%= render partial: "filter_record", locals: { pagy: @pagy, records: @records, filter: @filter, current_user: @current_user } %>
+  </section>
+</div>
+
+<div class="modal" id="exportInvoice" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag report_invoice_admin_billing_sections_path(format: "csv") do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Export</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-4 mb-3">
+              <label>Carrier Name</label>
+              <%= text_field_tag :carrier, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3">
+              <label>Record Start Date</label>
+              <%= date_field_tag :start_date, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3">
+              <label>Record End_date</label>
+              <%= date_field_tag :end_date, "", class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <%= hidden_field_tag :store, current_store %>
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary report_button" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).on("click", ".report_button", function() {
+    setTimeout(function() {
+      location.reload();
+    }, 500)
+  });
+</script>

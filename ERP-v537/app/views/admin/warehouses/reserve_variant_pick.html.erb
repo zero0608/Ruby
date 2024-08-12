@@ -1,0 +1,66 @@
+<div id="layoutSidenav" class="warehouse-layout">
+  <%= render "includes/flash_messages" %>
+  <div class="container bg-white-grey h-100 overflow-auto">
+    <div class="row p-3">
+      <div class="col-12 mb-3">
+        <span class="header1">To Be Reserved</span>
+      </div>
+      <div class="col-10 mb-3">
+        <span class="header1">
+          <%= @line_item.variant&.sku&.upcase %>
+        </span><br>
+        <span class="text-light-grey">
+          <%= @line_item.variant&.title %>
+        </span>
+      </div>
+      <div class="col-2 mb-3 text-right">
+        <span class="header2 mr-1">pick</span>
+        <span class="header1 font-weight-bold">
+          <%= @line_item.quantity.to_i - @line_item.reserve_items.pluck(:quantity).min.to_i %>
+        </span>
+      </div>
+
+      <% @line_item.variant.cartons.eager_load(:carton_detail).order("carton_details.index").each do |carton| %>
+        <div class="col-4 col-md-6 mb-3">
+          <span class="text-black" style="vertical-align: -webkit-baseline-middle">
+            Carton <%= carton.carton_detail.index %> / <%= carton.carton_detail.product.carton_details.maximum(:index) %>
+          </span>
+          <span class="header2" style="vertical-align: -webkit-baseline-middle">
+            (pick <%= @line_item.quantity.to_i - @line_item.reserve_items.find_by(carton_id: carton.id)&.quantity.to_i %>)
+          </span>
+        </div>
+        <div class="col-4 col-md-2 mb-3">
+          <div class="row no-gutters">
+            <div class="col-2">
+              <span style="vertical-align: -webkit-baseline-middle">
+                <%= carton.carton_locations.sum { |location| location.quantity.to_i } %>
+              </span>
+            </div>
+            <div class="col-10">
+              <span style="vertical-align: -webkit-baseline-middle">
+                In-stock
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="col-4 text-right mb-3">
+          <a href="<%= reserve_quantity_pick_admin_warehouses_path(line_item_id: @line_item.id, carton_id: carton.id) %>" class="btn bg-light-grey text-black" style="min-width: 80px">Select</a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="navbar footer bg-white">
+  <div class="col-10">
+    <a>
+      <%= @current_user.username if @current_user.username.present? %>
+      <%= "- " + @current_user.warehouse.name if @current_user.warehouse.name.present? %>
+    </a>
+  </div>
+  <div class="col-2 text-right">
+    <a href="<%= outstanding_reserve_admin_warehouses_path %>" class="icon-large-left">
+      <%= show_svg("ri-arrow-up-line.svg") %>
+    </a>
+  </div>
+</div>

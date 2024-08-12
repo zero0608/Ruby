@@ -1,0 +1,5 @@
+require 'rspec'
+require_relative '../lib/vending_machine'
+require_relative '../lib/money_handler'
+require_relative '../lib/inventory'
+require_relative '../lib/product'

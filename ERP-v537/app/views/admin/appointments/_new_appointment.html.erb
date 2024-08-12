@@ -1,0 +1,360 @@
+<%= form_for [:admin, Appointment.new], :url => create_customer_appointment_admin_appointments_path, html: { class: "form-horizontal form-bordered needs-validation", novalidate: true } do |f| %>
+  <div class="modal" id="newAppointmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content switch-content active" data-switch-group="appointment-modal" data-switch-index="main">
+        <div class="modal-header">
+          <span class="header2 modal-title">New Appointment</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0 mb-3 align-items-end border-bottom">
+            <div class="col-12 col-md-9 mb-3">
+              <label>Search Customer</label>
+              <div class="search-bar mb-md-0">
+                <input type="text" placeholder="Search Customer..." class="form-control" data-reflex="debounced:input->AppointmentReflex#search_customer_appointment">
+              </div>
+              <section class="search-results" id="customer-appointment-results"></section>
+            </div>
+            <div class="col-12 col-md-3 mb-3">
+              <button type="button" class="btn btn-primary switch-tab" data-switch-group="appointment-modal" data-switch-index="customer">New Customer</button>
+            </div>
+          </div>
+          <div class="row mx-0 align-items-end">
+            <div class="col-12">
+              <span id="customer_name" class="header2"></span>
+              <%= f.hidden_field :customer_id %>
+              <%= f.hidden_field :showroom_id, value: current_showroom["id"] %>
+            </div>
+            <div class="col-6 col-md-4 mb-3">
+              <span class="text-light-grey">Book With</span><br>
+              <span class="header2 text-black">
+                <%= f.select :employee_id, options_for_select(Employee.where(exit_date: nil).where.not(sales_permission: nil).eager_load(:showroom_manage_permissions).where("employees.showroom_id = ? OR (showroom_manage_permissions.showroom_id = ? AND showroom_manage_permissions.permission IS TRUE)", current_showroom["id"], current_showroom["id"]).order(:first_name).map { |w| [w.full_name, w.id] }, :selected => @appointment_employee_id), {}, class: "form-control", data: { reflex: "change->AppointmentReflex#update_appointment_employee", reflex_root: "#appointment-modal-time" }, required: true %>
+              </span>
+            </div>
+            <div class="col-6 col-md-4 mb-3">
+              <span class="text-light-grey">Select Date</span><br>
+              <span class="header2 text-black">
+                <%= f.date_field :appointment_date, value: @appointment_date, class: "form-control", data: { reflex: "change->AppointmentReflex#update_appointment_date", reflex_root: "#appointment-modal-time" }, required: true %>
+              </span>
+            </div>
+            <div class="col-12 col-md-4 mb-3">
+              <p class="d-none d-md-block">&nbsp;</p>
+              <button type="button" id="select-time" class="btn btn-primary switch-tab" data-switch-group="appointment-modal" data-switch-index="time" style="color: var(--blue) !important; background: var(--off-white) !important; border-color: var(--blue) !important">Select Time</button>
+            </div>
+            <div class="col-12 mb-3">
+              <span class="text-light-grey">Appointment Type</span>
+              <%= f.select :appointment_type, options_for_select(Appointment.appointment_types.keys.map { |w| [w.titleize, w] }, ""), { include_blank: true }, required: true, class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <span class="text-light-grey">Notes</span>
+              <%= f.text_area :notes, class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+
+      <div class="modal-content switch-content" data-switch-group="appointment-modal" data-switch-index="customer">
+        <div class="modal-body">
+          <div class="row mx-0" id="new-customer-info">
+            <div class="col-6 mb-3">
+              <span class="header2">Customer Information</span>
+            </div>
+            <div class="col-6 mb-3 text-right">
+              <button type="button" class="close" data-dismiss="modal">
+                <span class="text-black"><%= show_svg("close.svg") %></span>
+              </button>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>First Name</label><span class="text-red">*</span>
+              <%= text_field_tag :first_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Last Name</label><span class="text-red">*</span>
+              <%= text_field_tag :last_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Phone Number</label><span class="text-red">*</span>
+              <%= text_field_tag :phone, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Email</label><span class="text-red">*</span>
+              <%= text_field_tag :email, "", class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <label>Trade Name</label>
+              <%= text_field_tag :trade_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 mb-4">
+              <label>Trade Number</label>
+              <%= text_field_tag :trade_number, "", class: "form-control" %>
+            </div>
+          </div>
+          <div class="row mx-0" id="new-customer-shipping">
+            <div class="col-12 mb-3">
+              <span class="header2">Shipping Address</span>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>First Name</label>
+              <%= text_field_tag :shipping_first_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Last Name</label>
+              <%= text_field_tag :shipping_last_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Phone Number</label>
+              <%= text_field_tag :shipping_phone, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Email</label>
+              <%= text_field_tag :shipping_email, "", class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <label>Address</label>
+              <%= text_field_tag :shipping_address, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>City</label>
+              <%= text_field_tag :shipping_city, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Country</label>
+              <%= select_tag :shipping_country, options_for_select({ "US" => "us", "Canada" => "canada" }), { include_blank: true, class: "form-control" } %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>State</label>
+              <%= select_tag :shipping_state, options_for_select(TaxRate.all.map { |s| [s.state, s.state, { "data-country": s.store, "style": "display: none" }]}), { include_blank: true, class: "form-control" } %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Zip</label>
+              <%= text_field_tag :shipping_zip, "", class: "form-control" %>
+            </div>
+            <div class="col-6 mb-4">
+              <span class="header2">Billing Address</span>
+            </div>
+            <div class="col-6 mb-4 text-right">
+              <label class="mr-2">Same as Shipping</label>
+              <label class="checkbox checkbox-blue" style="vertical-align: text-bottom">
+                <%= check_box_tag :same_as_shipping, :same_as_shipping, true %>
+                <span class="checkmark"></span>
+              </label>
+            </div>
+          </div>
+          <div class="row mx-0" id="new-customer-billing" style="display: none">
+            <div class="col-12 col-md-6 mb-3">
+              <label>First Name</label>
+              <%= text_field_tag :billing_first_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Last Name</label>
+              <%= text_field_tag :billing_last_name, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Phone Number</label>
+              <%= text_field_tag :billing_phone, "", class: "form-control" %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Email</label>
+              <%= text_field_tag :billing_email, "", class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <label>Address</label>
+              <%= text_field_tag :billing_address, "", class: "form-control", data: { type: "address" } %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>City</label>
+              <%= text_field_tag :billing_city, "", class: "form-control", data: { type: "city" } %>
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label>Country</label>
+              <%= select_tag :billing_country, options_for_select({ "US" => "us", "Canada" => "canada" }), { include_blank: true, class: "form-control", data: { type: "country" } } %>
+            </div>
+            <div class="col-12 col-md-6 mb-4">
+              <label>State</label>
+              <%= select_tag :billing_state, options_for_select(TaxRate.all.map { |s| [s.state, s.state, { "data-country": s.store, "style": "display: none" }]}), { include_blank: true, class: "form-control", data: { type: "state" } } %>
+            </div>
+            <div class="col-12 col-md-6 mb-4">
+              <label>Zip</label>
+              <%= text_field_tag :billing_zip, "", class: "form-control", data: { type: "zip" } %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary switch-tab mr-4" data-switch-group="appointment-modal" data-switch-index="main">Back</button>
+          <button id="new-customer" type="button" class="btn btn-primary" data-switch-group="appointment-modal" data-switch-index="main">Confirm</button>
+        </div>
+      </div>
+      
+      <div class="modal-content switch-content" id="appointment-modal-time" data-switch-group="appointment-modal" data-switch-index="time">
+        <div class="modal-header">
+          <span class="header2 modal-title">Appointment</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "10:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "10:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_10:00">10:00 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "10:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "10:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_10:30">10:30 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "11:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "11:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_11:00">11:00 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "11:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "11:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_11:30">11:30 AM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "12:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "12:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_12:00">12:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "12:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "12:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_12:30">12:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "13:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "13:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_13:00">01:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "13:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "13:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_13:30">01:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "14:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "14:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_14:00">02:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "14:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "14:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_14:30">02:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "15:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "15:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_15:00">03:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "15:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "15:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_15:30">03:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "16:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "16:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_16:00">04:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "16:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "16:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_16:30">04:30 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "17:00", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "17:00"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_17:00">05:00 PM</label>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+              <%= radio_button_tag :appointment_time, "17:30", false, { class: "d-none", disabled: (@appointments.map { |a| a.appointment_time.strftime("%H:%M") }.include? "17:30"), required: true } %>
+              <label class="btn btn-primary w-100" for="appointment_time_17:30">05:30 PM</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary switch-tab mr-4" data-switch-group="appointment-modal" data-switch-index="main">Back</button>
+          <button type="button" class="btn btn-primary switch-tab" data-switch-group="appointment-modal" data-switch-index="main">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script type="text/javascript">
+  $("#shipping_country").on("change", function() {
+    var con = $(this).val();
+    $("#shipping_state option").hide();
+    $("#shipping_state option[data-country='" + con + "']").show();
+  });
+
+  $("#billing_country").on("change", function() {
+    var con = $(this).val();
+    $("#billing_state option").hide();
+    $("#billing_state option[data-country='" + con + "']").show();
+  });
+
+  $("#same_as_shipping").on("change", function() {
+    if ($(this)[0].checked) {
+      $("#new-customer-billing").hide();
+    } else {
+      $("#new-customer-billing").show();
+    }
+  });
+
+  $(document).on("click", "#new-customer", function(event) {
+    if (!$("#first_name").val() || !$("#last_name").val() || !$("#phone").val() || !$("#email").val()) {
+      if (!$("#first_name").val()) {
+        $("#first_name").css("border-color", "red");
+      }
+
+      if (!$("#last_name").val()) {
+        $("#last_name").css("border-color", "red");
+      }
+
+      if (!$("#phone").val()) {
+        $("#phone").css("border-color", "red");
+      }
+
+      if (!$("#email").val()) {
+        $("#email").css("border-color", "red");
+      }
+
+    } else {
+      var first_name = $("#first_name").val();
+      var last_name = $("#last_name").val();
+      $("#customer_name").text(first_name + " " + last_name);
+      $("#appointment_customer_id").val("");
+
+      var index = $(this).data("switch-index");
+      var group = $(this).data("switch-group");
+
+      $(".switch-tab[data-switch-group='" + group + "']").removeClass("active");
+      $(".switch-tab[data-switch-group='" + group + "'][data-switch-index='" + index + "']").addClass("active");
+
+      $(".switch-content[data-switch-group='" + group + "']").removeClass("active");
+      $(".switch-content[data-switch-group='" + group + "'][data-switch-index='" + index + "']").addClass("active");
+    }
+  });
+
+  $(document).on("focus", "#first_name, #last_name, #phone, #email", function() {
+    $(this).css("border-color", "#cecece");
+  });
+
+  $(document).on("change", "#appointment-modal-time input", function() {
+    $("#select-time").css("color", "white");
+    $("#select-time").css("background-color", "#005de8");
+    $("#select-time").css("border-color", "#005de8");
+  });
+
+  $(document).on("click", ".select-customer", function() {
+    $("#customer_name").text($(this).data("customer-name"));
+    $("#appointment_customer_id").val($(this).data("customer-id"));
+    $(".modal-content[data-switch-index='customer'] input").val("");
+  });
+</script>
+
+<style>
+  input[type="radio"]~label {
+    color: var(--black);
+    background: var(--off-white);
+  }
+
+  input[type="radio"]:checked~label {
+    color: white;
+    background: var(--blue);
+  }
+</style>

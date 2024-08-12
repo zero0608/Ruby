@@ -1,0 +1,50 @@
+<% if @query.present? %>
+  <ul class="pl-0" style="list-style-type: none">
+    <% @board_pages.order(created_at: :desc).each do |page| %>
+      <li>
+        <%= link_to (page.name.present? ? page.name : "New Page"), admin_board_sections_path(page_id: page.id), class: "li-text d-inline-block text-grey w-100" + (page.name.present? ? "" : " font-italic" ), remote: true %>
+      </li>
+    <% end %>
+  </ul>
+
+<% else %>
+  <ul class="pl-0" style="list-style-type: none">
+    <% BoardSection.where(main_board: nil).order(:position).each do |section| %>
+      <li>
+        <span class="li-text d-inline-block text-grey w-100 font-weight-bold <%= "font-italic" unless section.name.present? %>">
+          <%= section.name.present? ? section.name : "New Section" %>
+        </span>
+        <% if section.board_pages.present? || BoardSection.where(main_board: section.id).present? %>
+          <ul class="pl-4" style="list-style-type: none">
+            <% if BoardSection.where(main_board: section.id).present? %>
+              <% BoardSection.where(main_board: section.id).order(:position).each do |ss| %>
+                <li>
+                  <span class="li-text d-inline-block text-grey w-100 font-weight-bold" + <%= "font-italic" unless ss.name.present? %>>
+                    <%= ss.name.present? ? ss.name : "New Section" %>
+                  </span>
+                  <% if ss.board_pages.present? %>
+                    <ul class="pl-4" style="list-style-type: none">
+                      <% ss.board_pages.order(:position).each do |ss_page| %>
+                        <li>
+                          <%= link_to (ss_page.name.present? ? ss_page.name : "New Page"), admin_board_sections_path(page_id: ss_page.id), class: "li-text d-inline-block text-grey w-100" + (ss_page.name.present? ? "" : " font-italic"), remote: true %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% end %>
+                </li>
+              <% end %>
+            <% end %>
+          
+            <% if section.board_pages.present? %>
+              <% section.board_pages.order(:position).each do |page| %>
+                <li>
+                  <%= link_to (page.name.present? ? page.name : "New Page"), admin_board_sections_path(page_id: page.id), class: "li-text d-inline-block text-grey w-100" + (page.name.present? ? "" : " font-italic" ), remote: true %>
+                </li>
+              <% end %>
+            <% end %>
+          </ul>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

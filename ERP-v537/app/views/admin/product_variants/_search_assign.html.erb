@@ -1,0 +1,20 @@
+<div class="table-responsive">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 45%">Order Name</th>
+        <th style="width: 45%">Qty</th>
+        <th style="width: 10%"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @line_items.each do |line_item| %>
+        <tr>
+          <td><%= link_to line_item.order.name, edit_admin_order_path(line_item.order.name) %></td>
+          <td><%= line_item.quantity %></td>
+          <td><button class="btn btn-primary" data-reflex="click->OrderReflex#assign_to_order" data-product-variant-id="<%= @product_variant&.id %>" data-line-item-id="<%= line_item&.id %>" data-user-id="<%= current_user&.id %>">Assign</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

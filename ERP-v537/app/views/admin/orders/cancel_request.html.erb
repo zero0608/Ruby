@@ -1,0 +1,95 @@
+<div class="container h-100 px-4 d-flex flex-column">
+  <%= render partial: "admin/orders/navigation_cancel" %>
+  
+  <div class="flex-column flex-auto switch-content <%= "active" if params[:type] == "cancel_request" %>" data-switch-group="cancel" data-switch-index="request">
+    <div class="table-responsive d-flex flex-auto">
+      <table class="table table-borderless table-hover">
+        <thead>
+          <tr>
+            <th style="width: 10%">Order Number</th>
+            <th style="width: 10%">Customer</th>
+            <th style="width: 15%">Order Date</th>
+            <th style="width: 15%">Cancel Request Date</th>
+            <th style="width: 15%">SKU</th>
+            <th style="width: 25%">Cancel Reason</th>
+            <th style="width: 10%">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @orders.order(cancel_request_date: :desc).each do |order| %>
+            <tr>
+              <td><%= link_to order.name, edit_admin_order_path(order), data: { turbolinks: false } %></td>
+              <td><%= order.customer&.full_name&.titleize %></td>
+              <td><%= order.created_at.to_date.strftime('%B %d, %Y') %></td>
+              <td><%= order.cancel_request_date.to_date.strftime('%B %d, %Y') if order.cancel_request_date.present? %></td>
+              <td>
+                <% order.line_items.each do |item| %>
+                  <span class="mr-2"><%= item&.sku %></span>
+                <% end %>
+              </td>
+              <td><%= order.cancel_reason %></td>
+              <td>
+                <% if current_user.user_group.orders_cru && ((current_user.user_group.permission_us && current_store == "us") || (current_user.user_group.permission_ca && current_store == "canada")) %>
+                  <div class="dropdown">
+                    <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+                      Action <%= show_svg("arrow.svg") %>
+                    </div>
+                    <div class="dropdown-menu">
+                      <%= link_to "Confirm", order_status_admin_orders_path(name: order.name, status: "cancel_confirmed"), class: "dropdown-item" %>
+                      <%= link_to "Reject", order_status_admin_orders_path(name: order.name, status: "reject"), class: "dropdown-item" %>
+                    </div>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flex-column flex-auto switch-content <%= "active" if params[:type] == "cancel_product" %>" data-switch-group="cancel" data-switch-index="product">
+    <div class="table-responsive d-flex flex-auto">
+      <table class="table table-borderless table-hover">
+        <thead>
+          <tr>
+            <th style="width: 10%">Order Number</th>
+            <th style="width: 10%">Customer</th>
+            <th style="width: 15%">Order Date</th>
+            <th style="width: 15%">Cancelled Date</th>
+            <th style="width: 20%">Cancelled Qty</th>
+            <th style="width: 20%">SKU</th>
+            <th style="width: 20%">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @line_items.order(created_at: :desc).each do |item| %>
+            <tr>
+              <td><%= link_to item&.order&.name, edit_admin_order_path(item.order), data: { turbolinks: false } %></td>
+              <td><%=item&.order&.customer&.full_name&.titleize %></td>
+              <td><%= item&.order&.created_at&.to_date.strftime("%B %d, %Y") %></td>
+              <td><%= item&.order&.cancelled_date&.to_date.strftime("%B %d, %Y") if item&.order&.cancelled_date.present? %></td>
+              <td><%= item&.cancel_quantity.to_i %> / <%= item&.quantity.to_i %></td>
+              <td><%= item&.sku %></td>
+              <td>
+                <div class="dropdown">
+                  <div class="btn btn-primary dropdown-toggle arrow-none" data-toggle="dropdown">
+                    Action <%= show_svg("arrow.svg") %>
+                  </div>
+                  <div class="dropdown-menu">
+                    <%= link_to "Confirm", order_status_admin_orders_path(item_id: item.id, status: "product_cancel_confirmed"), class: "dropdown-item" %>
+                    <%= link_to "Reject", order_status_admin_orders_path(item_id: item.id, status: "product_reject"), class: "dropdown-item" %>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  .switch-content.active { display: flex !important; }
+</style>

@@ -1,0 +1,41 @@
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 10%">Container</th>
+        <th style="width: 15%">Reference</th>
+        <th style="width: 10%">Shipping Date</th>
+        <th style="width: 10%">Port ETA</th>
+        <th style="width: 10%">Arriving to DC ETA</th>
+        <th style="width: 15%">Warehouse</th>
+        <th style="width: 15%">Ocean Carrier</th>
+        <th style="width: 15%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @containers_arriving.each do |container| %>
+        <tr>
+          <td><%= link_to (current_store == "us" ? "CTUS" : "CTCA") + container.container_number.to_s, edit_admin_container_path(container) %></td>
+          <td><%= container&.carrier_serial_number %></td>
+          <td><%= container&.shipping_date&.strftime("%B %d, %Y") %></td>
+          <td><%= container&.port_eta&.strftime("%B %d, %Y") %></td>
+          <td><%= container&.arriving_to_dc&.strftime("%B %d, %Y") %></td>
+          <td><%= container&.warehouse&.name %></span></td>
+          <td><%= container&.ocean_carrier&.name %></td>
+          <td>
+            <%= link_to "Received", arriving_admin_containers_path(time: "this_week", container_id: container.id), class: "mr-4 btn btn-primary" %>
+            <a class="print_container" data-container="<%= container.id %>">
+              <i class="dripicons-print"></i>
+            </a>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<script type="text/javascript">
+  $(".print_container").on('click', function() {
+    window.open('<%= pdf_admin_containers_path() %>?container_id=' + $(this).data("container"), 'print', 'height=750px, width=1000px');  
+  });
+</script>

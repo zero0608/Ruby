@@ -1,0 +1,33 @@
+<nav>
+  <ul class="pagination justify-content-end">
+    <li class="page-item px-2 <%= "disabled" if @pagy.page == 1 %>">
+      <a href="#" class="page-link text-grey rounded-circle rounded-circle-2 border-0" data-reflex="click->BillingSectionReflex#posting_paginate" data-current-store="<%= current_store %>" data-user-id="<%= current_user.id if current_user.present? %>" data-page="<%= prev_page %>">
+        <span class="icon-left">
+          <%= show_svg("arrow.svg") %>
+        </span>
+      </a>
+    </li>
+    <% @pagy.series.each do |item| %>
+      <% if item == :gap %>
+        <li class="page-item px-2 disabled">
+          <a class="page-link text-grey rounded-circle rounded-circle-2 border-0">
+            <span>...</span>
+          </a>
+        </li>
+      <% else %>
+        <li class="page-item px-2 <%= "active" if item.is_a?(String) %>">
+          <a href="#" class="page-link text-light-grey rounded-circle rounded-circle-2 border-0" data-reflex="click->BillingSectionReflex#posting_paginate" data-current-store="<%= current_store %>" data-user-id="<%= current_user.id if current_user.present? %>" data-page="<%= item %>">
+            <span><%= item %></span>
+          </a>
+        </li>
+      <% end %>
+    <% end %>
+    <li class="page-item px-2 <%= "disabled" if @pagy.page == @pagy.last %>">
+      <a href="#" class="page-link text-grey rounded-circle rounded-circle-2 border-0" data-reflex="click->BillingSectionReflex#posting_paginate" data-current-store="<%= current_store %>" data-user-id="<%= current_user.id if current_user.present? %>" data-page="<%= next_page %>">
+        <span class="icon-right">
+          <%= show_svg("arrow.svg") %>
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>

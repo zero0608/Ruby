@@ -1,0 +1,30 @@
+<div class="container px-4">
+  <div class="row">
+    <div class="col-12 mb-3 qrcode">
+      <p>Scan this QR code in Authenticator Apps like Google Authenticator, Authy.</p>
+      <%= @qr_code.as_svg(module_size: 5).html_safe %>
+    </div>
+  
+    <div class="col-12">
+      Keep these backup codes safe in case you lose access to your authenticator app:
+      <% @backup_codes.each do |otp_c| %>
+        <p> <%= otp_c %> </p>
+      <% end %>
+
+      <p>
+         Note: The Backup Codes are available for one time use only, once the Backup code is used for Login, the same Backup Code can not be used again. Generating new Backup Codes will invalidate all the previous unused Backup Codes.
+      </p>
+
+    </div>
+    
+    <div class="col-12">
+      <%= link_to "Back", root_path, class: "btn btn-secondary mr-4" %>
+    </div>
+  </div>
+</div>
+<style type="text/css">
+  .qrcode svg {
+    height: 300px;
+    width: 300px;
+  }
+</style>

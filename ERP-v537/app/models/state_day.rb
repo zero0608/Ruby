@@ -1,0 +1,2 @@
+class StateDay < ApplicationRecord
+end

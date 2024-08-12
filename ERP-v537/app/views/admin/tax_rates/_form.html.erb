@@ -1,0 +1,117 @@
+<% if @tax_rate.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @tax_rate.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-4 mb-3">
+    <%= f.label :state, "State" %>
+    <%= f.text_field :state, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-4 mb-3">
+    <%= f.label :combined_rate, "Tax Rate" %>
+    <%= f.text_field :combined_rate, class: "form-control" %>
+  </div>
+
+  <div class="col-4 mb-3">
+    <%= f.label :store, "Store" %>
+    <%= f.select :store, ["us", "canada"], {}, class: "form-control", required: true %>
+  </div>
+
+  <div class="col-4 mb-3">
+    <%= f.label :to_zip_code, "To zip code" %>
+    <%= f.text_field :to_zip_code, class: "form-control" %>
+  </div>
+  <div class="col-4 mb-3">
+    <%= f.label :from_zip_code, "From Zip code" %>
+    <%= f.text_field :from_zip_code, class: "form-control" %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_tax_rates_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+</div>
+<% if params[:action] == 'edit' %>
+  <h3>Warehouse</h3>
+  <button class="btn btn-primary d-inline-block ml-4" type="button" data-reflex="click->StateZipCode#build_warehouse" data-type-id="<%= f.object.id %>" data-user-id="<%= current_user.id %>">
+    <%= show_svg("plus.svg") %>
+    Add Warehouse
+  </button>
+
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 45%">Warehouse</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= f.fields_for :warehouse_and_tax_rates do |ff| %>
+          <tr>
+            <td>
+              <%= ff.select :warehouse_id, options_for_select(Warehouse.where(store: current_store).map{|s|[s.name, s.id]}, ff.object.warehouse_id), {include_blank: true}, class: "form-control", data: { reflex: "change->StateZipCode#update", type_id: f.object.id }  %>
+            </td>
+            <td>
+              <%= ff.select :terminal, options_for_select(["0", "1", "2"], ff.object&.terminal&.titleize), {include_blank: true}, class: "form-control", data: { reflex: "change->StateZipCode#update", type_id: f.object.id }  %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <h3>Remote</h3>
+  <button class="btn btn-primary d-inline-block ml-4" type="button" data-reflex="click->StateZipCode#build_code" data-type-id="<%= f.object.id %>" data-user-id="<%= current_user.id %>">
+    <%= show_svg("plus.svg") %>
+    Add Code
+  </button>
+
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 45%">Zip-code</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= f.fields_for :state_zip_codes do |ff| %>
+          <tr>
+            <td>
+              <%= ff.text_field :zip_code, class: "form-control w-50 d-inline-block", data: { reflex: "change->StateZipCode#update", type_id: f.object.id } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Local</h3>
+  <button class="btn btn-primary d-inline-block ml-4" type="button" data-reflex="click->StateZipCode#build_city" data-type-id="<%= f.object.id %>" data-user-id="<%= current_user.id %>">
+    <%= show_svg("plus.svg") %>
+    Add City
+  </button>
+
+  <div class="table-responsive">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <tr>
+          <th style="width: 45%">City</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= f.fields_for :curbside_cities do |ff| %>
+          <tr>
+            <td>
+              <%= ff.text_field :city, class: "form-control w-50 d-inline-block", data: { reflex: "change->StateZipCode#update", type_id: f.object.id } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+

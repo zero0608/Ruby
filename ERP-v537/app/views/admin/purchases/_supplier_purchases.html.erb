@@ -1,0 +1,30 @@
+<div class="table-responsive flex-auto">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <th style="width: 10%">订单号码</th>
+      <th style="width: 30%">订单时间</th>
+      <th style="width: 10%">数量</th>
+      <th style="width: 10%">未开始</th>
+      <th style="width: 10%">生产中</th>
+      <th style="width: 10%">完成生产</th>
+      <th style="width: 20%">已发货</th>
+    </thead>
+    <tbody>
+      <% @purchases.each do |purchase| %>
+        <tr>
+          <% if purchase&.store == "us" %>
+            <td><%=link_to "TUS" + "#{purchase.id}", admin_purchase_path(id: purchase.id, source: "index"), data: { turbolinks: false } %></td>
+          <% else %>
+            <td><%=link_to "TCA" + "#{purchase.id}", admin_purchase_path(id: purchase.id, source: "index"), data: { turbolinks: false } %></td>
+          <% end %>
+          <td><%= purchase.created_at.to_date.strftime("%B %d, %Y") %></th>
+          <td><%= purchase&.purchase_items.pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :not_started).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :in_production).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :container_ready).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+          <td><%= purchase&.purchase_items.where(status: :completed).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

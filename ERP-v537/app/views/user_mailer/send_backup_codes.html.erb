@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+   </head>
+   <body>
+      Hello <%= @user.full_name %>, 
+      <br>
+      Below is the OTP Backup Codes for your account.  
+      <br><br>
+      <% @otp_backup_codes.each do |otp_c| %>
+        <p style="font-size:16px ;padding: 15px 0px; font-family: Arial, Helvetica, sans-serif;color:#666666"> <%= otp_c %> </p>
+      <% end %>
+
+      <p>
+        Note: The Backup Codes are available for one time use only, once the Backup code is used for Login, the same Backup Code can not be used again. Generating new Backup Codes will invalidate all the previous unused Backup Codes.
+      </p>
+      <p>
+         ___________
+      </p>
+      <p>Thanks!</p>
+   </body>
+</html>

@@ -1,0 +1,199 @@
+<%= form_for [@purchase.comments.new], :url => admin_purchase_comments_path(@purchase), data: { reflex: "submit->CommentReflex#submit", user_id: current_user.id} do |f| %>
+  <div class="row mb-3">
+    <div class="col-9" data-reflex-permanent>
+      <div id="editor"></div>
+      <button type="submit" class="btn btn-primary mt-2">Add</button>
+    </div>
+
+    <div class="col-3">
+      <%= f.hidden_field :description %>
+      <%= f.hidden_field :tag_user_id %>
+      
+      <input type="text" placeholder="@ Tag someone" class="form-control comment-search mb-3" data-reflex="debounced:input->OrderReflex#search_user">
+      <section class="search-results" id="user-search-edit-results">
+        <% render partial: "search_user", locals: { current_user: current_user } %>
+      </section>
+      <span class="user-list"></span>
+    </div>
+  </div>
+<% end %>
+
+<% if @purchase.associated_audits.present? %>
+  <div class="timeline-container">
+    <div class="row mx-0 mb-3 timeline timeline-line">
+      <% @purchase.associated_audits.order(created_at: :desc).each do |audit| %>
+        <% if audit.auditable_type == "Comment" && audit.audited_changes %>
+          <div class="col-1 mb-5">
+            <%= render partial: "/admin/comments/timeline_icon" %>
+          </div>
+          <div class="col-11 mb-5">
+            <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+            <p>
+              <% if audit.audited_changes["tag_user_id"].present? %>
+                <% audit.audited_changes["tag_user_id"].split(",").uniq.reject { |s| s.to_s.empty? }.each do | id | %>
+                  <% if User.find_by(id: id).present? %>
+                    <span class="font-weight-bold mr-2">@<%= User.find_by(id: id).username %></span>
+                  <% end %>
+                <% end %>
+              <% end %>
+              <%= audit.audited_changes["description"]&.html_safe if audit.audited_changes["description"].present? %>
+            </p>
+          </div>
+
+        <% elsif audit.auditable_type == "PurchaseItem" && audit.audited_changes %>
+          <div class="col-1 mb-5">
+            <%= render partial: "/admin/comments/timeline_icon" %>
+          </div>
+          <div class="col-11 mb-5">
+            <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+            <p>
+              <% if audit.action =="create" %>
+                <!-- create purchase -->
+                Purchase created
+
+                <% if audit.audited_changes["quantity"].present? %>
+                  with <%= audit&.audited_changes["quantity"] %>
+                <% end %>
+
+                <% if audit.audited_changes["product_variant_id"].present? %>
+                  <%= ProductVariant.find_by(id: audit.audited_changes["product_variant_id"])&.title %> (<%= ProductVariant.find_by(id: audit.audited_changes["product_variant_id"])&.sku&.upcase %>)
+                <% elsif audit.audited_changes["line_item_id"].present? %>
+                  <%= LineItem.find_by(id: audit.audited_changes["line_item_id"])&.title %> (<%= LineItem.find_by(id: audit.audited_changes["line_item_id"])&.sku&.upcase %>)
+                <% else %>
+                  Items
+                <% end %>
+
+                <% if audit.audited_changes["product_variant_id"].present? && audit.audited_changes["purchase_type"].present? %>
+                  for <%= audit.audited_changes["purchase_type"] %> order
+                <% elsif audit.audited_changes["line_item_id"].present? && audit.audited_changes["purchase_type"].present? %>
+                  for order <%= audit.audited_changes["purchase_type"] %>
+                <% end %>
+
+              <% else %>
+                <% if audit.audited_changes["quantity"].present? %>
+                  <!-- update purchase quantity -->
+                  <% if PurchaseItem.find(audit.auditable_id).line_item.present? %>
+                    Quantity of <%= PurchaseItem.find(audit.auditable_id).line_item&.title %><% if PurchaseItem.find(audit.auditable_id).line_item&.sku.present? %> (<%= PurchaseItem.find(audit.auditable_id).line_item&.sku&.upcase %>)<% end %> updated from <%= audit.audited_changes["quantity"][0] %> to <%= audit.audited_changes["quantity"][1] %>
+
+                  <% elsif PurchaseItem.find(audit.auditable_id).product_variant.present? %>
+                    Quantity of <%= PurchaseItem.find(audit.auditable_id).product_variant&.title %><% if PurchaseItem.find(audit.auditable_id).product_variant&.sku.present? %> (<%= PurchaseItem.find(audit.auditable_id).product_variant&.sku&.upcase %>)<% end %> updated from <%= audit.audited_changes["quantity"][0] %> to <%= audit.audited_changes["quantity"][1] %>
+                            
+                  <% elsif PurchaseItem.find(audit.auditable_id).product.present? %>
+                    Quantity of <%= PurchaseItem.find(audit.auditable_id).product&.title %><% if PurchaseItem.find(audit.auditable_id).product&.sku.present? %> (<%= PurchaseItem.find(audit.auditable_id).product&.sku&.upcase %>)<% end %> updated from <%= audit.audited_changes["quantity"][0] %> to <%= audit.audited_changes["quantity"][1] %>
+                  <% end %>
+                        
+                <% elsif audit.audited_changes["status"].present? %>
+                  <!-- update purchase status -->
+                  <% if PurchaseItem.find(audit.auditable_id).line_item.present? %>
+                    Status of <%= PurchaseItem.find(audit.auditable_id).line_item.title %><% if PurchaseItem.find(audit.auditable_id).line_item&.sku.present? %> (<%= PurchaseItem.find(audit.auditable_id).line_item&.sku&.upcase %>)<% end %> updated from <%= PurchaseItem.statuses.key(audit.audited_changes["status"][0]).try(:titleize) %> to <%= PurchaseItem.statuses.key(audit.audited_changes["status"][1]).try(:titleize) %>
+
+                  <% elsif PurchaseItem.find(audit.auditable_id).product_variant.present? %>
+                    Status of <%= PurchaseItem.find(audit.auditable_id).product_variant.title %><% if PurchaseItem.find(audit.auditable_id).product_variant&.sku.present? %> (<%= PurchaseItem.find(audit.auditable_id).product_variant&.sku&.upcase %>)<% end %> updated from <%= PurchaseItem.statuses.key(audit.audited_changes["status"][0]).try(:titleize) %> to <%= PurchaseItem.statuses.key(audit.audited_changes["status"][1]).try(:titleize) %>
+                            
+                  <% elsif PurchaseItem.find(audit.auditable_id).product.present? %>
+                    Status of <%= PurchaseItem.find(audit.auditable_id).product.title %><% if PurchaseItem.find(audit.auditable_id).product&.sku.present? %> (<%= PurchaseItem.find(audit.auditable_id).product&.sku&.upcase %>)<% end %> updated from <%= PurchaseItem.statuses.key(audit.audited_changes["status"][0]).try(:titleize) %> to <%= PurchaseItem.statuses.key(audit.audited_changes["status"][1]).try(:titleize) %>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </p>
+          </div>
+                    
+        <% elsif audit.auditable_type == "PurchaseCancelreq" && audit.audited_changes %>
+          <div class="col-1 mb-5">
+            <%= render partial: "/admin/comments/timeline_icon" %>
+          </div>
+          <div class="col-11 mb-5">
+            <%= render partial: "/admin/comments/timeline_date", locals: { audit: audit } %>
+            <p>
+              <% if audit.action == "create" %>
+                <!-- create cancel request -->
+                <% if PurchaseItem.find(audit.audited_changes["purchase_item_id"]).line_item.present? && audit.audited_changes["cancel_quantity"].present? %>
+                  Cancel requested for <%= audit.audited_changes["cancel_quantity"] %> <%= PurchaseItem.find(audit.audited_changes["purchase_item_id"]).line_item&.title %><% if PurchaseItem.find(audit.audited_changes["purchase_item_id"]).line_item&.sku.present? %> (<%= PurchaseItem.find(audit.audited_changes["purchase_item_id"]).line_item&.sku&.upcase %>)<% end %>
+
+                <% elsif PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product.present? && audit.audited_changes["cancel_quantity"].present? %>
+                  Cancel requested for <%= audit.audited_changes["cancel_quantity"] %> <%= PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product&.title %><% if PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product&.sku.present? %> (<%= PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product&.sku&.upcase %>)<% end %>
+
+                <% elsif PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product_variant.present? && audit.audited_changes["cancel_quantity"].present? %>
+                  Cancel requested for <%= audit.audited_changes["cancel_quantity"] %> <%= PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product_variant&.title %><% if PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product_variant&.sku.present? %> (<%= PurchaseItem.find(audit.audited_changes["purchase_item_id"]).product_variant&.sku&.upcase %>)<% end %>
+                <% end %>
+
+              <% else %>
+                <% if audit.audited_changes["status"][1] == 1 %>
+                  <!-- cancel request accepted -->
+                  <% if audit.audited_changes["status"].present? && PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item.present? %>
+                    Cancel request for <%= PurchaseCancelreq.find(audit.auditable_id)&.cancel_quantity %> <%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item&.title %><% if PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item&.sku.present? %> (<%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item&.sku&.upcase %>)<% end %> confirmed
+                              
+                  <% elsif audit.audited_changes["status"].present? && PurchaseCancelreq.find(audit.auditable_id).purchase_item.product.present? %>
+                    Cancel request for <%= PurchaseCancelreq.find(audit.auditable_id)&.cancel_quantity %> <%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product&.title %><% if PurchaseCancelreq.find(audit.auditable_id).purchase_item.product&.sku.present? %> (<%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product&.sku&.upcase %>)<% end %> confirmed
+                                
+                  <% elsif audit.audited_changes["status"].present? && PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant.present? %>
+                    Cancel request for <%= PurchaseCancelreq.find(audit.auditable_id)&.cancel_quantity %> <%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant&.title %><% if PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant&.sku.present? %> (<%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant&.sku&.upcase %>)<% end %> confirmed
+                    <% end %>
+                        
+                <% elsif audit.audited_changes["status"][1] == 2 %>
+                  <!-- cancel request rejected -->
+                  <% if audit.audited_changes["status"].present? && PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item.present? %>
+                    Cancel request for <%= PurchaseCancelreq.find(audit.auditable_id)&.cancel_quantity %> <%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item&.title %><% if PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item&.sku.present? %> (<%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.line_item&.sku&.upcase %>)<% end %> rejected
+                            
+                  <% elsif audit.audited_changes["status"].present? && PurchaseCancelreq.find(audit.auditable_id).purchase_item.product.present? %>
+                    Cancel request for <%= PurchaseCancelreq.find(audit.auditable_id)&.cancel_quantity %> <%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product&.title %><% if PurchaseCancelreq.find(audit.auditable_id).purchase_item.product&.sku.present? %> (<%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product&.sku&.upcase %>)<% end %> rejected
+                                
+                  <% elsif audit.audited_changes["status"].present? && PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant.present? %>
+                    Cancel request for <%= PurchaseCancelreq.find(audit.auditable_id)&.cancel_quantity %> <%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant&.title %><% if PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant&.sku.present? %> (<%= PurchaseCancelreq.find(audit.auditable_id).purchase_item.product_variant&.sku&.upcase %>)<% end %> rejected
+                  <% end %>
+                <% end %>
+              <% end %>
+            </p>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<script type="text/javascript">
+  $("#new_comment").on("submit", function() {
+    $("#comment_description").val($(".ql-editor").html());
+
+    var val = ",";
+    $(".user-list .tag").each(function() {
+      if ($(this).data("id") != null) {
+        val += $(this).data("id") + ",";
+      }
+    });
+
+    $("#comment_tag_user_id").val(val);
+    $(".ql-editor").html("");
+  });
+
+  $(document).on("click", "#new_comment .user-search", function() {
+    var id = $(this).data("id");
+    var name = $(this).text().trim().toLowerCase().split(' ').join('_');
+    var svg = '<%= show_svg("close.svg") %>'
+    $("#new_comment .user-list").append("<span class='tag' data-id='" + id + "'>@" + name + "<span class='user-list-remove'>" + svg + "</span></span>");
+    $(".comment-search").val("");
+  });
+</script>
+
+<link href="//cdn.quilljs.com/1.0.0/quill.snow.css" rel="stylesheet" />
+
+<script src="https://cdn.quilljs.com/1.0.0/quill.js"></script>
+
+<script>
+var toolbarOptions = [
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+  [{ 'script': 'sub'}, { 'script': 'super' }],
+  [{ 'color': [] }, { 'background': [] }]
+];
+
+  if (!$(".ql-toolbar").length) {
+    var editor = new Quill("#editor", {
+        
+      modules: { 
+        toolbar: toolbarOptions 
+      },
+      theme: "snow",
+    });
+  }
+</script>

@@ -1,0 +1,126 @@
+<style type="text/css">
+  @media print {
+    .btn {
+      display: none;
+    }
+  }
+  
+  .sb-topnav, #layoutSidenav_nav {
+    display: none !important;
+  }
+
+  #layoutSidenav_content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .printer-preview-content {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+</style>
+
+<div class="mb-4 text-right" style="max-width: 1000px; margin: 0 auto">
+  <button class="btn btn-primary dripicons-print" onclick="window.print()"> Print</button>
+</div>
+
+<div class="printer-preview-content p-4 bg-off-white" contenteditable="true" title="Click to edit text (changes will be printed but not saved)">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h5>Container <%= @container.container_number %></h5>
+
+      <span class="font-weight-bold">Shipping Date:</span>
+      <% if @container.try(:shipping_date).present? %>
+        <span><%= @container.try(:shipping_date).strftime('%B %d, %Y') %></span>
+      <% end %>
+      <br>
+
+      <span class="font-weight-bold">Port ETA:</span>
+      <% if @container.try(:port_eta).present? %>
+        <span><%= @container.try(:port_eta).strftime('%B %d, %Y') %></span>
+      <% end %>
+      <br>
+
+      <span class="font-weight-bold">Arriving to DC:</span>
+      <% if @container.try(:arriving_to_dc).present? %>
+        <span><%= @container.try(:arriving_to_dc).strftime('%B %d, %Y') %></span>
+      <% end %>
+      <br>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>SKU</th>
+            <th>Purchase Number</th>
+            <th>Quantity</th>
+            <th>Carton</th>
+            <th>Supplier</th>
+            <th>Order Number</th>
+            <th>Order From</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @cart = 0 %>
+          <% @container.purchase_items.try(:each) do |item| %>
+            <% if item.line_item_id.present? && !(item.line_item.status == "cancelled") %>
+              <tr>
+                <td><%= item.try(:line_item).try(:title) %></td>
+                <td><%= item.try(:line_item).try(:sku).upcase %></td>
+                <td><%= item.try(:purchase).try(:id) %></td>
+                <td><%= item.try(:quantity) %></td>
+                <td><%= @cart = @cart + item.try(:line_item).try(:product).try(:cartons).count if !(item.try(:line_item).try(:product).try(:cartons).nil?) %></td>
+                <td><%= item.try(:purchase).try(:supplier).name %></td>
+                <td>
+                  <% if item.try(:line_item).try(:order_from) == "CTUS" || item.try(:line_item).try(:order_from) == "CTCA" %>
+                    <%= item.try(:line_item).try(:order_from) %>
+                  <% else %>
+                    <%= item.try(:line_item).try(:order).name %>
+                  <% end %>
+                </td>
+                <td>
+                  <% if item.try(:line_item).try(:order_from) == "CTUS" || item.try(:line_item).try(:order_from) == "CTCA" %>
+                    <%= item.try(:line_item).try(:order).name %>
+                  <% else %>
+                    <%= item.try(:line_item).try(:order_from) %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+            <% if item.product_id.present? && item.product_variant_id.present? %>
+              <tr>
+                <td><%= item.try(:product).try(:title) %></td>
+                <td><%= item.try(:product_variant).try(:sku).upcase %></td>
+                <td><%= item.try(:purchase).try(:id) %></td>
+                <td><%= item.try(:quantity) %></td>
+                <td><%= @cart = @cart + item.try(:product).try(:cartons).count if !(item.try(:product).try(:cartons).nil?) %></td>
+                <td><%= item.try(:purchase).try(:supplier).name %></td>
+                <td><%= current_store == 'us' ? 'CTUS' : 'CTCA' %></td>
+              </tr>
+            <% end %>
+            <% if item.product_variant_id.present? && !(item.product_id.present?) && !(item.line_item_id.present?) %>
+              <tr>
+                <td><%= item.try(:product_variant).try(:title) %></td>
+                <td><%= item.try(:product_variant).try(:sku).upcase %></td>
+                <td><%= item.try(:purchase).try(:id) %></td>
+                <td><%= item.try(:quantity) %></td>
+                <td><%= @cart = @cart + item.try(:product_variant).try(:product).try(:cartons).count if !(item.try(:product_variant).try(:product).try(:cartons).nil?) %></td>
+                <td><%= item.try(:purchase).try(:supplier).name %></td>
+                <td><%= current_store == 'us' ? 'CTUS' : 'CTCA' %></td>
+              </tr>
+            <% end %>
+          <% end %>
+          <tr class="border-top">
+            <th colspan="3">Totals</th>
+            <th><%= @container.try(:purchase_items).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></th>
+            <th><%= @cart %></th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

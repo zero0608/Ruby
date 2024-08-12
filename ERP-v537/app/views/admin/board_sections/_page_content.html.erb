@@ -1,0 +1,107 @@
+<%= form_for [:admin, board_page], html: { class: "form-horizontal form-bordered h-100 d-flex flex-column" } do |f| %>
+  <div class="row">
+    <div class="col-10 mb-3">
+      <%= f.text_field :name, class: "form-control" %>
+    </div>
+    <div class="col-2 mb-3">
+      <span class="text-light-grey font-italic" style="vertical-align: -webkit-baseline-middle">
+        (<%= ((board_page.updated_at - board_page.created_at) / 3600).round <= 1 ? "created on" : "updated on" %> <%= board_page.updated_at.strftime("%B %d, %Y") %>)
+      </span>
+    </div>
+    <div class="col-3 mb-3">
+      <input class="form-control w-50 mr-4 d-inline-block" id="tag-form">
+      <button type="button" class="btn btn-primary" id="tag-button">Add Tag</button>
+    </div>
+    <div class="col-3 mb-3">
+      <label class="mr-4">Section</label>
+      <%= f.select :board_section_id, options_for_select(BoardSection.all.map{ |s| s.main_board == nil ? [s.name, s.id] : [(BoardSection.find_by(id: s.main_board).name.to_s + "-" + s.name.to_s), s.id] }, board_page.board_section_id), {}, class: "form-control w-50 d-inline-block mr-4" %>
+    </div>
+  </div>
+  <div class="flex-auto mb-3">
+    <div id="editor"></div>
+    <%= f.hidden_field :content %>
+    <%= f.hidden_field :tag %>
+  </div>
+  <div class="row">
+    <div class="col-9 mb-3">
+      <div class="d-inline-block" id="tag-group">
+        <% if board_page.tag.present? %>
+          <% board_page.tag.each do |tag| %>
+            <span class="tag" data-val="<%= tag %>">
+              <%= tag %>
+              <span class="user-list-remove">
+                <%= show_svg("close.svg") %>
+              </span>
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <div class="col-3 mb-3 text-right">
+      <%= f.submit "Post", class: "btn btn-primary" %>
+    </div>
+  </div>
+<% end %>
+
+<link href="//cdn.quilljs.com/1.0.0/quill.snow.css" rel="stylesheet" />
+
+<script src="https://cdn.quilljs.com/1.0.0/quill.js"></script>
+
+<script type="text/javascript">
+  var toolbarOptions = [
+    ['bold', 'italic', 'underline', 'strike'],
+    ['blockquote'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    [{ 'script': 'sub'}, { 'script': 'super' }],
+    [{ 'indent': '-1'}, { 'indent': '+1' }],
+    [{ 'direction': 'rtl' }],
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+
+    ['clean']
+  ];
+
+  setTimeout(function() {
+    if (!$(".ql-toolbar").length) {
+      var editor = new Quill("#editor", {
+          
+        modules: { 
+          toolbar: toolbarOptions 
+        },
+        theme: "snow",
+      });
+    }
+      
+    $(".ql-editor").empty();
+    $(".ql-editor").append('<%= @board_page.content.html_safe if @board_page.content.present? %>');
+  }, 300);
+
+  $(document).on("submit", "form", function() {
+    $("#board_page_content").val($(".ql-editor").html().replace(/\'/g, "\\\'"));
+    
+    var val = ",";
+    $(".tag").each(function() {
+      if ($(this).data("val") != null) {
+        val += $(this).data("val") + ",";
+      }
+    });
+    $("#board_page_tag").val(val);
+  });
+
+  $(document).on("click", "#tag-button", function() {
+    var val = $("#tag-form").val();
+    if (val != "") {
+      var svg = '<%= show_svg("close.svg") %>';
+      $("#tag-group").append("<span class='tag' data-val='" + val + "'>" + val + "<span class='user-list-remove'>" + svg + "</span></span>");
+      $("#tag-form").val("");
+    }
+  });
+</script>
+
+<style>
+  .ql-container {
+    height:  calc(100% - 50px) !important;
+  }
+</style>

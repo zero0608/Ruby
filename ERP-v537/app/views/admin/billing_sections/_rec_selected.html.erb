@@ -1,0 +1,100 @@
+<%= form_tag posting_all_admin_billing_sections_path(posting_ids: params[:posting_ids]), html: { class: "form-horizontal form-bordered" } do |f| %>
+  <div class="modal" id="selectedPostingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-body">
+          <% @brokers.uniq.each do |id| %>
+            <% broker = TruckBroker.find_by(id: id) %>
+            <% selected_id = Array.new %>
+            <% @selected_postings.each do |posting| %>
+              <% if posting.order_id.present? %>
+                <% selected_id.push(posting.id) if posting.shipping_detail&.shipping_quotes&.find_by(selected: true)&.truck_broker_id == id %>
+              <% elsif posting.return_id.present? %>
+                <% selected_id.push(posting.id) if posting.return&.carrier&.truck_broker_id == id %>
+              <% elsif posting.consolidation_id.present? %>
+                <% selected_id.push(posting.id) if posting.consolidation.shipping_details.first&.shipping_quotes&.find_by(selected: true)&.truck_broker_id == id %>
+              <% end %>
+            <% end %>
+
+            <div class="col-12 mb-3">
+              <p class="header2">
+                <%= broker&.name[0..3]&.upcase if broker&.name.present? %> - <%= Date.today.strftime("%Y-%m-%d") %>
+              </p>
+              <p>
+                Total Orders: <%= @selected_postings.where(id: selected_id.uniq).count %><br>
+                Total Invoice Amount: <%= number_to_currency(@selected_postings.where(id: selected_id.uniq).sum { |p| ((p.white_glove ? p.shipping_detail.invoice_for_wgd.invoice_amount.to_f : p.shipping_detail.invoice_for_billing.invoice_amount.to_f) if p.shipping_detail_id.present?) || ((p.white_glove ? p.return.invoice_for_wgd.invoice_amount.to_f : p.return.invoice_for_billing.invoice_amount.to_f) if p.return_id.present?) || ((p.white_glove ? p.consolidation.invoice_for_wgd.invoice_amount.to_f : p.consolidation.invoice_for_billing.invoice_amount.to_f) if p.consolidation_id.present?) })%><br>
+                <% selected_paid = @selected_postings.where(id: selected_id.uniq).where(status: :paid) %>
+                <% selected_dispute = @selected_postings.where(id: selected_id.uniq).where(status: :dispute) %>
+                Total Paid: <%= selected_paid.count %><br>
+                Total Paid Amount: <%= number_to_currency(selected_paid.sum { |p| ((p.white_glove ? p.shipping_detail.invoice_for_wgd.invoice_amount.to_f : p.shipping_detail.invoice_for_billing.invoice_amount.to_f) if p.shipping_detail_id.present?) || ((p.white_glove ? p.return.invoice_for_wgd.invoice_amount.to_f : p.return.invoice_for_billing.invoice_amount.to_f) if p.return_id.present?) || ((p.white_glove ? p.consolidation.invoice_for_wgd.invoice_amount.to_f : p.consolidation.invoice_for_billing.invoice_amount.to_f) if p.consolidation_id.present?) })%><br>
+                Total Dispute: <%= selected_dispute.count %><br>
+                Total Dispute Amount: <%= number_to_currency(selected_dispute.sum { |p| ((p.white_glove ? p.shipping_detail.invoice_for_wgd.invoice_amount.to_f : p.shipping_detail.invoice_for_billing.invoice_amount.to_f) if p.shipping_detail_id.present?) || ((p.white_glove ? p.return.invoice_for_wgd.invoice_amount.to_f : p.return.invoice_for_billing.invoice_amount.to_f) if p.return_id.present?) || ((p.white_glove ? p.consolidation.invoice_for_wgd.invoice_amount.to_f : p.consolidation.invoice_for_billing.invoice_amount.to_f) if p.consolidation_id.present?) })%>
+              </p>
+            </div>
+            <div class="col-12 mb-3">
+              <div class="table-responsive">
+                <table class="table table-borderless table-hover">
+                  <thead>
+                    <tr>
+                      <th style="width: 20%">Order Number</th>
+                      <th style="width: 15%">Invoice Number</th>
+                      <th style="width: 15%">Invoice Amount</th>
+                      <th style="width: 15%">Due Date</th>
+                      <th style="width: 15%">Status</th>
+                      <th style="width: 20%">Dispute Reason</th>
+                  </thead>
+                  <tbody>
+                    <% @selected_postings.where(id: selected_id.uniq).each do |posting| %>
+                      <% if posting.shipping_detail_id.present? %>
+                        <% if posting.white_glove %>
+                          <% invoice = posting.shipping_detail.invoice_for_wgd %>
+                        <% else %>
+                          <% invoice = posting.shipping_detail.invoice_for_billing %>
+                        <% end %>
+                      <% elsif posting.return_id.present? %>
+                        <% if posting.white_glove %>
+                          <% invoice = posting.return.invoice_for_wgd %>
+                        <% else %>
+                          <% invoice = posting.return.invoice_for_billing %>
+                        <% end %>
+                      <% elsif posting.consolidation_id.present? %>
+                        <% if posting.white_glove %>
+                          <% invoice = posting.consolidation.invoice_for_wgd %>
+                        <% else %>
+                          <% invoice = posting.consolidation.invoice_for_billing %>
+                        <% end %>
+                      <% end %>
+                      <tr>
+                        <td>
+                          <% if posting.order_id.present? %>
+                            <%= posting.order.name %>
+                          <% elsif posting.return_id.present? %>
+                            <%= (posting.return.customer_return ? "CRT-" : "RT-") + posting.return.order.name + "-" + (posting.return.order.returns.where(customer_return: posting.return.customer_return).index(posting.return) + 1).to_s.rjust(2, "0") %>
+                          <% elsif posting.consolidation_id.present? %>
+                            <%= posting.consolidation.name %>
+                          <% end %>
+                        </td>
+                        <td><%= invoice.invoice_number %></td>
+                        <td><%= number_to_currency(invoice.invoice_amount.to_f) %></td>
+                        <td><%= invoice.invoice_due_date&.strftime("%B %d, %Y") %></td>
+                        <td><%= posting.status %></td>
+                        <td>
+                          <%= posting.dispute_pay_reason if posting.dispute_pay_reason.present? %>
+                          <%= posting.dispute_not_paid_reason if posting.dispute_not_paid_reason.present? %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

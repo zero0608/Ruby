@@ -1,0 +1,10 @@
+<div class="row pb-3 position-fixed w-100 bg-white" style="z-index: 2; left: 15px; right: 15px">
+  <div class="col-12">
+    <p class="header1">Returns</p>
+  </div>
+    
+  <div class="col-12">
+    <a class="underline-hover <%= "active" if params[:status] == "pending" || (@return.present? && @return.status == "pending") %>" href="<%= admin_returns_path(status: "pending") %>">Pending</a>
+    <a class="underline-hover <%= "active" if params[:status] == "completed" || (@return.present? && @return.status != "pending") %>" href="<%= admin_returns_path(status: "completed") %>">Completed</a>
+  </div>
+</div>

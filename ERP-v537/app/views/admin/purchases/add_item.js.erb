@@ -1,0 +1,2 @@
+$("#newPurchase").append("<%= escape_javascript(render partial: 'items', locals: { line_items: @line_items, current_user: current_user })%>");
+$("#newPurchaseModal").modal('show');

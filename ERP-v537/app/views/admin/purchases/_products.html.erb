@@ -1,0 +1,27 @@
+<div class="modal" id="productPurchaseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_for [:admin,@purchase], html: {class: "form-horizontal form-bordered"} do |f| %>
+      <div class="modal-content modal-full-size">
+        <div class="modal-header flex-wrap">
+          <div class="w-100 mb-3">
+            <span class="header2 modal-title">Search Product</span>
+          </div>
+          <div class="w-100">
+            <div class="search-bar">
+              <input type="text" placeholder="Search..." class="form-control" data-reflex="debounced:input->PurchaseReflex#search_product" data-store-type="<%= current_store %>">
+            </div>
+          </div>
+        </div>
+        <div class="modal-body">
+          <section id="purchase-product-result">
+            <% render partial: "search_product", locals: { purchase: @purchase, current_user: current_user, current_store: current_store} %>
+          </section>
+        </div>      
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

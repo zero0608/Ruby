@@ -1,0 +1,22 @@
+<%= form_tag delete_board_admin_board_sections_path(section_id: delete_section.id), html: { class: "form-horizontal form-bordered" } do |f| %>
+  <div class="modal" id="deleteModal-<%= delete_section.id %>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-thin">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Delete Section</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <label>Move contents to (leave blank to delete all contents)</label>
+          <%= select_tag :new_section_id, options_for_select(BoardSection.where.not(id: delete_section.id).map{ |s| s.main_board == nil ? [s.name, s.id] : [(BoardSection.find_by(id: s.main_board).name.to_s + "-" + s.name.to_s), s.id] }), { include_blank: true, class: "form-control" } %>
+        </div>
+        <div class="modal-footer">
+          <span class="btn btn-secondary mr-4" data-dismiss="modal">Cancel</span>
+          <%= submit_tag "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+require_relative '../lib/vending_machine/version'
+require 'irb'
+
+# Check if the user wants to see the version
+if ARGV.include?('--version')
+  puts "Vending Machine version: #{VendingMachine::Version::VERSION}"
+else
+  # Start interactive console
+  require_relative '../lib/vending_machine'
+  IRB.start
+end

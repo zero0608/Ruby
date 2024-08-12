@@ -1,0 +1,13 @@
+<div class="container">
+  <div class="col-12 mb-4">
+    <h5>Search SKU</h5>
+  </div>
+  <div class="col-12 mb-4">
+    <input type="text" placeholder="Search..." class="form-control pl-5" data-reflex="debounced:input->WarehouseReflex#search_sku" data-user-id="<%= current_user.id %>">
+    <i class="uil-search fc-red-clay" style="position: absolute; top: 0.5rem; left: 2.25rem; font-size: 1.15rem"></i>
+  </div>
+
+  <section id="warehouse-search-sku">
+    <%= render partial: "search_skus", locals: { pagy: @pagy, current_user: @current_user } %>
+  </section>
+</div>

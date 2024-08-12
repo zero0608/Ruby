@@ -1,0 +1,56 @@
+<div class="container px-4">
+  <%= render "includes/admin_sub_nav" %>
+
+  <div class="row">
+    <div class="col-2">
+      <%= render "includes/side_nav_accounting" %>
+    </div>
+
+    <div class="col-10">
+      <% if current_user.user_group.admin_cru %>
+        <a href="<%= new_admin_expense_payment_method_path %>">
+          <button class="btn btn-primary">
+            <%= show_svg("plus.svg") %>
+            Create Payment Method
+          </button>
+        </a>
+      <% end %>
+
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 70%">Payment Method</th>
+              <th style="width: 10%">Posting</th>
+              <th style="width: 10%">Deactivated</th>
+              <th style="width: 10%">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @payment_methods.order(:title).each do |payment_method| %>
+              <tr>
+                <td><%= payment_method.title %></td>
+                <td>
+                  <% if payment_method.company_card == 1 %>
+                    <span class="badge badge-outline-blue">Posting</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if payment_method.deactivate %>
+                    <span class="badge badge-outline-black">Deactivated</span>
+                  <% end %>
+                <td>
+                  <% if current_user.user_group.admin_cru %>
+                    <a href="<%= edit_admin_expense_payment_method_path(payment_method) %>" class="mr-4">
+                      <%= show_svg("recent_activity.svg") %>
+                    </a>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

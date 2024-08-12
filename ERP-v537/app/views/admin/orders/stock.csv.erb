@@ -1,0 +1,19 @@
+<%- if params[:report_type] == "stock" -%>
+  <%- headers = ["Product SKU", "Product Description", "Current Qty", "Qty Sold", "Price", "Discounted Price", "Supplier", "Supplier Price", "Alert Limit", "Max LImit", "Stock", "Category", "Sub-category", "Factory"] -%>
+<%= CSV.generate_line headers -%>
+  <%- @line_items.each do |variant| -%>
+    <%- sold = 0 -%>
+    <%- LineItem.where(variant_id: variant.id).joins(:order).where(orders: {status: "completed"}).each do |item| -%>
+      <%- sold = sold + item.quantity.to_i -%>
+    <%- end -%>
+<%= CSV.generate_line([variant.sku.upcase, variant.title, variant.inventory_quantity, sold, variant.price, variant.discounted_price, Supplier.find_by(id: variant.supplier_id)&.name, variant.unit_cost, variant.inventory_limit, variant.max_limit, variant.stock, variant&.category&.title, variant&.subcategory&.name, variant&.factory]).html_safe -%>
+  <%- end -%>
+<%- else -%>
+  <%- headers = ["SKU", "Rack", "Level", "Bin", "Qty", "Qty updated date"] -%>
+<%= CSV.generate_line headers -%>
+  <%- CartonLocation.joins(:product_location).where('(DATE(carton_locations.updated_at) <= ?)',params[:date]).order("product_locations.rack, product_locations.level, product_locations.bin").each do |carton_location| -%>
+    <%- if carton_location&.product_location&.store == current_store -%>
+<%= CSV.generate_line([carton_location&.carton&.product_variant&.sku + " (" + carton_location&.carton&.carton_detail&.index.to_s + " / " + carton_location&.carton&.carton_detail&.product&.carton_details&.maximum(:index).to_s + ")", carton_location&.product_location&.rack, carton_location&.product_location&.level, carton_location&.product_location&.bin, carton_location&.quantity, carton_location&.updated_at.to_date.strftime('%Y-%m-%d')]).html_safe -%>
+    <%- end -%>
+  <%- end -%>
+<%- end -%>

@@ -1,0 +1,175 @@
+<% if @warehouse.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @warehouse.errors.full_messages.each do |message| %>
+      <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+    <div class="w-50">
+      <label class="text-black mr-2">Warehouse Address</label> <a data-toggle="modal" data-target="#shippingAddressModal">Edit</a><br>
+      <% if @warehouse.warehouse_address.present? %>
+        <%= @warehouse.warehouse_address&.address1 %><br>
+        <%= @warehouse.warehouse_address&.city&.titleize %>
+        <%= @warehouse.warehouse_address&.address2&.titleize %>,
+        <%= @warehouse.warehouse_address&.zip&.upcase %>,
+        <%= @warehouse.warehouse_address&.country %><br>
+        <% if @warehouse.warehouse_address&.phone.present? %>
+          <span class="text-blue">T:</span>
+          <%= @warehouse.warehouse_address&.phone %>
+        <% end %>
+      <% end %>
+    </div>
+
+<div class="row">
+  <div class="col-4 mb-3">
+    <%= f.label :name, "Name" %>
+    <%= f.text_field :name, class: "form-control", required: true %>
+  </div>
+  <div class="col-4 mb-3">
+    <%= f.label :code, "Code" %>
+    <%= f.text_field :code, class: "form-control", required: true %>
+  </div>
+  <!--
+  <div class="col-6 mb-3">
+    <%= f.label :State, "state" %>
+
+    <%= f.select :tax_rate_id, options_for_select(TaxRate.all.map{|s|[s.state, s.id]}, f.object.tax_rate_id), {include_blank: true}, class: "form-control", required: true %>
+  </div> -->
+
+  <div class="col-4 mb-3">
+    <label>Store</label><br>
+    <label class="mb-0 mr-2" style="vertical-align: middle">US</label>
+    <label class="checkbox checkbox-blue radio mr-4" style="vertical-align: middle">
+      <%= f.radio_button :store, "us", required: true %>
+      <span class="checkmark"></span>
+    </label>
+    <label class="mb-0 mr-2" style="vertical-align: middle">CA</label>
+    <label class="checkbox checkbox-blue radio mr-4" style="vertical-align: middle">
+      <%= f.radio_button :store, "canada", required: true %>
+      <span class="checkmark"></span>
+    </label>
+  </div>
+
+  <% if params[:action] == "edit" %>
+    <div class="col-12 mb-3">
+      <span class="header2 mr-2">Users</span>
+      <a href="<%= add_user_admin_warehouse_path(@warehouse) %>">
+        <button class="btn btn-primary" type="button">
+          <%= show_svg("plus.svg") %>
+          Add User
+        </button>
+      </a>
+    </div>
+    
+    <div class="col-12 mb-3">
+      <div class="table-responsive">
+        <table class="table table-borderless table-hover">
+          <thead>
+            <tr>
+              <th style="width: 40%">Name</th>
+              <th style="width: 40%">Email</th>
+              <th style="width: 20%">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @warehouse.users.where(deactivate: [false, nil]).each do |user| %>
+              <tr>
+                <td><%= user&.full_name %></td>
+                <td><%= user&.email %></td>
+                <td>
+                  <a href="<%= change_password_admin_user_path(user) %>" class="mr-4">
+                    Reset Password
+                  </a>
+                  <a href="<%= edit_admin_user_path(user) %>" class="mr-4">
+                    <%= show_svg("recent_activity.svg") %>
+                  </a>
+                  <a href="<%= admin_user_path(user) %>" method="delete" data-confirm="Are you sure you want to delete this user?">
+                    <%= show_svg("close.svg") %>
+                  </a>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Cancel", admin_warehouses_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Submit", class: "btn btn-primary" %>
+  </div>
+
+  <div class="col-12 mb-3">
+    <div class="table-responsive">
+      <table class="table table-borderless table-hover">
+        <thead>
+          <tr>
+            <th style="width: 40%">Associated States</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @warehouse.tax_rates.each do |tax| %>
+            <tr>
+              <td><%= tax&.state %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- shipping address -->
+<div class="modal" id="shippingAddressModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="header2 modal-title">Warehouse Address</span>
+        <button type="button" class="close" data-dismiss="modal">
+          <span class="text-black"><%= show_svg("close.svg") %></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <%= f.fields_for :warehouse_address do |ff| %>
+          <div class="row mx-0">
+            <div class="col-12 mb-3">
+              <%= ff.label :address1, "Address Line" %>
+              <%= ff.text_field :address1, class: "form-control" %>
+            </div>
+            <div class="col-12 mb-3">
+              <%= ff.label :city, "City" %>
+              <%= ff.text_field :city, class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3">
+              <%= ff.label :country, "Country" %>
+              <%= ff.text_field :country, class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3">
+              <%= ff.label :address2, "State" %>
+              <%= ff.text_field :address2, class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3">
+              <%= ff.label :zip, "Zip Code" %>
+              <%= ff.text_field :zip, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <%= ff.label :phone, "Phone" %>
+              <%= ff.text_field :phone, class: "form-control" %>
+            </div>
+            <div class="col-6 mb-3">
+              <%= ff.label :email, "Email" %>
+              <%= ff.text_field :email, class: "form-control" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <% if params[:action] == "edit" %>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= f.submit "Submit", name: "shipping_add_edit", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

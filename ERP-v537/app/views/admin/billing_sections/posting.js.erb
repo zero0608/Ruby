@@ -1,0 +1,2 @@
+$("#rec_modal").append("<%= escape_javascript(render partial: 'rec_selected', locals: { selected_postings: @selected_postings, brokers: @brokers }) %>");
+$("#selectedPostingModal").modal("show");

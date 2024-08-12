@@ -1,0 +1,46 @@
+<div class="row">
+  <div class="col-12">
+    <div class="table-responsive">
+      <table class="table table-borderless table-hover">
+        <thead>
+          <tr>
+            <th style="width: 10%">Rack</th>
+            <th style="width: 10%">Level</th>
+            <th style="width: 10%">Bin</th>
+            <th style="width: 10%">SKU</th>
+            <th style="width: 35%">Description</th>
+            <th style="width: 10%">Qty</th>
+            <th style="width: 5%"></th>
+            <th style="width: 5%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @product_locations&.each do |location| %>
+            <tr>
+              <td><%= location.rack %></td>
+              <td><%= location.level %></td>
+              <td><%= location.bin %></td>
+              <% if location.product_variant.present? %>
+                <td><%= location.product_variant.sku %></td>
+                <td><%= location.product_variant.title %></td>
+              <% else %>
+                <td></td>
+                <td></td>
+              <% end %>
+              <td><%= location.quantity if location.quantity.present? %></td>
+              <% if location.product_variant.present? %>
+                <td><%= link_to "Put", quantity_put_admin_warehouses_path(variant_id: location.product_variant.id, location_id: location.id), class: "btn btn-primary btn-fit-content px-3 w-100", remote: true %></td>
+                <div id="quantityPut"></div>
+                <td><%= link_to "Pick", quantity_pick_admin_warehouses_path(variant_id: location.product_variant.id, location_id: location.id), class: "btn btn-secondary btn-fit-content px-3 w-100", remote: true %></td>
+                <div id="quantityPick"></div>
+              <% else %>
+                <td colspan="2"><%= link_to "Assign", add_product_admin_warehouses_path(location_id: location.id), class: "btn btn-secondary btn-fit-content px-3 w-100", remote: true %></td>
+                <div id="productPurchase"></div>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

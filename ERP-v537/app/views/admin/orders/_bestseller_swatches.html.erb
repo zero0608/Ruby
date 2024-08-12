@@ -1,0 +1,37 @@
+
+  <span class="h5 font-weight-bold">BESTSELLERS SWATCHES</span>
+    <% if params[:b].to_i == 0 %>
+      (This Month)
+    <% elsif params[:b].to_i == 1 %>
+      (Last month)
+    <% elsif params[:b].to_i == 2 %>
+      (Past 90 Days)
+    <% end %>
+<div class="row">
+  <% if @items.present? %>
+    <% @items.group(:variant_id).count.sort_by { |k, v| v }.reverse!.first(6).to_h.keys.each do |id| %>
+      <% variant = ProductVariant.find_by(id: id) %>
+      <% if variant.present? %>
+        <div class="col-2 mb-4">
+          <% product = variant.product if variant.product.present? %>
+          <% product_image = ProductImage.find_by(shopify_image_id: variant.image_id) if variant.image_id.present? %>
+
+          <% if product_image.present? && product_image.src.present? %>
+            <%= image_tag product_image.src, class: "img-fluid border mb-4" %>
+          <% elsif product.present? && product.product_images.present? %>
+            <%= image_tag product.product_images[0].src, class: "img-fluid border mb-4" %>
+          <% else %>
+            <%= image_tag "logo-em.png", class: "img-fluid border mb-4" %>
+          <% end %>
+          <h5>SKU: <%= variant.sku %></h5>
+          <h5 class="fc-red-clay"><%= variant.title %></h5>
+          <span>Material: <%= variant.option1 %></span>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="col-12 mb-4">
+      <p>No Data</p>
+    </div>
+  <% end %>
+</div>

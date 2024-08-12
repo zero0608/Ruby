@@ -1,0 +1,74 @@
+<div class="row pb-3 position-fixed w-100 bg-white" style="z-index: 2; left: 15px; right: 15px">
+  <div class="col-6">      
+    <p class="header1">Claims</p>
+  </div>    
+  <div class="col-6 text-right">
+    <div class="btn btn-primary" data-toggle="modal" data-target="#exportClaims">
+      Export Claims
+    </div>
+  </div>
+  <div class="col-12">
+    <a class="underline-hover <%= params[:issue_status].present? ? ("active" if params[:issue_status] == "assigned") : "" %>" href="<%= admin_issues_path(issue_status: "assigned") %>">
+      Assigned
+      (<%= Issue.joins(:order).where("(assign_to = ? or assign_to = ? or assign_to LIKE ?) and orders.store = ?", current_user.full_name, current_user.username, "%,#{current_user.id.to_s},%", current_store).where.not(status: "closed").count %>)
+    </a>
+
+    <% Issue.issue_types.keys.each do |issue_type| %>
+      <a class="underline-hover <%= params[:issue_status].present? ? ("active" if params[:issue_status] == issue_type) : ("active" if (@issue.present? && @issue.issue_type == issue_type)) %>" href="<%= admin_issues_path(issue_status: issue_type) %>">
+        <%= issue_type.titleize %>
+        (<%= Issue.eager_load(:order).where(issue_type: issue_type).where("orders.store = ?", current_store).where.not(status: "closed").count %>)
+      </a>
+    <% end %>
+    
+    <a class="underline-hover <%= params[:issue_status].present? ? ("active" if params[:issue_status] == "do_not_pay") : "" %>" href="<%= admin_issues_path(issue_status: "do_not_pay") %>">
+      Do Not Pay
+      (<%= Issue.joins(:order).where(invoice_pay: false).where("orders.store = ?", current_store).where.not(status: "closed").count %>)
+    </a>
+  </div>
+</div>
+
+<div class="modal fade" id="exportClaims" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <%= form_tag report_admin_issues_path(format: "csv"), class: "needs-validation", novalidate: true do |ff| %>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="header2 modal-title">Date Range</span>
+          <button type="button" class="close" data-dismiss="modal">
+            <span class="text-black"><%= show_svg("close.svg") %></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row mx-0">
+            <div class="col-4 mb-3">
+              <label>Claim Type</label>
+              <span class="text-red">*</span>
+              <%= select_tag :issue_type, options_for_select(Issue.issue_types.keys.map { |w| [w.titleize, w] }), { include_blank: true, required: true, class: "form-control" } %>
+            </div>
+            <div class="col-4 mb-3">
+              <label>Start Date</label>
+              <%= date_field_tag :start_date, "", class: "form-control" %>
+            </div>
+            <div class="col-4 mb-3">
+              <label>End Date</label>
+              <%= date_field_tag :end_date, "", class: "form-control" %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary mr-4" data-dismiss="modal">Close</button>
+          <%= submit_tag "Submit", class: "btn btn-primary", id: "export_submit" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $("#export_submit").on("click", function() {
+    document.getElementById("loaderOverlay").style.display = "flex";
+    document.getElementById("loaderOverlay").style.left = 0;
+    setTimeout(function() {
+      location.reload();
+    }, 2000);
+  });
+</script>

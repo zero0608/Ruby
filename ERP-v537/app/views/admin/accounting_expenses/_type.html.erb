@@ -1,0 +1,33 @@
+<% if current_user.user_group.admin_cru %>
+  <a href="<%= create_type_admin_accounting_expenses_path %>">
+    <button class="btn btn-primary">
+      <%= show_svg("plus.svg") %>
+      Create Type
+    </button>
+  </a>
+<% end %>
+
+<div class="table-responsive">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 90%">Expense Type</th>
+        <th style="width: 10%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @expense_types.each do |expense_type| %>
+        <tr>
+          <td><%= expense_type.title %></td>
+          <td>
+            <% if current_user.user_group.admin_cru %>
+              <a href="<%= edit_type_admin_accounting_expenses_path(id: expense_type.id) %>" class="mr-4">
+                <%= show_svg("recent_activity.svg") %>
+              </a>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

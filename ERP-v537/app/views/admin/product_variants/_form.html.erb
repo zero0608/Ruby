@@ -1,0 +1,142 @@
+<% if @product_variant.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <% @product_variant.errors.full_messages.each do |message|%>
+        <%= message %><br>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-3 mb-3">
+    <label>Supplier Price</label>
+    <%= f.text_field :unit_cost, class: "form-control" %>
+  </div>
+  <div class="col-3 mb-3">
+    <label>Alert Limit</label>
+    <%= f.number_field :inventory_limit, class: "form-control" %>
+  </div>
+  <div class="col-3 mb-3">
+    <label>Max Limit</label>
+    <%= f.number_field :max_limit, class: "form-control" %>
+  </div>
+  <div class="col-3 mb-3">
+    <label>Inventory Status</label>
+    <%= f.select :stock, options_for_select(["Discontinued", "Inventory", "Non-Inventory", "Deactivated"], :selected => f.object.stock), { include_blank: true }, class: "form-control" %>                
+  </div>
+  <div class="col-3 mb-3">
+    <label>On Hand</label>
+    <% if @product_variant.inventory_quantity.to_i > 0 %>
+      <a class="ml-2" data-toggle="modal" data-target="#assignModal">Assign</a>
+    <% end %>
+    <p><%= @product_variant.try(:inventory_quantity).to_i %></p>
+  </div>
+  <div class="col-3 mb-3">
+    <%= f.label :category, "Category" %>
+    <p><%= f.object.category&.title %></p>
+  </div>
+  <div class="col-3 mb-3">
+    <%= f.label :subcategory, "Sub-Category" %>
+    <p><%= f.object.subcategory&.name %></p>
+  </div>
+  <div class="col-3 mb-3">
+    <label>In Production</label>
+    <p><%= @product_variant.purchase_items.where(status: :in_production).pluck(:quantity).reject(&:blank?).map(&:to_i).sum %></p>
+  </div>
+  <div class="col-3 mb-3">
+    <label>In Container</label>
+    <p>
+      <% @a = 0 %>
+      <% @product_variant.try(:purchase_items).where(line_item_id: nil).each do |item| %>
+        <% if item.containers.present? %>
+          <% item.containers.each do |cant| %>
+            <% @a = @a + item.try(:quantity).to_i if !(cant.status == "arrived") %>
+          <% end %>
+        <% end %>
+      <% end %>
+      <%= @a %>
+    </p>
+  </div>
+  <div class="col-3 mb-3">
+    <%= f.label :supplier, "Supplier" %>
+    <p><%= f.object.supplier&.name %></p>
+  </div>
+  <div class="col-3 mb-3">
+    <%= f.label :factory, "Factory" %>
+    <p><%= f.object.factory %></p>
+  </div>
+  <div class="col-3 mb-3">
+    <label>Purchase Order</label>
+    <p>
+      <% Purchase.where(store: current_store).order(:id).each do |purchase| %>
+        <% if @product_variant.in?(purchase.product_variants) %>
+          <% if purchase.try(:store) == "us" %>
+            <%= link_to "TUS" + "#{purchase.id}", admin_purchase_path(id: purchase.id), class: "mr-3", data: { turbolinks: false } %>
+          <% else %>
+            <%= link_to "TCA" + "#{purchase.id}", admin_purchase_path(id: purchase.id), class: "mr-3", data: { turbolinks: false } %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </p>
+  </div>
+  <div class="col-3 mb-3">
+    <label>Container</label>
+    <p>
+      <% a = []%>
+      <% Container.where(store: current_store).order(:id).each do |container| %>
+        <% container.line_items.each do |item| %>
+          <% if @product_variant == item&.variant %>
+            <% if container.try(:store) == "us"  %>
+              <% a << container.id %>
+            <% else %>
+              <% a << container.id %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+      <% if a.present? %>
+        <% a.uniq.each do |id| %>
+          <% container = Container.find(id) %>
+          <% if container.try(:store) == "us"  %>
+            <%= link_to "CTUS" + "#{container.container_number}", edit_admin_container_path(container), class: "mr-3" %>
+          <% else %>
+            <%= link_to "CTCA" + "#{container.container_number}", edit_admin_container_path(container), class: "mr-3" %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </p>
+  </div>
+  
+  <div class="col-12 mb-3">
+    <table class="table table-borderless table-hover">
+      <thead>
+        <th style="width: 10%">#</th>
+        <th style="width: 20%">Length</th>
+        <th style="width: 20%">Width</th>
+        <th style="width: 20%">Height</th>
+        <th style="width: 20%">Weight</th>
+        <th style="width: 30%">Quantity</th>
+      </thead>
+      <tbody>
+        <% @product_variant.cartons.sort_by{ |p| p.created_at }.each do | carton | %>
+          <tr>
+            <td><%= carton.carton_detail.index %></td>
+            <td><%= carton.carton_detail.length %></td>
+            <td><%= carton.carton_detail.width %></td>
+            <td><%= carton.carton_detail.height %></td>
+            <td><%= carton.carton_detail.weight %></td>
+            <td><%= carton.quantity %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col-12 mb-3">
+    <%= link_to "Back", params[:product_id].present? ? edit_admin_product_path(params[:product_id]) : stock_admin_orders_path, class: "btn btn-secondary mr-4" %>
+    <%= f.submit "Save", class: "btn btn-primary mr-4" %>                  
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).on('turbolinks:load', ready); 
+</script>

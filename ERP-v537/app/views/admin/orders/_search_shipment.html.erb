@@ -1,0 +1,24 @@
+<div class="table-responsive h-100">
+  <table class="table table-borderless table-hover">
+    <thead>
+      <tr>
+        <th style="width: 60%">Order Number</th>
+        <th style="width: 20%">Shipment</th>
+        <th style="width: 20%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @shipments&.each do |ship| %>
+        <tr>
+          <td><%= ship.order.name %></td>
+          <td><%= get_shipping ship %></td>
+          <td>
+            <button class="btn btn-primary" type="button" data-reflex="click->OrderReflex#add_consolidate" data-reflex-root="#consolidate-container-<%= @shipping_id %>" data-main-shipping="<%= @shipping_id %>" data-id="<%= ship.id %>" data-store="<%= current_store %>">
+              Select
+            </button>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
