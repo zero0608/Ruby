@@ -1,4 +1,0 @@
-<% if current_user.user_group.billing_view %>
-  <a class="underline-hover switch-tab <%= "active" if params[:action] == "expense_posting" %>" href="<%= expense_posting_admin_expenses_path %>">Posting (<%= ExpensePosting.where(status: "posting").count %>)</a>
-  <a class="underline-hover switch-tab <%= "active" if params[:action] == "expense_record" %>" href="<%= expense_record_admin_expenses_path %>">Records</a>
-<% end %>

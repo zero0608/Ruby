@@ -1,2 +1,0 @@
-class RemotePostalCode < ApplicationRecord
-end

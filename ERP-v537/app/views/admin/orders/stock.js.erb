@@ -1,4 +1,0 @@
-<% if params[:return_status] == "marketplace" %>
-  $("#sellMarketItem").append("<%= escape_javascript(render partial: "sell_market_item", locals: { current_user: current_user, market_product: @market_product }) %>");
-  $("#sellModal").modal("show");
-<% end %>

@@ -1,2 +1,0 @@
-module Admin::SwatchProductsHelper
-end

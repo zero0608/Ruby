@@ -1,2 +1,0 @@
-class StateDay < ApplicationRecord
-end

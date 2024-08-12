@@ -1,2 +1,0 @@
-class SwatchProduct < ApplicationRecord
-end

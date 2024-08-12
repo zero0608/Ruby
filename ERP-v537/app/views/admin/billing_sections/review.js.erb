@@ -1,9 +1,0 @@
-<% if params[:selected_review].present? %>
-  <% if params[:type] == "approve" %>
-    $("#review").append("<%= escape_javascript(render partial: "review_approve", locals: { selected_review: @selected_review }) %>");
-    $("#reviewApproveModal-<%= @selected_review.id %>").modal("show");
-  <% elsif params[:type] == "dispute" %>
-    $("#review").append("<%= escape_javascript(render partial: "review_dispute", locals: { selected_review: @selected_review }) %>");
-    $("#reviewDisputeModal-<%= @selected_review.id %>").modal("show");
-  <% end %>
-<% end %>

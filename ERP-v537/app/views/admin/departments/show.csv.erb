@@ -1,5 +1,0 @@
-<%- headers = ["Employee Name", "Position", "Department", "Employment Type", "Salary", "Compensation", "DOB", "Contact Information", "Time Off Remaining", "Personal Days Remaining", "Sick Days Remaining", "Date Started", "Date Left"] -%>
-<%= CSV.generate_line headers -%>
-<%- @department.employees.where(exit_date: nil).each do |employee| -%>
-<%= CSV.generate_line([employee.full_name, employee.position.name, employee.department.name, employee.employment_type, employee.salary, employee.bonus, employee.dob, employee.phone, employee.pto_remain, employee.personal_remain, employee.sick_remain, employee.start_date, employee.exit_date]) -%>
-<%- end -%>

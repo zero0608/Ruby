@@ -1,2 +1,0 @@
-class MergePackingSlip < ApplicationRecord
-end

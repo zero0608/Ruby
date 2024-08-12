@@ -1,5 +1,0 @@
-<% Department.order(:name).each do |department| %>
-  <a class="side-link <%= "active" if department.id == id %>" href="<%= admin_department_path(department) %>">
-    <%= department.name %>
-  </a>
-<% end %>

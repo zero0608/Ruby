@@ -1,2 +1,0 @@
-$("#assign").append("<%= escape_javascript(render partial: 'assign', locals: { order: @order, line_item: @line_item, purchase_item: @purchase_item, current_user: current_user }) %>");
-$("#assignModal-<%= @order.id %>-<%= @line_item.id %>-<%= @purchase_item.id %>").modal("show");
